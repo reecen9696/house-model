@@ -1,0 +1,870 @@
+{
+ "_frame": "Lot frame, metres. x = west along the front boundary from the party-wall corner, y = south (depth into the lot), z = above finished floor level (FFL). Source: MEASUREMENTS-RECONCILED.md",
+ "site": {
+  "lat": -37.8558857,
+  "lon": 145.0008581,
+  "bearing_deg": 188.4,
+  "ffl_ahd": 29.34,
+  "lot": {
+   "width": 6.95,
+   "depth": 29.6
+  },
+  "ground_z": -0.42,
+  "context_mesh": {
+   "file": "context/context.glb",
+   "origin_e": 3.456,
+   "origin_n": 8.755,
+   "ffl_on_mesh_datum": 0.86
+  }
+ },
+ "levels": {
+  "ffl": 0.0,
+  "slab": -0.38,
+  "porch": -0.25,
+  "path_west": -0.45,
+  "front_yard": -0.4
+ },
+ "walls": {
+  "ext": 0.23,
+  "int": 0.11,
+  "party_half": 0.115,
+  "plate_z": 3.15,
+  "wing_plate_z": 3.35
+ },
+ "house": {
+  "x_east": 0.0,
+  "x_west_outer": 4.92,
+  "x_west_inner": 4.69,
+  "y_front_outer": 3.05,
+  "y_front_inner": 3.28,
+  "y_rear_outer": 19.54,
+  "y_rear_inner": 19.31,
+  "porch": {
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 3.05,
+   "y1": 4.64
+  },
+  "bay": {
+   "x0": 1.915,
+   "x1": 4.285,
+   "front_x0": 2.415,
+   "front_x1": 3.785,
+   "projection": 0.35,
+   "sill": 0.8,
+   "head": 2.25,
+   "wall_top": 2.5
+  },
+  "wing": {
+   "x_outer": 2.25,
+   "x_inner": 2.02,
+   "y_end_outer": 25.0,
+   "y_end_inner": 24.77
+  },
+  "hall_step": {
+   "_note": "entry wall at x 1.47-1.58, stepping out 0.17 m to x 1.30-1.41 at y 7.94 (plan 0.16, vent photo about 0.19)",
+   "front_wall_x0": 1.47,
+   "front_wall_x1": 1.58,
+   "step_y": 7.94,
+   "rear_wall_x0": 1.3,
+   "rear_wall_x1": 1.41
+  }
+ },
+ "rooms": [
+  {
+   "name": "Porch",
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 3.05,
+   "y1": 4.64,
+   "floor": -0.25,
+   "ceil": null,
+   "floorMat": "tile"
+  },
+  {
+   "name": "Entry",
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 4.64,
+   "y1": 7.94,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Hall",
+   "x0": 0.115,
+   "x1": 1.3,
+   "y0": 7.94,
+   "y1": 11.49,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Front bedroom",
+   "x0": 1.58,
+   "x1": 4.69,
+   "y0": 3.28,
+   "y1": 7.94,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Bedroom 2",
+   "x0": 1.41,
+   "x1": 4.69,
+   "y0": 8.05,
+   "y1": 11.49,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Living",
+   "x0": 0.115,
+   "x1": 4.69,
+   "y0": 11.6,
+   "y1": 14.91,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Kitchen / dining",
+   "x0": 0.115,
+   "x1": 4.69,
+   "y0": 15.02,
+   "y1": 19.31,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "lino"
+  },
+  {
+   "name": "Bath",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 18.98,
+   "y1": 21.18,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "lino"
+  },
+  {
+   "name": "WC",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 21.29,
+   "y1": 22.16,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "lino"
+  },
+  {
+   "name": "Laundry",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 22.27,
+   "y1": 24.77,
+   "floor": -0.38,
+   "ceil": 2.4,
+   "floorMat": "concrete"
+  },
+  {
+   "name": "Covered area",
+   "x0": 2.25,
+   "x1": 6.22,
+   "y0": 19.54,
+   "y1": 24.75,
+   "floor": -0.38,
+   "ceil": null,
+   "floorMat": "concrete"
+  }
+ ],
+ "windows": {
+  "W1_bed2": {
+   "wall": "west",
+   "y0": 8.25,
+   "y1": 9.52,
+   "sill": 0.8,
+   "head": 2.4,
+   "frame": "timber"
+  },
+  "W2_living": {
+   "wall": "west",
+   "y0": 11.75,
+   "y1": 13.59,
+   "sill": 0.45,
+   "head": 2.4,
+   "frame": "alu"
+  },
+  "W3_kitchen": {
+   "wall": "west",
+   "y0": 16.49,
+   "y1": 18.29,
+   "sill": 1.18,
+   "head": 2.28,
+   "frame": "alu"
+  },
+  "bath": {
+   "wall": "wing_west",
+   "y0": 19.9,
+   "y1": 20.85,
+   "sill": 1.45,
+   "head": 2.08,
+   "frame": "alu",
+   "_note": "0.95 wide, 0.55 m of brick to the WC window (brick count in the covered-area photo)"
+  },
+  "wc": {
+   "wall": "wing_west",
+   "y0": 21.4,
+   "y1": 22.0,
+   "sill": 1.38,
+   "head": 1.95,
+   "frame": "alu"
+  },
+  "laundry": {
+   "wall": "wing_west",
+   "y0": 22.75,
+   "y1": 23.65,
+   "sill": 0.7,
+   "head": 1.4,
+   "frame": "alu"
+  }
+ },
+ "doors": {
+  "front": {
+   "x0": 0.28,
+   "x1": 1.06,
+   "head": 2.04,
+   "sidelight": {
+    "x0": 1.06,
+    "x1": 1.43,
+    "sill": 0.9
+   }
+  },
+  "front_bed": {
+   "y0": 6.42,
+   "y1": 7.22,
+   "head": 2.04,
+   "_note": "Moved 0.30 m toward the front to leave 0.10 m clear of the 0.62 m-deep rear-wall built-in; aligns with the plan's 6.4-7.2 m position."
+  },
+  "bed2": {
+   "y0": 9.98,
+   "y1": 10.78,
+   "head": 2.04
+  },
+  "hall_living": {
+   "x0": 0.2,
+   "x1": 0.92,
+   "head": 2.05,
+   "leaf": "none"
+  },
+  "living_kitchen_opening": {
+   "x0": 1.65,
+   "x1": 3.45,
+   "head": 2.4,
+   "_note": "centred on the wall with solid piers both sides (plan, kitchen-looking-north photo)"
+  },
+  "bath": {
+   "x0": 1.15,
+   "x1": 1.97,
+   "head": 2.04
+  },
+  "back": {
+   "x0": 3.1,
+   "x1": 3.84,
+   "head": 2.04
+  },
+  "wc": {
+   "x0": 1.15,
+   "x1": 1.9,
+   "head": 2.04
+  },
+  "laundry": {
+   "y0": 23.8,
+   "y1": 24.62,
+   "head": 2.04
+  },
+  "pantry": {
+   "x0": 2.3,
+   "x1": 2.8,
+   "head": 2.35
+  }
+ },
+ "roof": {
+  "main": {
+   "ridge_x": 0.0,
+   "ridge_z": 5.1,
+   "eave_x": 5.32,
+   "eave_z": 3.0,
+   "y0": 2.5,
+   "y1": 17.8,
+   "gable_y_front": 3.05,
+   "gable_y_rear": 17.8
+  },
+  "kitchen_flat": {
+   "x0": 0.0,
+   "x1": 4.92,
+   "y0": 17.8,
+   "y1": 19.54,
+   "z": 3.35,
+   "fascia": 0.3
+  },
+  "wing_flat": {
+   "x0": 0.0,
+   "x1": 2.25,
+   "y0": 19.54,
+   "y1": 25.0,
+   "z_top": 3.35,
+   "fascia": 0.3
+  },
+  "covered": {
+   "x0": 2.25,
+   "x1": 6.4,
+   "y0": 19.54,
+   "y1": 24.75,
+   "z_top_east": 2.4,
+   "z_top_west": 2.25,
+   "thick": 0.05,
+   "posts_x": 6.22,
+   "posts_y": [
+    19.8,
+    22.2,
+    24.6
+   ],
+   "post": 0.09,
+   "lining": "timber",
+   "bare_strip_to_x": 3.3,
+   "gutter_x": 6.4,
+   "beams_y": [
+    19.9,
+    21.1,
+    22.3,
+    23.5,
+    24.6
+   ]
+  },
+  "porch_hood": {
+   "x0": 0.0,
+   "x1": 1.55,
+   "y0": 2.2,
+   "y1": 3.05,
+   "z_low": 2.42,
+   "z_high": 2.85
+  },
+  "bay_hood": {
+   "z_low": 2.5,
+   "z_high": 2.85,
+   "overhang": 0.15
+  },
+  "blinds": {
+   "x": 6.2,
+   "bays": [
+    [
+     19.6,
+     21.9,
+     "striped"
+    ],
+    [
+     22.1,
+     24.7,
+     "beige"
+    ]
+   ],
+   "z_top": 2.2,
+   "z_bottom": 1.55
+  },
+  "awning_W3": {
+   "x0": 4.92,
+   "x1": 5.45,
+   "y0": 16.4,
+   "y1": 18.4,
+   "z_wall": 2.9,
+   "z_edge": 2.45
+  }
+ },
+ "chimney": {
+  "x0": 4.92,
+  "x1": 5.22,
+  "y0": 13.8,
+  "y1": 16.1,
+  "z_breast": 2.95,
+  "stack_x0": 4.72,
+  "stack_x1": 5.22,
+  "stack_y0": 14.65,
+  "stack_y1": 15.25,
+  "z_top": 4.85,
+  "pot": 0.35,
+  "breast_material": "white"
+ },
+ "fixtures": {
+  "robe_front": {
+   "x0": 2.6,
+   "x1": 4.69,
+   "y0": 7.32,
+   "y1": 7.94,
+   "z1": 3.14
+  },
+  "robe_bed2": {
+   "x0": 1.41,
+   "x1": 4.69,
+   "y0": 10.87,
+   "y1": 11.49,
+   "z1": 3.14
+  },
+  "shower": {
+   "x0": 0.115,
+   "x1": 1.0,
+   "y0": 20.3,
+   "y1": 21.18,
+   "z1": 1.95
+  },
+  "vanity": {
+   "x0": 0.115,
+   "x1": 0.55,
+   "y0": 18.98,
+   "y1": 20.2,
+   "z1": 0.85
+  },
+  "_kitchen": "From the listing photo (kitchen facing south) and the plan: honey timber raised-panel joinery on the west wall, freestanding white gas stove at the north end with rangehood and tall uppers above, double sink under the window, dishwasher at the south end, bench returning along the south wall to the back door, cream tiled splashback, tall pantry door flush in the south wall beside the bath door.",
+  "bench": {
+   "x0": 4.09,
+   "x1": 4.69,
+   "y0": 16.0,
+   "y1": 19.31,
+   "z1": 0.9,
+   "top": 0.035
+  },
+  "bench_return": {
+   "x0": 4.4,
+   "x1": 4.69,
+   "y0": 18.71,
+   "y1": 19.31,
+   "_note": "short end cupboard only; the south wall is bare tile (listing photo)"
+  },
+  "stove": {
+   "x0": 4.09,
+   "x1": 4.69,
+   "y0": 15.4,
+   "y1": 16.0,
+   "z1": 0.92
+  },
+  "rangehood": {
+   "x0": 4.2,
+   "x1": 4.69,
+   "y0": 15.4,
+   "y1": 16.0,
+   "z0": 1.6,
+   "z1": 1.75
+  },
+  "uppers_north": {
+   "x0": 4.35,
+   "x1": 4.69,
+   "y0": 15.1,
+   "y1": 16.4,
+   "z0": 1.75,
+   "z1": 2.75
+  },
+  "uppers_corner": {
+   "x0": 4.35,
+   "x1": 4.69,
+   "y0": 18.3,
+   "y1": 19.31,
+   "z0": 1.45,
+   "z1": 2.6
+  },
+  "dishwasher": {
+   "y0": 18.1,
+   "y1": 18.7
+  },
+  "sink": {
+   "y0": 16.95,
+   "y1": 17.85
+  },
+  "splash": {
+   "z0": 0.935,
+   "z1": 1.45
+  },
+  "pantry_shelves": {
+   "x0": 2.13,
+   "x1": 2.95,
+   "y0": 18.98,
+   "y1": 19.31,
+   "levels": [
+    0.5,
+    0.95,
+    1.4,
+    1.85
+   ]
+  },
+  "floor_vents": [
+   {
+    "x0": 1.17,
+    "x1": 1.47,
+    "y0": 7.62,
+    "y1": 7.92,
+    "_note": "0.3 x 0.3 grate in the corner against the entry wall, projecting about 0.13 past the step (vent photo)"
+   }
+  ],
+  "drawers": {
+   "y0": 16.0,
+   "y1": 16.5,
+   "count": 3
+  },
+  "kitchen_light": {
+   "x": 2.4,
+   "y": 17.0
+  },
+  "kitchen_wall_vent": {
+   "x0": 2.9,
+   "x1": 3.15,
+   "z0": 2.45,
+   "z1": 2.6
+  },
+  "mirror_cabinet": {
+   "x0": 0.115,
+   "x1": 0.25,
+   "y0": 19.15,
+   "y1": 20.05,
+   "z0": 1.3,
+   "z1": 2.0
+  },
+  "bath_tiles": {
+   "z1": 2.7,
+   "_note": "cream/yellow patterned tiles on the whole east wall and inside the shower; other walls plain"
+  },
+  "exhaust_fan": {
+   "x": 0.6,
+   "y": 19.5
+  },
+  "toilet": {
+   "x0": 0.115,
+   "x1": 0.8,
+   "y0": 21.45,
+   "y1": 21.95,
+   "_note": "against the party wall, pan facing west"
+  },
+  "wc_cabinet": {
+   "x0": 0.115,
+   "x1": 0.3,
+   "y0": 21.4,
+   "y1": 22.0,
+   "z0": 1.6,
+   "z1": 2.3
+  },
+  "laundry_trough": {
+   "x0": 0.115,
+   "x1": 0.65,
+   "y0": 22.4,
+   "y1": 23.0
+  },
+  "washing_machine": {
+   "x0": 0.115,
+   "x1": 0.75,
+   "y0": 23.1,
+   "y1": 23.7
+  },
+  "grab_rail": {
+   "x": 3.97,
+   "y": 19.56,
+   "z0": 0.9,
+   "z1": 1.4
+  },
+  "shelves_front": {
+   "x0": 1.58,
+   "x1": 2.6,
+   "y0": 7.32,
+   "y1": 7.94,
+   "levels": [
+    0.4,
+    0.9,
+    1.4,
+    1.9,
+    2.4
+   ],
+   "_note": "open shelving niche (SH on the plan)"
+  },
+  "wall_heater": {
+   "x0": 4.49,
+   "x1": 4.69,
+   "y0": 13.9,
+   "y1": 14.65,
+   "z0": 0.1,
+   "z1": 0.7,
+   "_note": "console gas heater on the living west wall"
+  },
+  "ceiling_roses": [
+   {
+    "room": "Living",
+    "x": 2.4,
+    "y": 13.25,
+    "dia": 0.7,
+    "light": "chandelier"
+   },
+   {
+    "room": "Entry",
+    "x": 0.71,
+    "y": 5.6,
+    "dia": 0.5,
+    "light": "chandelier"
+   },
+   {
+    "room": "Bedroom 2",
+    "x": 3.05,
+    "y": 9.77,
+    "dia": 0.3,
+    "light": "pendant"
+   },
+   {
+    "room": "Front bedroom",
+    "x": 3.1,
+    "y": 5.6,
+    "dia": 0.3,
+    "light": "pendant"
+   }
+  ],
+  "wall_vents": [
+   {
+    "y0": 12.4,
+    "y1": 12.63,
+    "z0": 2.75,
+    "z1": 2.87
+   },
+   {
+    "y0": 8.78,
+    "y1": 9.01,
+    "z0": 2.8,
+    "z1": 2.92
+   }
+  ],
+  "cornice": {
+   "deep_rooms": [
+    "Entry",
+    "Hall",
+    "Front bedroom",
+    "Living"
+   ],
+   "deep": [
+    0.2,
+    0.15
+   ],
+   "plain": [
+    0.1,
+    0.1
+   ]
+  }
+ },
+ "site_items": {
+  "front_fence": {
+   "y": 0.0,
+   "h": 1.15,
+   "gate_x0": 0.3,
+   "gate_x1": 1.3
+  },
+  "west_fence": {
+   "x": 6.95,
+   "y0": 0.0,
+   "y1": 29.6,
+   "h": 2.0
+  },
+  "east_fence": {
+   "x": 0.0,
+   "y0": 25.0,
+   "y1": 29.6,
+   "h": 2.0
+  },
+  "rear_fence": {
+   "y": 29.6,
+   "h": 2.2,
+   "lattice_from": 1.8
+  },
+  "side_pier": {
+   "x0": 6.21,
+   "x1": 6.95,
+   "y0": 5.85,
+   "y1": 6.0,
+   "h": 1.7
+  },
+  "side_gate": {
+   "x0": 4.92,
+   "x1": 6.21,
+   "y": 5.92,
+   "h": 1.7,
+   "material": "cream_metal"
+  },
+  "rear_gate": {
+   "x0": 4.92,
+   "x1": 5.95,
+   "y": 19.4,
+   "h": 1.9,
+   "iron_z1": 2.35,
+   "panel_x1": 6.95,
+   "panel_h": 2.0,
+   "lattice_h": 2.3
+  },
+  "shed": {
+   "x0": 0.1,
+   "x1": 2.0,
+   "y0": 25.0,
+   "y1": 29.4,
+   "h": 2.1
+  },
+  "front_path": {
+   "x0": 0.28,
+   "x1": 1.36,
+   "y0": 0.0,
+   "y1": 3.05,
+   "z": -0.4
+  },
+  "_ground": "Surfaces from the owner's and agent photos: concrete rear yard and covered area, pavers down the west side, brick-edged beds along the west fence, garden and tiled path at the front.",
+  "front_garden": {
+   "x0": 0.0,
+   "x1": 4.92,
+   "y0": 0.0,
+   "y1": 3.05,
+   "z": -0.42,
+   "_note": "the concrete side path continues to the front fence west of the house"
+  },
+  "divider_fence": {
+   "x": 0.03,
+   "y0": 0.0,
+   "y1": 3.05,
+   "h": 1.15
+  },
+  "west_path": {
+   "x0": 4.92,
+   "x1": 6.35,
+   "y0": 0.0,
+   "y1": 19.4,
+   "z": -0.45
+  },
+  "west_bed": {
+   "x0": 6.35,
+   "x1": 6.95,
+   "y0": 3.05,
+   "y1": 19.4,
+   "edge_h": 0.17,
+   "fill": "plants"
+  },
+  "rear_slab": {
+   "x0": 0.0,
+   "x1": 6.95,
+   "y0": 19.4,
+   "y1": 29.6,
+   "z": -0.38
+  },
+  "rear_bed": {
+   "x0": 6.35,
+   "x1": 6.95,
+   "y0": 19.6,
+   "y1": 29.6,
+   "edge_h": 0.17,
+   "fill": "pebbles"
+  },
+  "tree": {
+   "x": 6.19,
+   "y": 28.9,
+   "h": 3.0,
+   "r": 0.62,
+   "_note": "slim lemon tree in the south-west corner (listing photo facing south); canopy kept inside both fences"
+  },
+  "yucca": {
+   "x": 6.62,
+   "y": 21.3,
+   "h": 2.8,
+   "r": 0.7
+  },
+  "clothesline": {
+   "x": 3.475,
+   "y": 27.2,
+   "h": 2.0,
+   "arm": 1.2
+  },
+  "ducted_heater": {
+   "x0": 4.95,
+   "x1": 5.45,
+   "y0": 6.35,
+   "y1": 6.9,
+   "h": 1.25,
+   "_note": "Brivis ducted gas heater on the raised apron just inside the side gate (side-path video): grey lower cabinet, lighter access panel on top"
+  },
+  "hot_water": {
+   "x0": 4.92,
+   "x1": 5.12,
+   "y0": 18.85,
+   "y1": 19.3,
+   "z0": 1.85,
+   "z1": 2.5,
+   "_note": "Rinnai B26 continuous-flow, outside west wall"
+  },
+  "rear_bed_south": {
+   "x0": 2.0,
+   "x1": 6.35,
+   "y0": 28.7,
+   "y1": 29.6,
+   "edge_h": 0.17,
+   "fill": "soil"
+  },
+  "security_screen": {
+   "x0": 0.115,
+   "x1": 1.47,
+   "y": 3.0799999999999996,
+   "z0": -0.25,
+   "z1": 2.8
+  },
+  "front_tree": {
+   "x": 5.97,
+   "y": 0.985,
+   "h": 2.5,
+   "r": 0.9
+  },
+  "back_steps": {
+   "x0": 3.0,
+   "x1": 3.95,
+   "y0": 19.54,
+   "y1": 20.1
+  },
+  "downpipes": [
+   {
+    "x": 4.95,
+    "y": 3.3
+   },
+   {
+    "x": 4.95,
+    "y": 13.6
+   },
+   {
+    "x": 4.95,
+    "y": 19.45
+   },
+   {
+    "x": 2.28,
+    "y": 24.9
+   }
+  ],
+  "gas_meter": {
+   "x0": 4.92,
+   "x1": 5.12,
+   "y0": 3.2,
+   "y1": 3.5,
+   "z0": 0.35,
+   "z1": 0.7
+  },
+  "apron": {
+   "x0": 4.92,
+   "x1": 5.5,
+   "y0": 6.0,
+   "y1": 7.9,
+   "h": 0.1
+  }
+ },
+ "kitchen_south_wall": {
+  "x0": 0.115,
+  "x1": 2.95,
+  "y0": 18.87,
+  "y1": 18.98,
+  "_note": "bath door, wall, pantry door in one flush line; back door set back in the rear wall to the west"
+ }
+}

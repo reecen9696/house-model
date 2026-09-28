@@ -1,0 +1,361 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>13 Fern Ave — Renovation</title>
+<style>
+  :root {
+    --glass: rgba(248,247,243,0.94); --ink: #1f2427; --muted: #5d646a; --line: rgba(31,36,39,0.14);
+    --accent: #2f5d50; --accent-ink: #fff; --chip: #ecebe6;
+    --walk: #d6336c; --walk-on: #a61e4d; --glass-solid: #f8f7f3;
+    --bar-h: 64px; --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+    color-scheme: light;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body { margin: 0; background: #cfe3f5; color: var(--ink); font: 15px/1.35 system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  canvas { display: block; touch-action: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible + span, input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+
+  #bar { position: fixed; z-index: 21; left: 50%; transform: translateX(-50%); bottom: calc(10px + var(--safe-b)); width: min(520px, calc(100vw - 20px)); height: var(--bar-h); box-sizing: border-box; display: grid; grid-template-columns: 1fr auto 1fr; gap: 4px; padding: 6px; background: var(--glass); border-radius: 18px; box-shadow: 0 2px 14px rgba(0,0,0,0.2); }
+  #bar button { border: 0; background: transparent; border-radius: 12px; display: grid; place-items: center; gap: 1px; font-size: 12px; font-weight: 600; color: var(--muted); padding: 4px 0; }
+  #bar button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  #bar button[aria-pressed="true"] { background: var(--chip); color: var(--ink); }
+  #bar #walkBtn { position: relative; width: 76px; align-content: end; padding: 0 0 5px; color: var(--ink); background: transparent; -webkit-tap-highlight-color: transparent; }
+  #walkBtn .fab { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: var(--walk); box-shadow: 0 0 0 4px var(--glass-solid), 0 4px 12px rgba(214,51,108,0.45); transition: transform 0.12s, background 0.15s; }
+  #bar #walkBtn .fab svg { width: 26px; height: 26px; stroke: #fff; stroke-width: 2.2; }
+  #walkBtn .i-orbit, #walkBtn[aria-pressed="true"] .i-walk { display: none; }
+  #walkBtn[aria-pressed="true"] .i-orbit { display: block; }
+  #bar #walkBtn[aria-pressed="true"] { background: transparent; color: var(--ink); }
+  #walkBtn[aria-pressed="true"] .fab { background: var(--walk-on); }
+  #walkBtn:active .fab { transform: translateX(-50%) scale(0.93); }
+  #walkBtn:focus-visible { outline: none; }
+  #walkBtn:focus-visible .fab { outline: 3px solid var(--walk-on); outline-offset: 5px; }
+  #bar .grp { display: flex; gap: 4px; min-width: 0; }
+  #bar .grp button { flex: 1 1 0; min-width: 0; }
+
+  .sheet { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(var(--bar-h) + 36px + var(--safe-b)); width: min(520px, calc(100vw - 20px)); box-sizing: border-box; max-height: 46vh; overflow-y: auto; background: var(--glass); border-radius: 18px; padding: 14px 16px 16px; box-shadow: 0 2px 14px rgba(0,0,0,0.2); display: grid; gap: 12px; }
+  .sheet h2 { margin: 0; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .chip span, .btn { display: inline-block; padding: 10px 14px; border-radius: 999px; background: var(--chip); border: 1px solid transparent; font-size: 14px; font-weight: 550; }
+  .chip input:checked + span { background: var(--accent); color: var(--accent-ink); }
+  .chip input:disabled + span { opacity: 0.45; }
+  .btn { border: 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .grid3 .btn, .grid4 .btn { padding: 12px 4px; border-radius: 12px; text-align: center; }
+  .field { display: grid; gap: 6px; }
+  .field .lab { display: flex; justify-content: space-between; font-size: 14px; }
+  .field .val { color: var(--muted); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; height: 32px; accent-color: var(--accent); margin: 0; }
+  .field .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .num { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--muted); }
+  .num input { width: 64px; box-sizing: border-box; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; font-size: 16px; color: var(--ink); text-align: right; -webkit-user-select: text; user-select: text; }
+  .sheet h3 { margin: 0; font-size: 14px; font-weight: 650; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; background: var(--chip); border-radius: 14px; }
+  .seg button { border: 0; background: transparent; border-radius: 10px; padding: 10px 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .seg button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  select:disabled, input:disabled + span { opacity: 0.45; }
+  .grp-d { border-top: 1px solid var(--line); }
+  .grp-d summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 0 10px; font-size: 15px; font-weight: 650; cursor: pointer; }
+  .grp-d summary::-webkit-details-marker { display: none; }
+  .grp-d summary::after { content: ""; margin-left: 8px; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-3px); transition: transform 0.15s; }
+  .grp-d[open] summary::after { transform: rotate(225deg) translateY(-2px); }
+  .grp-d .sum { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--muted); text-align: right; }
+  .grp-d .body { display: grid; gap: 12px; padding-bottom: 12px; }
+  /* Reno sheet: room tabs pinned at the top; each room is a short list of questions (pills) and switches */
+  #sheet-reno { padding-top: 0; gap: 4px; }
+  .reno-head { position: sticky; top: 0; z-index: 1; margin: 0 -16px 8px; padding: 14px 16px 10px; background: var(--glass-solid); border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+  .reno-top { display: flex; align-items: center; justify-content: space-between; }
+  .link { border: 0; background: none; padding: 6px 2px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  .rooms { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rooms button { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .rooms button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .rooms button.is-here::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--walk); box-shadow: 0 0 0 2px var(--glass-solid); }
+  .here { margin: 0; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .here::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--walk); }
+  .rpanel { display: grid; gap: 16px; }
+  .rpanel[hidden] { display: none; }
+  .q { display: grid; gap: 6px; }
+  .q .lab { font-size: 14px; font-weight: 600; }
+  .q select { font: inherit; font-size: 16px; padding: 11px 36px 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235d646a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; -webkit-appearance: none; appearance: none; color: var(--ink); width: 100%; }
+  .q select:disabled { opacity: 0.5; }
+  .seg.wrap { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
+  .seg button:disabled { opacity: 0.4; }
+  .note:empty { display: none; }
+  .sws { display: grid; }
+  .sws .note { padding: 0 0 8px; }
+  .sw { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 15px; border-top: 1px solid var(--line); }
+  .sw:first-child { border-top: 0; }
+  .sw input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .sw .tk { flex: none; width: 46px; height: 28px; border-radius: 14px; background: #cfcdc6; position: relative; transition: background 0.15s; }
+  .sw .tk::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.15s; }
+  .sw input:checked + .tk { background: var(--accent); }
+  .sw input:checked + .tk::after { transform: translateX(18px); }
+  .sw input:disabled ~ * { opacity: 0.4; }
+  .fine { border-top: 1px solid var(--line); padding-top: 4px; }
+  .fine summary { list-style: none; cursor: pointer; padding: 8px 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .fine summary::-webkit-details-marker { display: none; }
+  .fine summary::before { content: "▸ "; }
+  .fine[open] summary::before { content: "▾ "; }
+  .fine .field { padding: 4px 0 10px; }
+  .field select { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); width: 100%; }
+
+  #joy { position: fixed; left: 18px; bottom: calc(var(--bar-h) + 26px + var(--safe-b)); width: 132px; height: 132px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.28); touch-action: none; transition: background 0.2s, border-color 0.2s; }
+  #joy.active { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.75); }
+  @media (hover: hover) and (pointer: fine) { #joy { display: none !important; } }   /* mouse and keyboard: WASD instead of the thumb stick */
+  #knob { position: absolute; left: 40px; top: 40px; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.92); box-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+  #eye { position: fixed; right: 18px; bottom: calc(var(--bar-h) + 26px + var(--safe-b)); display: grid; gap: 10px; }
+  #eye button { width: 56px; height: 56px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.75); background: rgba(255,255,255,0.3); display: grid; place-items: center; touch-action: none; box-shadow: 0 1px 10px rgba(0,0,0,0.15); }
+  #eye svg { width: 24px; height: 24px; stroke: #fff; stroke-width: 2.4; fill: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+  #toast { position: fixed; left: 50%; transform: translateX(-50%); top: calc(14px + var(--safe-t)); background: rgba(31,36,39,0.85); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 13px; max-width: calc(100vw - 40px); text-align: center; }
+  .field .ic { display: inline-flex; align-items: center; gap: 7px; }
+  .field .ic svg { width: 18px; height: 18px; color: var(--accent); }
+  #loading { position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; justify-items: center; gap: 14px; background: #eef3f7; color: var(--muted); font-size: 14px; transition: opacity 0.35s ease; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  #loading .spin { width: 44px; height: 44px; border-radius: 50%; border: 4px solid rgba(47,93,80,0.18); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #loading .spin { animation-duration: 2.5s; } }
+  @media (prefers-reduced-motion: no-preference) { .sheet { animation: rise 0.16s ease-out; } @keyframes rise { from { opacity: 0; transform: translate(-50%, 8px); } } }
+/* M (desktop): hide every on-screen control, only the 3D view stays, for screen recording */
+body.clean > *:not(canvas) { display: none !important; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "suncalc": "https://cdn.jsdelivr.net/npm/suncalc@1.9.0/+esm"
+} }
+</script>
+
+<link rel="stylesheet" href="../model-switch.css">
+<nav class="model-switch" aria-label="House version">
+  <a href="../?original">Original</a>
+  <a href="./" aria-current="page">Renovated</a>
+</nav>
+<div id="loading" role="status" aria-live="polite"><div class="spin" aria-hidden="true"></div><div class="lt">Loading renovation</div></div>
+
+
+<section class="sheet" id="sheet-layers" hidden>
+  <h2>Show</h2>
+  <div class="chips">
+    <label class="chip"><input type="checkbox" id="roof" checked><span>Roof</span></label>
+    <label class="chip"><input type="checkbox" id="ceil" checked><span>Ceilings</span></label>
+    <label class="chip"><input type="checkbox" id="labels"><span>Room names</span></label>
+    <label class="chip"><input type="checkbox" id="furn" checked><span>Furniture</span></label>
+    <label class="chip"><input type="checkbox" id="ctx"><span>Neighbours and street</span></label>
+    <label class="chip"><input type="checkbox" id="mesh"><span>Photo mesh</span></label>
+    <label class="chip"><input type="checkbox" id="shadows" checked><span>Shadows</span></label>
+    <label class="chip"><input type="checkbox" id="lights"><span>Lights</span></label>
+    <label class="chip"><input type="checkbox" id="sunOnly"><span>Sun only (leak test)</span></label>
+  </div>
+</section>
+
+<section class="sheet" id="sheet-sun" hidden>
+  <h2>Sun</h2>
+  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1zm13 8H4v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9z"/></svg>Date</span><span class="val" id="dayVal"></span></div><input type="range" id="day" min="1" max="365" step="1" value="172"></div>
+  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>Time</span><span class="val" id="timeVal"></span></div><input type="range" id="time" min="5" max="21" step="0.25" value="12"></div>
+  <p class="note" id="sunInfo"></p>
+</section>
+
+<section class="sheet" id="sheet-cut" hidden>
+  <h2>Section</h2>
+  <div class="field"><div class="lab"><span>Cut height above floor</span><span class="val" id="cutVal"></span></div><input type="range" id="cut" min="0.5" max="6" step="0.1" value="6"></div>
+  <div class="grid3"><button class="btn" type="button" data-cut="1.2">Floor plan</button><button class="btn" type="button" data-cut="2.6">Below ceiling</button><button class="btn" type="button" data-cut="6">Off</button></div>
+</section>
+
+<section class="sheet" id="sheet-reno" hidden aria-labelledby="renoTitle">
+  <div class="reno-head">
+    <div class="reno-top"><h2 id="renoTitle">Reno</h2><button class="link" type="button" id="renoReset">Reset all</button></div>
+    <div class="rooms" role="tablist" aria-label="Room">
+      <button type="button" role="tab" data-room="kitchen" aria-selected="true" aria-controls="rp-kitchen">Kitchen</button>
+      <button type="button" role="tab" data-room="lounge" aria-selected="false" aria-controls="rp-lounge">Lounge</button>
+      <button type="button" role="tab" data-room="laundry" aria-selected="false" aria-controls="rp-laundry">Laundry</button>
+      <button type="button" role="tab" data-room="bedroom" aria-selected="false" aria-controls="rp-bedroom">Bedroom</button>
+      <button type="button" role="tab" data-room="hall" aria-selected="false" aria-controls="rp-hall">Hall</button>
+      <button type="button" role="tab" data-room="outside" aria-selected="false" aria-controls="rp-outside">Outside</button>
+    </div>
+    <p class="here" id="renoHere" hidden></p>
+  </div>
+
+  <div class="rpanel" id="rp-kitchen" role="tabpanel" data-panel="kitchen">
+    <div class="q">
+      <span class="lab" id="renoStyleLab">Style</span>
+      <select data-pick="kstyle" aria-labelledby="renoStyleLab">
+        <option value="white">White &amp; stone</option>
+        <option value="ikea">IKEA ash &amp; marble</option>
+        <option value="walnut">Walnut &amp; quartzite</option>
+        <option value="cream">Cream &amp; quartzite</option>
+      </select>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoDoorLab">Side wall</span>
+      <select data-pick="kdoor" aria-labelledby="renoDoorLab">
+        <option value="double">French doors</option>
+        <option value="single">Single door</option>
+        <option value="none">Window</option>
+      </select>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoFridgeLab">Fridge</span>
+      <select data-pick="fridge" aria-labelledby="renoFridgeLab">
+        <option value="none">None</option>
+        <option value="pantry">Pantry recess</option>
+        <option value="runEnd">By the hall, double</option>
+        <option value="runEndSingle">By the hall, single</option>
+        <option value="runEndPantry">By the hall + pantry cupboard</option>
+        <option value="doorRight">By the doors</option>
+      </select>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoDtLab">Table</span>
+      <select data-pick="dt" aria-labelledby="renoDtLab">
+        <option value="oak">Oak 160</option>
+        <option value="tonstad">TONSTAD 140</option>
+        <option value="tonstadExt">TONSTAD 196</option>
+        <option value="matched">Matched: stone &amp; sand oak</option>
+      </select>
+      <p class="note" id="renoDtNote"></p>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoSbLab">Sideboard</span>
+      <select data-pick="sideboard" aria-labelledby="renoSbLab">
+        <option value="none">None</option>
+        <option value="portobello">Portobello</option>
+        <option value="matched">Matched: fluted oak &amp; stone</option>
+      </select>
+      <p class="note" id="renoSbNote"></p>
+    </div>
+    <div class="sws">
+      <label class="sw"><span>Cupboards to ceiling</span><input type="checkbox" id="renoTall"><span class="tk"></span></label>
+      <label class="sw"><span>Island</span><input type="checkbox" id="renoIsland"><span class="tk"></span></label>
+      <label class="sw"><span>Remove pantry wall</span><input type="checkbox" id="renoNoPantry"><span class="tk"></span></label>
+    </div>
+  </div>
+
+  <div class="rpanel" id="rp-lounge" role="tabpanel" data-panel="lounge" hidden>
+    <div class="q">
+      <span class="lab" id="renoLstyleLab">TV wall</span>
+      <select data-pick="lstyle" aria-labelledby="renoLstyleLab">
+        <option value="standard">TV unit</option>
+        <option value="walnut">Walnut + stone run</option>
+      </select>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoTvuLab">TV unit</span>
+      <select data-pick="tvu" aria-labelledby="renoTvuLab">
+        <option value="white">White drawers</option>
+        <option value="rimowar">Rimowar</option>
+        <option value="capello">Capello</option>
+        <option value="archie">Archie</option>
+      </select>
+      <p class="note" id="renoTvuNote"></p>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoCtLab">Coffee table</span>
+      <select data-pick="ct" aria-labelledby="renoCtLab">
+        <option value="round">Round oak</option>
+        <option value="monolith">Monolith</option>
+        <option value="matched">Matched: stone drum, 85</option>
+      </select>
+      <p class="note" id="renoCtNote"></p>
+    </div>
+    <div class="sws">
+      <label class="sw"><span>Skylight</span><input type="checkbox" id="renoSkylight" checked><span class="tk"></span></label>
+      <label class="sw"><span>Taller opening to the kitchen</span><input type="checkbox" id="renoOpening" checked><span class="tk"></span></label>
+      <label class="sw"><span>Sheer white curtains</span><input type="checkbox" id="renoCurtains"><span class="tk"></span></label>
+    </div>
+    <details class="fine">
+      <summary>Fine-tune roof and floor</summary>
+      <div class="field">
+        <div class="lab"><label for="renoRoof">Raise roof</label></div>
+        <div class="row"><input type="range" id="renoRoof" min="0" max="120" step="1" value="85" aria-label="Raise roof, cm"><span class="num"><input type="number" id="renoRoofN" min="0" step="1" inputmode="numeric" value="85" aria-label="Raise roof in cm">cm</span></div>
+      </div>
+      <div class="field">
+        <div class="lab"><label for="renoFloor">Floor thickness</label></div>
+        <div class="row"><input type="range" id="renoFloor" min="0" max="40" step="1" value="38" aria-label="Floor thickness, cm"><span class="num"><input type="number" id="renoFloorN" min="0" step="1" inputmode="numeric" value="38" aria-label="Floor thickness in cm">cm</span></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="rpanel" id="rp-laundry" role="tabpanel" data-panel="laundry" hidden>
+    <div class="q">
+      <span class="lab" id="renoLaundryLab">Washer and dryer</span>
+      <select data-pick="laundry" aria-labelledby="renoLaundryLab">
+        <option value="bathCorner">Stacked in the corner</option>
+        <option value="bathCornerFold">Stacked + linen cupboard</option>
+        <option value="bathCornerLow">Stacked + bench &amp; hamper</option>
+        <option value="bathCornerStore">Stacked + linen &amp; storage</option>
+        <option value="bathBench">Side by side, no shower</option>
+        <option value="pantry">In the kitchen pantry</option>
+        <option value="none">None</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="rpanel" id="rp-bedroom" role="tabpanel" data-panel="bedroom" hidden>
+    <div class="q">
+      <span class="lab" id="renoBedLab">Bed</span>
+      <select data-pick="fbed" aria-labelledby="renoBedLab">
+        <option value="none">None</option>
+        <option value="queen">Queen</option>
+        <option value="king">King</option>
+      </select>
+    </div>
+    <div class="sws">
+      <label class="sw"><span>Bedside drawers</span><input type="checkbox" id="renoBedside" checked><span class="tk"></span></label>
+      <label class="sw"><span>Plantation shutters (bedroom windows)</span><input type="checkbox" id="renoShutters" checked><span class="tk"></span></label>
+    </div>
+  </div>
+
+  <div class="rpanel" id="rp-hall" role="tabpanel" data-panel="hall" hidden>
+    <div class="q">
+      <span class="lab" id="renoHallLab">Doorway</span>
+      <select data-pick="hall" aria-labelledby="renoHallLab">
+        <option value="open">Open</option>
+        <option value="classic">Classic arch</option>
+        <option value="simple">Simple arch</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="rpanel" id="rp-outside" role="tabpanel" data-panel="outside" hidden>
+    <div class="sws">
+      <label class="sw"><span>White woodwork</span><input type="checkbox" id="renoWhite"><span class="tk"></span></label>
+      <label class="sw"><span>Cream exterior</span><input type="checkbox" id="renoCream"><span class="tk"></span></label>
+      <label class="sw"><span>Bay window hood</span><input type="checkbox" id="renoBayHood"><span class="tk"></span></label>
+      <label class="sw"><span>Porch security screen</span><input type="checkbox" id="renoScreen"><span class="tk"></span></label>
+      <label class="sw"><span>Side path pavers</span><input type="checkbox" id="renoPavers"><span class="tk"></span></label>
+    </div>
+  </div>
+</section>
+
+<nav id="bar" aria-label="Controls">
+  <div class="grp">
+    <button type="button" data-sheet="layers" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg>Layers</button>
+    <button type="button" data-sheet="sun" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Sun</button>
+  </div>
+  <button type="button" id="walkBtn" aria-pressed="false" aria-label="Walk mode"><span class="fab" aria-hidden="true"><svg class="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"/><path d="M11 21l2-6-3-3 1-4 3 3 3 1M10 12l-2 3-3 1"/></svg><svg class="i-orbit" viewBox="0 0 24 24"><path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z"/><path d="M4 7.4l8 4.6 8-4.6M12 12v9.2"/></svg></span><span id="walkLabel">Walk</span></button>
+  <div class="grp">
+    <button type="button" data-sheet="cut" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M6 12V6h12v6M6 12v6h12v-6" stroke-dasharray="2 2.5"/></svg>Section</button>
+    <button type="button" data-sheet="reno" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M14.5 3.5l6 6-3 3-6-6z"/><path d="M13 8L4 17a1.4 1.4 0 0 0 3 3l9-9"/></svg>Reno</button>
+  </div>
+</nav>
+
+<div id="joy" hidden><div id="knob"></div></div>
+<div id="toast" hidden></div>
+
+<script>
+  const tabs = document.querySelectorAll('#bar [data-sheet]');
+  tabs.forEach(b => b.addEventListener('click', () => {
+    const open = b.getAttribute('aria-pressed') !== 'true';
+    tabs.forEach(t => { t.setAttribute('aria-pressed', 'false'); document.getElementById('sheet-' + t.dataset.sheet).hidden = true; });
+    if (open) { b.setAttribute('aria-pressed', 'true'); document.getElementById('sheet-' + b.dataset.sheet).hidden = false; }
+  }));
+  window.closeSheets = () => tabs.forEach(t => { t.setAttribute('aria-pressed', 'false'); document.getElementById('sheet-' + t.dataset.sheet).hidden = true; });
+</script>
+<script type="module" src="./src/main.js"></script>

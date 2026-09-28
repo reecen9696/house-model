@@ -1,0 +1,1249 @@
+{
+ "_frame": "Lot frame, metres. x = west along the front boundary from the party-wall corner, y = south (depth into the lot), z = above finished floor level (FFL). Source: MEASUREMENTS-RECONCILED.md",
+ "site": {
+  "lat": -37.8558857,
+  "lon": 145.0008581,
+  "bearing_deg": 188.4,
+  "ffl_ahd": 29.34,
+  "lot": {
+   "width": 6.95,
+   "depth": 29.6
+  },
+  "ground_z": -0.42,
+  "context_mesh": {
+   "file": "../context/context.glb",
+   "origin_e": 3.456,
+   "origin_n": 8.755,
+   "ffl_on_mesh_datum": 0.86
+  }
+ },
+ "levels": {
+  "ffl": 0,
+  "slab": -0.38,
+  "porch": -0.25,
+  "path_west": -0.45,
+  "front_yard": -0.4
+ },
+ "walls": {
+  "ext": 0.23,
+  "int": 0.11,
+  "party_half": 0.115,
+  "plate_z": 3.15,
+  "wing_plate_z": 3.35
+ },
+ "house": {
+  "x_east": 0,
+  "x_west_outer": 4.92,
+  "x_west_inner": 4.69,
+  "y_front_outer": 3.05,
+  "y_front_inner": 3.28,
+  "y_rear_outer": 19.54,
+  "y_rear_inner": 19.31,
+  "porch": {
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 3.05,
+   "y1": 4.64
+  },
+  "bay": {
+   "x0": 1.915,
+   "x1": 4.285,
+   "front_x0": 2.415,
+   "front_x1": 3.785,
+   "projection": 0.35,
+   "sill": 0.8,
+   "head": 2.25,
+   "wall_top": 2.5
+  },
+  "wing": {
+   "x_outer": 2.25,
+   "x_inner": 2.02,
+   "y_end_outer": 25,
+   "y_end_inner": 24.77
+  },
+  "hall_step": {
+   "_note": "entry wall at x 1.47-1.58, stepping out 0.17 m to x 1.30-1.41 at y 7.94 (plan 0.16, vent photo about 0.19)",
+   "front_wall_x0": 1.47,
+   "front_wall_x1": 1.58,
+   "step_y": 7.94,
+   "rear_wall_x0": 1.3,
+   "rear_wall_x1": 1.41
+  }
+ },
+ "rooms": [
+  {
+   "name": "Porch",
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 3.05,
+   "y1": 4.64,
+   "floor": -0.25,
+   "ceil": null,
+   "floorMat": "tile"
+  },
+  {
+   "name": "Entry",
+   "x0": 0.115,
+   "x1": 1.47,
+   "y0": 4.64,
+   "y1": 7.94,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Hall",
+   "x0": 0.115,
+   "x1": 1.3,
+   "y0": 7.94,
+   "y1": 11.49,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Front bedroom",
+   "x0": 1.58,
+   "x1": 4.69,
+   "y0": 3.28,
+   "y1": 7.94,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "carpet"
+  },
+  {
+   "name": "Bedroom 2",
+   "x0": 1.41,
+   "x1": 4.69,
+   "y0": 8.05,
+   "y1": 11.49,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "carpet"
+  },
+  {
+   "name": "Hall extension",
+   "x0": 0.115,
+   "x1": 1.3,
+   "y0": 11.6,
+   "y1": 14.91,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Bedroom 3",
+   "x0": 1.41,
+   "x1": 4.69,
+   "y0": 11.6,
+   "y1": 14.91,
+   "floor": 0,
+   "ceil": 3.15,
+   "floorMat": "carpet"
+  },
+  {
+   "name": "Kitchen / dining",
+   "x0": 0.115,
+   "x1": 4.69,
+   "y0": 15.02,
+   "y1": 19.31,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "timber"
+  },
+  {
+   "name": "Bath",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 18.98,
+   "y1": 21.18,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "lino"
+  },
+  {
+   "name": "WC",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 21.29,
+   "y1": 22.16,
+   "floor": 0,
+   "ceil": 2.8,
+   "floorMat": "lino"
+  },
+  {
+   "name": "Bathroom 2",
+   "x0": 0.115,
+   "x1": 2.02,
+   "y0": 22.27,
+   "y1": 24.77,
+   "floor": -0.38,
+   "ceil": 2.4,
+   "floorMat": "porcelain"
+  },
+  {
+   "name": "Lounge / living",
+   "x0": 2.25,
+   "x1": 6.03,
+   "y0": 19.54,
+   "y1": 24.77,
+   "floor": -0.38,
+   "ceil": 2.33,
+   "floorMat": "timber"
+  }
+ ],
+ "windows": {
+  "bathroom2_rear": {
+   "wall": "wing_south",
+   "x0": 0.65,
+   "x1": 1.55,
+   "sill": 1.27,
+   "head": 1.72,
+   "frame": "white"
+  },
+  "W1_bed2": {
+   "wall": "west",
+   "y0": 8.25,
+   "y1": 9.52,
+   "sill": 0.8,
+   "head": 2.4,
+   "frame": "timber"
+  },
+  "W2_living": {
+   "wall": "west",
+   "y0": 11.75,
+   "y1": 13.59,
+   "sill": 0.45,
+   "head": 2.4,
+   "frame": "alu"
+  },
+  "W3_kitchen": {
+   "wall": "west",
+   "y0": 16.49,
+   "y1": 18.29,
+   "sill": 0,
+   "head": 2.28,
+   "frame": "alu"
+  },
+  "bath": {
+   "wall": "wing_west",
+   "y0": 19.9,
+   "y1": 20.85,
+   "sill": 1.45,
+   "head": 2.08,
+   "frame": "alu",
+   "_note": "0.95 wide, 0.55 m of brick to the WC window (brick count in the covered-area photo)"
+  },
+  "wc": {
+   "wall": "wing_west",
+   "y0": 21.4,
+   "y1": 22,
+   "sill": 1.38,
+   "head": 1.95,
+   "frame": "alu"
+  },
+  "laundry": {
+   "wall": "wing_west",
+   "y0": 22.75,
+   "y1": 23.65,
+   "sill": 0.7,
+   "head": 1.4,
+   "frame": "alu"
+  }
+ },
+ "doors": {
+  "front": {
+   "x0": 0.28,
+   "x1": 1.06,
+   "head": 2.04,
+   "sidelight": {
+    "x0": 1.06,
+    "x1": 1.43,
+    "sill": 0.9
+   }
+  },
+  "front_bed": {
+   "y0": 6.42,
+   "y1": 7.22,
+   "head": 2.04,
+   "_note": "Moved 0.30 m toward the front to leave 0.10 m clear of the 0.62 m-deep rear-wall built-in; aligns with the plan's 6.4-7.2 m position."
+  },
+  "bed2": {
+   "y0": 9.98,
+   "y1": 10.78,
+   "head": 2.04
+  },
+  "hall_living": {
+   "x0": 0.2,
+   "x1": 0.92,
+   "head": 2.05,
+   "leaf": "none"
+  },
+  "living_kitchen_opening": {
+   "x0": 1.65,
+   "x1": 3.45,
+   "head": 2.4,
+   "_note": "centred on the wall with solid piers both sides (plan, kitchen-looking-north photo)"
+  },
+  "bath": {
+   "x0": 1.15,
+   "x1": 1.97,
+   "head": 2.04
+  },
+  "back": {
+   "x0": 3.08,
+   "x1": 4.69,
+   "head": 2.04,
+   "_note": "kitchen to lounge opening, run through to the kitchen west wall (no nib); the reno 'Raise opening' option lifts the head to the lounge ceiling"
+  },
+  "wc": {
+   "x0": 1.15,
+   "x1": 1.9,
+   "head": 2.04
+  },
+  "laundry": {
+   "y0": 23.8,
+   "y1": 24.62,
+   "head": 2.04
+  },
+  "pantry": {
+   "x0": 2.3,
+   "x1": 2.8,
+   "head": 2.35
+  }
+ },
+ "roof": {
+  "main": {
+   "ridge_x": 0,
+   "ridge_z": 5.1,
+   "eave_x": 5.32,
+   "eave_z": 3,
+   "y0": 2.5,
+   "y1": 17.8,
+   "gable_y_front": 3.05,
+   "gable_y_rear": 17.8
+  },
+  "kitchen_flat": {
+   "x0": 0,
+   "x1": 4.92,
+   "y0": 17.8,
+   "y1": 19.54,
+   "z": 3.35,
+   "fascia": 0.3
+  },
+  "wing_flat": {
+   "x0": 0,
+   "x1": 2.25,
+   "y0": 19.54,
+   "y1": 25,
+   "z_top": 3.35,
+   "fascia": 0.3
+  },
+  "covered": {
+   "x0": 2.25,
+   "x1": 6.4,
+   "y0": 19.54,
+   "y1": 25,
+   "z_top_east": 2.4,
+   "z_top_west": 2.25,
+   "thick": 0.05,
+   "posts_x": 6.22,
+   "posts_y": [
+    19.8,
+    22.2,
+    24.6
+   ],
+   "post": 0.09,
+   "lining": "timber",
+   "bare_strip_to_x": 3.3,
+   "gutter_x": 6.4,
+   "beams_y": [
+    19.9,
+    21.1,
+    22.3,
+    23.5,
+    24.6
+   ]
+  },
+  "porch_hood": {
+   "x0": 0,
+   "x1": 1.55,
+   "y0": 2.2,
+   "y1": 3.05,
+   "z_low": 2.42,
+   "z_high": 2.85
+  },
+  "bay_hood": {
+   "z_low": 2.5,
+   "z_high": 2.85,
+   "overhang": 0.15
+  },
+  "blinds": {
+   "x": 6.2,
+   "bays": [
+    [
+     19.6,
+     21.9,
+     "striped"
+    ],
+    [
+     22.1,
+     24.7,
+     "beige"
+    ]
+   ],
+   "z_top": 2.2,
+   "z_bottom": 1.55
+  },
+  "awning_W3": {
+   "x0": 4.92,
+   "x1": 5.45,
+   "y0": 16.4,
+   "y1": 18.4,
+   "z_wall": 2.9,
+   "z_edge": 2.45
+  }
+ },
+ "chimney": {
+  "x0": 4.92,
+  "x1": 5.22,
+  "y0": 13.8,
+  "y1": 16.1,
+  "z_breast": 2.95,
+  "stack_x0": 4.72,
+  "stack_x1": 5.22,
+  "stack_y0": 14.65,
+  "stack_y1": 15.25,
+  "z_top": 4.85,
+  "pot": 0.35,
+  "breast_material": "white"
+ },
+ "fixtures": {
+  "robe_front": {
+   "x0": 2.6,
+   "x1": 4.69,
+   "y0": 7.32,
+   "y1": 7.94,
+   "z1": 3.14
+  },
+  "robe_bed2": {
+   "x0": 1.41,
+   "x1": 4.69,
+   "y0": 10.87,
+   "y1": 11.49,
+   "z1": 3.14
+  },
+  "shower": {
+   "x0": 0.115,
+   "x1": 1,
+   "y0": 20.3,
+   "y1": 21.18,
+   "z1": 1.95
+  },
+  "vanity": {
+   "x0": 0.115,
+   "x1": 0.55,
+   "y0": 18.98,
+   "y1": 20.2,
+   "z1": 0.85
+  },
+  "_kitchen": "From the listing photo (kitchen facing south) and the plan: honey timber raised-panel joinery on the west wall, freestanding white gas stove at the north end with rangehood and tall uppers above, double sink under the window, dishwasher at the south end, bench returning along the south wall to the back door, cream tiled splashback, tall pantry door flush in the south wall beside the bath door.",
+  "bench": {
+   "x0": 4.09,
+   "x1": 4.69,
+   "y0": 16,
+   "y1": 19.31,
+   "z1": 0.9,
+   "top": 0.035
+  },
+  "bench_return": {
+   "x0": 4.4,
+   "x1": 4.69,
+   "y0": 18.71,
+   "y1": 19.31,
+   "_note": "short end cupboard only; the south wall is bare tile (listing photo)"
+  },
+  "stove": {
+   "x0": 4.09,
+   "x1": 4.69,
+   "y0": 15.4,
+   "y1": 16,
+   "z1": 0.92
+  },
+  "rangehood": {
+   "x0": 4.2,
+   "x1": 4.69,
+   "y0": 15.4,
+   "y1": 16,
+   "z0": 1.6,
+   "z1": 1.75
+  },
+  "uppers_north": {
+   "x0": 4.35,
+   "x1": 4.69,
+   "y0": 15.1,
+   "y1": 16.4,
+   "z0": 1.75,
+   "z1": 2.75
+  },
+  "uppers_corner": {
+   "x0": 4.35,
+   "x1": 4.69,
+   "y0": 18.3,
+   "y1": 19.31,
+   "z0": 1.45,
+   "z1": 2.6
+  },
+  "dishwasher": {
+   "y0": 18.1,
+   "y1": 18.7
+  },
+  "sink": {
+   "y0": 16.95,
+   "y1": 17.85
+  },
+  "splash": {
+   "z0": 0.935,
+   "z1": 1.45
+  },
+  "pantry_shelves": {
+   "x0": 2.13,
+   "x1": 2.95,
+   "y0": 18.99,
+   "y1": 19.47,
+   "levels": [
+    0.5,
+    0.95,
+    1.4,
+    1.85
+   ],
+   "_note": "shelves fill the pantry recess, back to the new rear lining"
+  },
+  "floor_vents": [
+   {
+    "x0": 1.17,
+    "x1": 1.47,
+    "y0": 7.62,
+    "y1": 7.92,
+    "_note": "0.3 x 0.3 grate in the corner against the entry wall, projecting about 0.13 past the step (vent photo)"
+   }
+  ],
+  "drawers": {
+   "y0": 16,
+   "y1": 16.5,
+   "count": 3
+  },
+  "kitchen_light": {
+   "x": 2.4,
+   "y": 17
+  },
+  "kitchen_wall_vent": {
+   "x0": 2.9,
+   "x1": 3.15,
+   "z0": 2.45,
+   "z1": 2.6
+  },
+  "mirror_cabinet": {
+   "x0": 0.115,
+   "x1": 0.25,
+   "y0": 19.15,
+   "y1": 20.05,
+   "z0": 1.3,
+   "z1": 2
+  },
+  "bath_tiles": {
+   "z1": 2.7,
+   "_note": "cream/yellow patterned tiles on the whole east wall and inside the shower; other walls plain"
+  },
+  "exhaust_fan": {
+   "x": 0.6,
+   "y": 19.5
+  },
+  "toilet": {
+   "x0": 0.115,
+   "x1": 0.8,
+   "y0": 21.45,
+   "y1": 21.95,
+   "_note": "against the party wall, pan facing west"
+  },
+  "wc_cabinet": {
+   "x0": 0.115,
+   "x1": 0.3,
+   "y0": 21.4,
+   "y1": 22,
+   "z0": 1.6,
+   "z1": 2.3
+  },
+  "laundry_trough": {
+   "x0": 0.115,
+   "x1": 0.65,
+   "y0": 22.4,
+   "y1": 23
+  },
+  "washing_machine": {
+   "x0": 0.115,
+   "x1": 0.75,
+   "y0": 23.1,
+   "y1": 23.7
+  },
+  "grab_rail": {
+   "x": 3.97,
+   "y": 19.56,
+   "z0": 0.9,
+   "z1": 1.4
+  },
+  "shelves_front": {
+   "x0": 1.58,
+   "x1": 2.6,
+   "y0": 7.32,
+   "y1": 7.94,
+   "levels": [
+    0.4,
+    0.9,
+    1.4,
+    1.9,
+    2.4
+   ],
+   "_note": "open shelving niche (SH on the plan)"
+  },
+  "wall_heater": {
+   "x0": 4.49,
+   "x1": 4.69,
+   "y0": 13.9,
+   "y1": 14.65,
+   "z0": 0.1,
+   "z1": 0.7,
+   "_note": "console gas heater on the living west wall"
+  },
+  "ceiling_roses": [
+   {
+    "room": "Bedroom 3",
+    "x": 2.4,
+    "y": 13.25,
+    "dia": 0.7,
+    "light": "chandelier"
+   },
+   {
+    "room": "Entry",
+    "x": 0.71,
+    "y": 5.6,
+    "dia": 0.5,
+    "light": "chandelier"
+   },
+   {
+    "room": "Bedroom 2",
+    "x": 3.05,
+    "y": 9.77,
+    "dia": 0.3,
+    "light": "pendant"
+   },
+   {
+    "room": "Front bedroom",
+    "x": 3.1,
+    "y": 5.6,
+    "dia": 0.3,
+    "light": "pendant"
+   }
+  ],
+  "wall_vents": [
+   {
+    "y0": 12.4,
+    "y1": 12.63,
+    "z0": 2.75,
+    "z1": 2.87
+   },
+   {
+    "y0": 8.78,
+    "y1": 9.01,
+    "z0": 2.8,
+    "z1": 2.92
+   }
+  ],
+  "cornice": {
+   "deep_rooms": [
+    "Entry",
+    "Hall",
+    "Front bedroom",
+    "Living"
+   ],
+   "deep": [
+    0.2,
+    0.15
+   ],
+   "plain": [
+    0.1,
+    0.1
+   ]
+  }
+ },
+ "site_items": {
+  "front_fence": {
+   "y": 0,
+   "h": 1.15,
+   "gate_x0": 0.3,
+   "gate_x1": 1.3
+  },
+  "west_fence": {
+   "x": 6.95,
+   "y0": 0,
+   "y1": 29.6,
+   "h": 2
+  },
+  "east_fence": {
+   "x": 0,
+   "y0": 25,
+   "y1": 29.6,
+   "h": 2
+  },
+  "rear_fence": {
+   "y": 29.6,
+   "h": 2.2,
+   "lattice_from": 1.8
+  },
+  "side_pier": {
+   "x0": 6.21,
+   "x1": 6.95,
+   "y0": 5.85,
+   "y1": 6,
+   "h": 1.7
+  },
+  "side_gate": {
+   "x0": 4.92,
+   "x1": 6.21,
+   "y": 5.92,
+   "h": 1.7,
+   "material": "cream_metal"
+  },
+  "rear_gate": {
+   "x0": 4.92,
+   "x1": 5.95,
+   "y": 19.4,
+   "h": 1.9,
+   "iron_z1": 2.35,
+   "panel_x1": 6.95,
+   "panel_h": 2,
+   "lattice_h": 2.3
+  },
+  "shed": {
+   "x0": 0.1,
+   "x1": 2,
+   "y0": 25,
+   "y1": 29.4,
+   "h": 2.1
+  },
+  "front_path": {
+   "x0": 0.28,
+   "x1": 1.36,
+   "y0": 0,
+   "y1": 3.05,
+   "z": -0.4
+  },
+  "_ground": "Surfaces from the owner's and agent photos: concrete rear yard and covered area, pavers down the west side, brick-edged beds along the west fence, garden and tiled path at the front.",
+  "front_garden": {
+   "x0": 0,
+   "x1": 4.92,
+   "y0": 0,
+   "y1": 3.05,
+   "z": -0.42,
+   "_note": "the concrete side path continues to the front fence west of the house"
+  },
+  "divider_fence": {
+   "x": 0.03,
+   "y0": 0,
+   "y1": 3.05,
+   "h": 1.15
+  },
+  "west_path": {
+   "x0": 4.92,
+   "x1": 6.35,
+   "y0": 0,
+   "y1": 19.4,
+   "z": -0.45
+  },
+  "side_deck": {
+   "x0": 4.92,
+   "x1": 6.93,
+   "y1": 19.31,
+   "h": 0.1,
+   "board": 0.14,
+   "gap": 0.006,
+   "_note": "timber deck over the paved patio at the end of the side path: from where the planted bed stops (the chimney line) to the lounge's north wall, house wall to the fence; top 100 above the pavers, boards running along the path"
+  },
+  "west_bed": {
+   "x0": 6.35,
+   "x1": 6.95,
+   "y0": 3.05,
+   "y1": 19.4,
+   "edge_h": 0.17,
+   "fill": "plants"
+  },
+  "rear_slab": {
+   "x0": 0,
+   "x1": 6.95,
+   "y0": 19.4,
+   "y1": 29.6,
+   "z": -0.38
+  },
+  "rear_bed": {
+   "x0": 6.35,
+   "x1": 6.95,
+   "y0": 19.6,
+   "y1": 29.6,
+   "edge_h": 0.17,
+   "fill": "pebbles"
+  },
+  "tree": {
+   "x": 6.25,
+   "y": 29.05,
+   "h": 2.7,
+   "r": 0.62,
+   "bed": { "x0": 5.7, "y0": 28.15 },
+   "_note": "lemon tree in the rear bed, near but not in the south-west corner: trunk about 0.7 m in from the west fence and 0.55 m out from the rear fence, under the second lattice panel; about 2.7 m tall and 2.6 m across, canopy leaning east into the yard and pruned flat against both fences (listing photo facing south; close-up photo 'south east neighbour.MP'). The bed bulges out round it (the real brick edge curves out there); 'bed' is that bump-out's corner, clear of the outdoor-dining chairs"
+  },
+  "yucca": {
+   "x": 6.62,
+   "y": 21.3,
+   "h": 2.8,
+   "r": 0.7
+  },
+  "clothesline": {
+   "x": 3.475,
+   "y": 27.2,
+   "h": 2,
+   "arm": 1.2
+  },
+  "ducted_heater": {
+   "x0": 4.95,
+   "x1": 5.45,
+   "y0": 6.35,
+   "y1": 6.9,
+   "h": 1.25,
+   "_note": "Brivis ducted gas heater on the raised apron just inside the side gate (side-path video): grey lower cabinet, lighter access panel on top"
+  },
+  "hot_water": {
+   "x0": 4.92,
+   "x1": 5.12,
+   "y0": 18.85,
+   "y1": 19.3,
+   "z0": 1.85,
+   "z1": 2.5,
+   "_note": "Rinnai B26 continuous-flow, outside west wall"
+  },
+  "rear_bed_south": {
+   "x0": 2,
+   "x1": 6.92,
+   "y0": 28.7,
+   "y1": 29.6,
+   "edge_h": 0.17,
+   "fill": "soil"
+  },
+  "security_screen": {
+   "x0": 0.115,
+   "x1": 1.47,
+   "y": 3.0799999999999996,
+   "z0": -0.25,
+   "z1": 2.8
+  },
+  "front_tree": {
+   "x": 5.97,
+   "y": 0.985,
+   "h": 2.5,
+   "r": 0.9
+  },
+  "back_steps": {
+   "x0": 3,
+   "x1": 4.56,
+   "y0": 19.54,
+   "y1": 20.1
+  },
+  "downpipes": [
+   {
+    "x": 4.95,
+    "y": 3.3
+   },
+   {
+    "x": 4.95,
+    "y": 13.6
+   },
+   {
+    "x": 2.28,
+    "y": 25.08
+   }
+  ],
+  "gas_meter": {
+   "x0": 4.92,
+   "x1": 5.12,
+   "y0": 3.2,
+   "y1": 3.5,
+   "z0": 0.35,
+   "z1": 0.7
+  },
+  "apron": {
+   "x0": 4.92,
+   "x1": 5.5,
+   "y0": 6,
+   "y1": 7.9,
+   "h": 0.1
+  },
+  "outdoor_lounge": {
+   "sofa": { "x": 4.4, "y": 28.19, "w": 2.33, "d": 0.84, "h": 0.81 },
+   "armchairs": [ { "x": 3.25, "y": 27.05, "straight": true }, { "x": 5.55, "y": 26.75 } ],
+   "armchair": { "w": 0.83, "d": 0.84, "h": 0.81 },
+   "table": { "x": 4.4, "y": 27.2, "w": 0.9, "d": 0.5, "h": 0.4 },
+   "_note": "teak outdoor lounge (reference screenshots 2026-09-27): three-seat sofa 2330 x 840 x 810 backing onto the rear bed and facing the house, two 830 x 840 x 810 armchairs, the east one square to the table ('straight': facing it across the yard) and the west one angled in, a small slatted teak coffee table between; open teak frames, off-white cushions. About 0.85 m clear in front of the lounge sliders"
+  } },
+ "kitchen_south_wall": {
+  "x0": 0.115,
+  "x1": 2.95,
+  "y0": 18.87,
+  "y1": 18.98,
+  "_note": "bath door, wall, pantry door in one flush line; back door set back in the rear wall to the west"
+ },
+ "_renovation": "Concept from supplied plan. Existing measured footprint retained; new openings and fittings provisional. Existing rear slab level and covered roof retained. No European laundry.",
+ "renovation": {
+  "bedroom3": {
+   "door_y0": 11.85,
+   "door_y1": 12.649999999999999
+  },
+  "lounge": {
+   "wall_x": 6.03,
+   "south_y": 24.77,
+   "door_pairs": [
+    [
+     2.55,
+     5.9
+    ]
+   ],
+   "side_door": [
+    5.18,
+    6.02
+   ],
+   "wall_outer_x": 6.33,
+   "wall_thickness": 0.3,
+   "roof_thickness": 0.3,
+   "windows": [
+    {
+     "y0": 20.15,
+     "y1": 21.65,
+     "sill": 0.52,
+     "head": 1.72
+    },
+    {
+     "y0": 22.65,
+     "y1": 24.15,
+     "sill": 0.52,
+     "head": 1.72
+    }
+   ],
+   "slider_head": 2.2,
+   "roof": "Colorbond deck over the retained slope, 300 mm build-up, green fascia matching the wing, plaster ceiling under, flush downlights",
+   "skylight_rect": {
+    "x0": 3.6,
+    "x1": 4.7,
+    "y0": 20.4,
+    "y1": 22.0
+   }
+  },
+  "kitchen": {
+   "run": [
+    1.41,
+    4.69,
+    15.02,
+    15.65
+   ],
+   "return": [
+    4.06,
+    4.69,
+    15.65,
+    16.25
+   ],
+   "style": "white flat-panel joinery, black handles, 40 mm light stone top, white tile splashback, integrated appliances",
+   "uppers_z": [
+    1.65,
+    2.25
+   ],
+   "uppers_depth": 0.35,
+   "cooktop_x": [
+    1.5,
+    2.1
+   ],
+   "sink_x": [
+    2.8,
+    3.6
+   ],
+   "dishwasher_x": [
+    2.12,
+    2.72
+   ],
+   "_dishwasher": "600 integrated-width stainless dishwasher beside the sink; moves into the short return when the fridge takes the hall end of the bench"
+  },
+  "bathroom2": {
+   "shower": {
+    "x0": 0.15,
+    "x1": 1.05,
+    "y0": 22.3,
+    "y1": 23.2,
+    "screen_x": 1.05
+   },
+   "toilet": {
+    "x0": 1.35,
+    "x1": 1.75,
+    "y0": 22.32
+   },
+   "vanity": {
+    "x0": 0.13,
+    "x1": 0.58,
+    "y0": 23.6,
+    "y1": 24.5,
+    "hung_z": 0.5,
+    "top_z": 0.85
+   },
+   "tiles_to": 2.1,
+   "_note": "tiled to 2.1 above the bathroom 2 floor; large-format light grey"
+  },
+  "pantry": {
+   "front_y0": 18.87,
+   "front_y1": 18.98,
+   "x0": 2.13,
+   "x1": 3.06,
+   "back_y": 19.48,
+   "recess_head": 2.4,
+   "_note": "pantry front flush with the bath-door wall (y 18.87), per owner; recess cut back into the rear brick wall to y 19.48 (60 mm skin left on the lounge side) for about 0.5 m internal depth; brick kept above 2.4"
+  },
+  "dining": {
+   "kind": "rect",
+   "x0": 1.25,
+   "x1": 2.85,
+   "y0": 16.9,
+   "y1": 17.8,
+   "h": 0.75,
+   "chairs": [
+    [
+     1.65,
+     "N"
+    ],
+    [
+     2.45,
+     "N"
+    ],
+    [
+     1.65,
+     "S"
+    ],
+    [
+     2.45,
+     "S"
+    ]
+   ],
+   "chair": {
+    "w": 0.49,
+    "d": 0.53,
+    "h": 0.78,
+    "seat_h": 0.46
+   },
+   "_note": "160 x 90 x 75 oak extension table (closed), long way east-west in the middle of the kitchen: 1.2 m clear of the west bench, 1.1 m on the hall side for the path to the bathroom. Four 490 x 530 x 780 oak chairs with upholstered seats, two each side, pushed in with the back rails just outside the top."
+  },
+  "lounge_furniture": {
+   "tv": {
+    "wall_x": 2.25,
+    "y": 22.3,
+    "w": 1.56,
+    "h": 0.9,
+    "bottom": 0.75,
+    "_note": "70-inch TV (about 1550 x 872 screen plus a slim bezel) wall-mounted over the cabinet, east wall of the lounge"
+   },
+   "tv_cabinet": {
+    "x0": 2.25,
+    "x1": 2.67,
+    "y0": 21.4,
+    "y1": 23.2,
+    "h": 0.5,
+    "colour": "white",
+    "_note": "low white cabinet on the east wall, 1.8 long (three 600 drawers), centred under the TV (y 22.3), 0.6 short of bathroom 2's door"
+   },
+   "couch": {
+    "model": "King Living 1977 modular sofa, cream boucle (Leura S)",
+    "wall_x": 6.03,
+    "south_y": 24.11,
+    "depth": 0.96,
+    "chaise_depth": 1.485,
+    "seat_h": 0.42,
+    "back_h": 0.71,
+    "back_t": 0.26,
+    "_note": "Four pieces: chaise and a 2-seater along the west wall under the windows, the curve module at the south end, then one straight chair along the south side facing north. Set 0.66 clear of the sliding doors; the chaise stops at y 20.5, clear of the side glass door's swing. Sizes from the King Living 1977 product card (Nov 2025): chair 840x960, 2-seater 1470x960, chaise 840x1485, curve 1300x1300 (960 deep), seat 420, backrest 710.",
+    "west": [
+     "double",
+     "chaise"
+    ],
+    "corner": "curve",
+    "south": [
+     "chair"
+    ],
+    "curve_r": 1.3,
+    "widths": {
+     "chair": 0.84,
+     "double": 1.47,
+     "chaise": 0.84
+    }
+   },
+   "coffee_table": {
+    "x": 4.0,
+    "y": 22.2,
+    "dia": 1.0,
+    "h": 0.42,
+    "top_t": 0.05,
+    "_note": "round weathered-oak coffee table, 1000 dia x 420 high: thick top, four splayed square legs with an X stretcher. In front of the 2-seater, in line with the TV, about 0.5 clear of the sofa on each side"
+   },
+   "rug": {
+    "x0": 3.5,
+    "x1": 5.9,
+    "y0": 20.6,
+    "y1": 23.8,
+    "_note": "2400 x 3200 low-pile rug in oatmeal and taupe with a fine streaky weave and a bound edge; pushed back toward the windows, running almost to the west wall under the sofa; the coffee table on it"
+   }
+  },
+  "tv_units": {
+   "_note": "TV units trialled on the lounge's east wall, centred under the TV (Reno > Covered area to lounge > TV unit). Details as seen on the showroom tags.",
+   "white": {
+    "name": "White drawer cabinet",
+    "store": "model placeholder",
+    "size_cm": "180 x 42 x 50",
+    "price": null,
+    "finish": "white flat-panel drawers, silver pulls"
+   },
+   "rimowar": {
+    "name": "Rimowar TV Unit",
+    "store": "Nick Scali",
+    "code": "43FJ016",
+    "size_cm": "220 x 44 x 50",
+    "price": "$2450 regular, $1690 members",
+    "finish": "oak timber with natural finish; open shelving niche; two round plinths",
+    "seen": "2026-09-27",
+    "photos": [
+     "reference-photos/furniture/tv-units/rimowar/rimowar-price-tag.jpg",
+     "reference-photos/furniture/tv-units/rimowar/rimowar-showroom-1.jpg",
+     "reference-photos/furniture/tv-units/rimowar/rimowar-showroom-2.jpg"
+    ]
+   },
+   "capello": {
+    "name": "Capello TV Unit",
+    "store": "Nick Scali",
+    "code": "43MK013",
+    "size_cm": "200 x 42 x 60",
+    "price": "$3190 regular, $1990 members",
+    "finish": "oak timber frame, natural marble with travertine film top; half-round ends; four doors; travertine plinths",
+    "seen": "2026-09-27",
+    "photos": [
+     "reference-photos/furniture/tv-units/capello/capello-price-tag.jpg",
+     "reference-photos/furniture/tv-units/capello/capello-showroom-1.jpg",
+     "reference-photos/furniture/tv-units/capello/capello-showroom-2.jpg"
+    ]
+   },
+   "archie": {
+    "name": "Archie Cream Wooden Entertainment Unit with White Sintered Stone",
+    "store": "Koala Living (probable)",
+    "size_cm": "200 x 40 x 46",
+    "price": "$2998",
+    "finish": "cream fluted timber body with half-round ends, white marble-look sintered stone top, recessed taupe plinth; four doors",
+    "seen": "2026-09-27",
+    "store_note": "The tag has no store name, but the same cream fluted unit was on display beside the Monolith coffee table at Koala Living the same day.",
+    "photos": [
+     "reference-photos/furniture/tv-units/archie/archie-end.jpg",
+     "reference-photos/furniture/tv-units/archie/archie-front.jpg",
+     "reference-photos/furniture/tv-units/archie/archie-price-tag.jpg"
+    ]
+   }
+  },
+  "coffee_tables": {
+   "_note": "Lounge coffee table options (Reno > Covered area to lounge > Coffee table). Details from the showroom tag photos.",
+   "matched": {
+    "name": "Matched: stone drum coffee table",
+    "store": "Matched set",
+    "size_cm": "85 dia x 40",
+    "finish": "round 40 mm top in the kitchen benchtop stone on a sand-oak pedestal with a low plinth disc; smaller than the round oak (100)",
+    "_note": "matched set with the kitchen and the sofa: sand oak (#cdbb9f, paler and greyer than the smoked-oak floor), the kitchen benchtop stone, the lounge sofa's cream boucle"
+   },
+   "round": {
+    "name": "Round weathered-oak coffee table",
+    "store": "placeholder (no product chosen)",
+    "size_cm": "100 dia x 42"
+   },
+   "monolith": {
+    "name": "Monolith Natural Silver-Grey Travertine Coffee Table",
+    "store": "Koala Living",
+    "code": "TR101K",
+    "size_cm": "140 x 80 x 35",
+    "dims_tag": "35.0(h) x 140.0(w) x 80.0(d)",
+    "price": "$5198",
+    "finish": "natural silver-grey travertine slab on four travertine blocks",
+    "also_available": "TR101K - Natural Cream Travertine",
+    "seen": "2026-09-27 (showroom; storewide 50% off Luxe Members sale signs on display)",
+    "photos": [
+     "reference-photos/furniture/coffee-tables/monolith/monolith-price-tag.jpg",
+     "reference-photos/furniture/coffee-tables/monolith/monolith-showroom-1.jpg",
+     "reference-photos/furniture/coffee-tables/monolith/monolith-showroom-2.jpg"
+    ]
+   }
+  },
+  "sideboards": {
+   "_note": "Kitchen east-wall sideboard (Reno > Kitchen > Sideboard). Details from the showroom tag photos.",
+   "matched": {
+    "name": "Matched: fluted sand-oak sideboard, stone top",
+    "store": "Matched set",
+    "size_cm": "160 x 43.5 x 86",
+    "finish": "four fluted sand-oak doors (push to open) on a set-back plinth, 30 mm top in the kitchen benchtop stone; same place as the Portobello",
+    "_note": "matched set with the kitchen and the sofa: sand oak (#cdbb9f, paler and greyer than the smoked-oak floor), the kitchen benchtop stone, the lounge sofa's cream boucle"
+   },
+   "portobello": {
+    "name": "Portobello Light Brown Veneer Sideboard - Brown Stone Top",
+    "store": "Koala Living",
+    "code": "ST501L",
+    "size_cm": "160 x 43.5 x 86",
+    "dims_tag": "86.0(h) x 160.0(w) x 43.5(d)",
+    "price": "$2998",
+    "finish": "light-brown oak veneer, four doors with arched cut corners, round oak rod legs, Pandora Brown sintered stone top",
+    "also_available": "ST501L - Pandora Brown Sintered Stone",
+    "seen": "2026-09-27 (showroom; storewide 50% off Luxe Members sale sign on it)",
+    "placement": "kitchen east wall, centred on the dining table",
+    "photos": [
+     "reference-photos/furniture/sideboards/portobello/portobello-angle.jpg",
+     "reference-photos/furniture/sideboards/portobello/portobello-front.jpg",
+     "reference-photos/furniture/sideboards/portobello/portobello-price-tag.jpg"
+    ]
+   }
+  },
+  "_photos_note": "Showroom and reference photos live in reference-photos/ at the house project root (see its README.md); paths in each catalogue entry are relative to that root.",
+  "dining_tables": {
+   "_note": "Kitchen table options (Reno > Kitchen > Table). Details from the showroom tag photos.",
+   "matched": {
+    "name": "Matched: stone-top table (160 x 90) with four sand-oak chairs",
+    "store": "Matched set",
+    "size_cm": "160 x 90 x 75",
+    "finish": "30 mm top in the kitchen benchtop stone on a sand-oak apron and square tapered legs; chairs in sand oak with cream boucle seat and back pads, as the sofa",
+    "_note": "matched set with the kitchen and the sofa: sand oak (#cdbb9f, paler and greyer than the smoked-oak floor), the kitchen benchtop stone, the lounge sofa's cream boucle"
+   },
+   "oak": {
+    "name": "Oak extension table (160 x 90) with four oak chairs",
+    "store": "placeholder (no product chosen)",
+    "size_cm": "160 x 90 x 75"
+   },
+   "tonstad": {
+    "name": "TONSTAD Extendable table, brown stained oak veneer",
+    "store": "IKEA (aisle 10, location 27)",
+    "code": "205.940.62",
+    "size_cm": "140/196 x 85 x 75",
+    "dims_tag": "140/196x85 cm (height 75 per IKEA's standard spec, not on the tag)",
+    "price": "$599.99",
+    "finish": "brushed matte brown-stained oak veneer, rounded corners, solid wood legs; 4-seat, extends to 6 with a self-storing leaf",
+    "designer": "Ola Wihlborg",
+    "also_available": "off-white 006.007.33 (aisle 14, location 26) $499.99",
+    "seen": "2026-09-27",
+    "photos": [
+     "reference-photos/furniture/dining-tables/tonstad/tonstad-price-tag.jpg",
+     "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-1.jpg",
+     "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-2.jpg"
+    ]
+   }
+  }
+ }
+}
