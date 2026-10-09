@@ -87,6 +87,8 @@
   .seg.wrap { grid-auto-flow: row; grid-template-columns: 1fr 1fr; }
   .seg button:disabled { opacity: 0.4; }
   .note:empty { display: none; }
+  .listing { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
+  .listing[hidden] { display: none; }
   .sws { display: grid; }
   .sws .note { padding: 0 0 8px; }
   .sw { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 15px; border-top: 1px solid var(--line); }
@@ -190,6 +192,10 @@ body.clean > *:not(canvas) { display: none !important; }
         <option value="ikea">IKEA ash &amp; marble</option>
         <option value="walnut">Walnut &amp; quartzite</option>
         <option value="cream">Cream &amp; quartzite</option>
+        <option value="std">Walnut, standard sizes</option>
+        <option value="stdWhite">White &amp; marble, standard sizes</option>
+        <option value="secondhand">Second-hand white (Seaford)</option>
+        <option value="gloss">Second-hand gloss U (as-is)</option>
       </select>
     </div>
     <div class="q">
@@ -239,6 +245,21 @@ body.clean > *:not(canvas) { display: none !important; }
 
   <div class="rpanel" id="rp-lounge" role="tabpanel" data-panel="lounge" hidden>
     <div class="q">
+      <span class="lab" id="renoBdLab">Back doors</span>
+      <select data-pick="bd" aria-labelledby="renoBdLab">
+        <option value="current">Current: 4-panel slider, 3350</option>
+        <option value="french">White French doors, 3245 x 2410</option>
+        <option value="slider">White slider, 3600 x 2100</option>
+        <option value="black">Black panels, 3 of 4 (1070 x 2340)</option>
+        <option value="blackStack">Black panels, 3 of 4, stacker</option>
+        <option value="cas">CAS Comet stacker, 2565 x 2070 (quote)</option>
+        <option value="monument">Monument stacker + security screens, 2430 x 2220</option>
+        <option value="timber">Timber slider, 3490 x 2100</option>
+      </select>
+      <p class="note" id="renoBdNote"></p>
+      <a class="listing" id="renoBdLink" target="_blank" rel="noopener" hidden>Open listing ↗</a>
+    </div>
+    <div class="q">
       <span class="lab" id="renoLstyleLab">TV wall</span>
       <select data-pick="lstyle" aria-labelledby="renoLstyleLab">
         <option value="standard">TV unit</option>
@@ -267,6 +288,7 @@ body.clean > *:not(canvas) { display: none !important; }
     <div class="sws">
       <label class="sw"><span>Skylight</span><input type="checkbox" id="renoSkylight" checked><span class="tk"></span></label>
       <label class="sw"><span>Taller opening to the kitchen</span><input type="checkbox" id="renoOpening" checked><span class="tk"></span></label>
+      <label class="sw"><span>Glass partition wall (west)</span><input type="checkbox" id="renoGlassWall" checked><span class="tk"></span></label>
       <label class="sw"><span>Sheer white curtains</span><input type="checkbox" id="renoCurtains"><span class="tk"></span></label>
     </div>
     <details class="fine">

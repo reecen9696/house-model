@@ -654,7 +654,7 @@ function ashTexture() {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 const MARBLE_TILE = [1.6, 1.6];
-function marbleTexture() {
+function marbleTexture(bold = false) {                                // bold: Calacatta-style, veins wide and grey enough to read across a room
   const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
   const rnd = (a, b) => a + Math.random() * (b - a);
   g.fillStyle = '#f3f1ec'; g.fillRect(0, 0, 1024, 1024);
@@ -666,7 +666,8 @@ function marbleTexture() {
     for (let d = 0; d < len; d += 18) { a += rnd(-0.35, 0.35); x += Math.cos(a) * 18; y += Math.sin(a) * 18; g.lineTo(x, y); if (Math.random() < 0.08 && w > 1.2) vein(x, y, a + rnd(-1, 1), len * 0.35, w * 0.55, col); }
     g.stroke();
   };
-  for (let k = 0; k < 7; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(500, 1300), rnd(1.5, 4), `rgba(150,140,128,${rnd(0.35, 0.6)})`);
+  const bw = bold ? 2.6 : 1;
+  for (let k = 0; k < 7; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(500, 1300), rnd(1.5, 4) * bw, bold ? `rgba(118,112,104,${rnd(0.55, 0.8)})` : `rgba(150,140,128,${rnd(0.35, 0.6)})`);
   for (let k = 0; k < 5; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(300, 900), rnd(0.8, 1.8), `rgba(184,150,96,${rnd(0.3, 0.5)})`);   // the warm gold veins
   for (let k = 0; k < 14; k++) vein(rnd(0, 1024), rnd(0, 1024), rnd(0, Math.PI), rnd(100, 400), rnd(0.5, 1), 'rgba(170,165,155,0.3)');
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
@@ -958,6 +959,11 @@ function mats() {
   M.frameT = s(0x3a2a1c);
   M.frameA = s(0x2b2b2b, { metalness: 0.5, roughness: 0.4 });
   M.frameW = s(0xf1f1ee, { metalness: 0.15, roughness: 0.35 });   // white powder-coated aluminium (kitchen window, lounge doors)
+  M.frameM = s(0x3c3d3e, { metalness: 0.35, roughness: 0.45 });   // Colorbond Monument aluminium (second-hand stacker on trial)
+  // timber sliders painted two colours: Ace of Spades outside, white inside (box faces: +x -x +y -y +z -z)
+  M.aceOfSpades = s(0x2e3033, { roughness: 0.55 });
+  M.twoTone = [M.aceOfSpades, M.aceOfSpades, M.aceOfSpades, M.aceOfSpades, M.frameW, M.aceOfSpades];
+  M.secMesh = new THREE.MeshStandardMaterial({ color: 0x1c1d1f, transparent: true, opacity: 0.5, roughness: 0.6, metalness: 0.4, side: THREE.DoubleSide });   // stainless security mesh
   M.door = s(0xb0703a, { roughness: 0.6 });          // honey-stained timber doors (photos)
   M.honey = s(0xa9652f, { roughness: 0.6 });         // kitchen joinery carcass
   M.honeyPanel = s(0xb8773d, { roughness: 0.55 });   // raised door panels
@@ -1158,7 +1164,7 @@ function wallSeg(group, a, b, thick, z0, z1, openings, mat, glassMat) {
   let cur = 0;
   for (const o of ops) {
     piece(cur, o.at, z0, z1, mat); skirt(cur, o.at, z0); archi(o);
-    if (o.kind === 'window') { if (o.sill > z0) piece(o.at, o.at + o.w, z0, o.sill, mat); skirt(o.at, o.at + o.w, z0); }
+    if (o.kind === 'window') { if (o.sill > z0) piece(o.at, o.at + o.w, z0, o.sill, mat); if (!o.floorGlass) skirt(o.at, o.at + o.w, z0); }
     else if (o.sill - 0.05 > z0 + 0.01) piece(o.at, o.at + o.w, z0, o.sill - 0.05, mat);   // stop below the full 5 cm threshold, including its exposed front edge
     piece(o.at, o.at + o.w, o.head, z1, mat);
     if (o.kind === 'window') {
@@ -1168,42 +1174,66 @@ function wallSeg(group, a, b, thick, z0, z1, openings, mat, glassMat) {
       piece(o.at, o.at + t, o.sill, o.head, f); piece(o.at + o.w - t, o.at + o.w, o.sill, o.head, f);
       // Rails meet the stiles without overlapping their front faces.
       piece(o.at + t, o.at + o.w - t, o.sill, o.sill + t, f); piece(o.at + t, o.at + o.w - t, o.head - t, o.head, f);
+      // panel joints (glazing bars) evenly across, for multi-panel glass walls
+      for (let i = 1; i < (o.panels || 1); i++) { const m = o.at + o.w * i / o.panels; piece(m - 0.02, m + 0.02, o.sill + t, o.head - t, f); }
     } else if (o.kind === 'french' || o.kind === 'glassDoor' || o.kind === 'sliding') {
       // slim aluminium (charcoal, or white where the plan says): outer frame lining the full wall thickness, sill track, glazed leaves
-      const fm = o.frame === 'whiteAlu' ? M.frameW : M.frameA, ft = 0.05, th = thick + 0.004, base = o.sill;
+      // whiteTimber: painted timber French doors with wide stiles and a deep bottom rail (second-hand set on trial)
+      // twoTone: painted timber sliders, dark outside and white inside
+      const timber = o.frame === 'whiteTimber', tt = o.frame === 'twoTone', fm = o.frame === 'whiteAlu' ? M.frameW : o.frame === 'monument' ? M.frameM : tt ? M.twoTone : timber ? M.fence : M.frameA, ft = timber || tt ? 0.06 : 0.05, th = thick + 0.004, base = o.sill;
       piece(o.at, o.at + ft, base, o.head, fm, th);
       piece(o.at + o.w - ft, o.at + o.w, base, o.head, fm, th);
       piece(o.at, o.at + o.w, o.head - ft, o.head, fm, th);
       piece(o.at + ft, o.at + o.w - ft, base, base + 0.02, fm, th);
-      const n = o.kind === 'sliding' ? 4 : o.kind === 'french' ? 2 : 1, overlap = o.kind === 'sliding' ? 0.04 : 0;
-      const clear = o.w - 2 * ft, lw = clear / n + (o.kind === 'sliding' ? overlap : -0.004), lh = o.head - ft - base - 0.024, lt = 0.04;
+      // leaves: sliding 4 (centre two slide), 3 (centre slides) or 2 (second slides); French 2, or 4 with fixed sidelights
+      const n = o.leaves || (o.kind === 'sliding' ? 4 : o.kind === 'french' ? 2 : 1), overlap = o.kind === 'sliding' ? 0.04 : 0;
+      const clear = o.w - 2 * ft, lw = clear / n + (o.kind === 'sliding' ? overlap : -0.004), lh = o.head - ft - base - 0.024, lt = timber || tt ? 0.045 : 0.04;
       const assembly = new THREE.Group(); assembly.userData.operable = true; assembly.userData.open = false; group.add(assembly);
       const nrm = L(-uy, ux, 0);
       for (let i = 0; i < n; i++) {
         const startS = o.at + ft + i * (clear / n) - (o.kind === 'sliding' && i > 0 ? overlap / 2 : 0) + (o.kind === 'sliding' && i === n - 1 ? -overlap / 2 : 0);
-        const hingeEnd = (o.kind === 'french' && i === 1) || (o.kind === 'glassDoor' && o.hinge === 'end');   // right-hand French leaf hinges on its far edge
-        const hingeS = hingeEnd ? o.at + o.w - ft - 0.002 : startS + 0.002, dir = hingeEnd ? -1 : 1;
+        const hingeEnd = (o.kind === 'french' && i >= n / 2) || (o.kind === 'glassDoor' && o.hinge === 'end');   // right-hand French leaves hinge on their far edge
+        const fixed = o.kind === 'french' && n === 4 && (i === 0 || i === 3);                                     // sidelights
+        const hingeS = hingeEnd ? startS + clear / n - 0.002 : startS + 0.002, dir = hingeEnd ? -1 : 1;
         const leaf = new THREE.Group(); leaf.rotation.y = phi;
         const part = (x0, x1, y0, y1, m, d = lt) => { const b = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(x1 - x0), y1 - y0, d), m); b.position.set(dir * (x0 + x1) / 2, (y0 + y1) / 2, 0); b.castShadow = true; b.receiveShadow = true; b.userData.door = true; leaf.add(b); };
-        const st = 0.05, br = 0.09, tr = 0.06;
+        const st = timber ? 0.1 : tt ? 0.09 : 0.05, br = timber ? 0.2 : tt ? 0.11 : 0.09, tr = timber ? 0.1 : tt ? 0.09 : 0.06;
         part(0, st, 0, lh, fm); part(lw - st, lw, 0, lh, fm); part(st, lw - st, 0, br, fm); part(st, lw - st, lh - tr, lh, fm);
         part(st, lw - st, br, lh - tr, M.glass, 0.008);
         // handle on the free edge (meeting stile for French/sliding centre panels)
         const hx = lw - st / 2;
-        if (o.kind !== 'sliding' || i === 1 || i === 2) for (const side of [1, -1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.28, 0.02), M.grille); h.position.set(dir * (o.kind === 'sliding' && i === 1 ? st / 2 : hx), 1.05, side * (lt / 2 + 0.03)); h.userData.door = true; leaf.add(h); }
+        // stack: a stacker, one track per panel; the first panel ('end': the last) is fixed and the rest slide back behind it
+        const toEnd = o.stack === 'end', k = toEnd ? n - 1 - i : i;   // k: place counting from the fixed panel
+        const inner = o.kind === 'sliding' && (o.stack ? k > 0 : n === 4 ? i === 1 || i === 2 : i === 1);
+        if ((o.kind !== 'sliding' || inner) && !fixed) for (const side of [1, -1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.28, 0.02), M.grille); h.position.set(dir * ((n === 4 && o.kind === 'sliding' && i === 1) || toEnd ? st / 2 : hx), 1.05, side * (lt / 2 + 0.03)); h.userData.door = true; leaf.add(h); }
         const pivot = new THREE.Group();
         pivot.position.copy(L(a[0] + ux * hingeS, a[1] + uy * hingeS, base + 0.022));
         if (o.kind === 'sliding') {
-          // outer panels fixed on the outer track; centre panels on the inner track slide over them
-          const inner = i === 1 || i === 2;
-          pivot.position.add(nrm.clone().multiplyScalar(inner ? 0.025 : -0.025));
+          // outer panels fixed on the outer track; inner-track panels slide over their neighbour
           pivot.userData.swing = 0;
-          if (inner) pivot.userData.slide = L(ux, uy, 0).multiplyScalar(i === 1 ? -(lw - overlap) : (lw - overlap));
+          if (o.stack) {
+            pivot.position.add(nrm.clone().multiplyScalar((k - (n - 1) / 2) * 0.05));
+            if (inner) pivot.userData.slide = L(ux, uy, 0).multiplyScalar(toEnd ? (o.at + o.w - ft) - (startS + lw) : -(startS - (o.at + ft)));
+          } else {
+            pivot.position.add(nrm.clone().multiplyScalar(inner ? 0.025 : -0.025));
+            if (inner) pivot.userData.slide = L(ux, uy, 0).multiplyScalar(n === 4 && i === 2 ? (lw - overlap) : -(lw - overlap));
+          }
         } else {
-          pivot.userData.swing = (hingeEnd ? -1 : 1) * (o.swing ?? 1) * Math.PI / 2;
+          pivot.userData.swing = fixed ? 0 : (hingeEnd ? -1 : 1) * (o.swing ?? 1) * Math.PI / 2;
         }
         pivot.add(leaf); assembly.add(pivot);
         pivot.userData.closedPosition = pivot.position.clone();
+        if (o.screens && inner) {
+          // mesh screen (security or fly) on its own track outside the glass, over this sliding panel; opens with it
+          const sl = new THREE.Group(); sl.rotation.y = phi;
+          const sp = (x0, x1, y0, y1, m, d) => { const b = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, d), m); b.position.set(dir * (x0 + x1) / 2, (y0 + y1) / 2, 0); b.castShadow = true; b.userData.door = true; sl.add(b); };
+          const sw = 0.045, sd = 0.022;
+          sp(0, sw, 0, lh, fm, sd); sp(lw - sw, lw, 0, lh, fm, sd); sp(sw, lw - sw, 0, sw, fm, sd); sp(sw, lw - sw, lh - sw, lh, fm, sd);
+          sp(sw, lw - sw, sw, lh - sw, M.secMesh, 0.003);
+          const sv = new THREE.Group(); sv.add(sl); assembly.add(sv);
+          sv.position.copy(L(a[0] + ux * hingeS, a[1] + uy * hingeS, base + 0.022)).add(nrm.clone().multiplyScalar(-0.075 - 0.028 * (k - 1)));
+          sv.userData.swing = 0; sv.userData.slide = pivot.userData.slide.clone(); sv.userData.closedPosition = sv.position.clone();
+        }
       }
     } else if (o.kind === 'door' && o.leaf !== 'none') {
       // lined opening: jambs and head through the full wall thickness, stop beads, leaf sized to the frame
@@ -1503,8 +1533,9 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard' } = {}) {
-  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream') fridge = 'none';                          // the fridge is built into the tall run
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current' } = {}) {
+  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss') fridge = 'none';                          // the fridge is built into the tall run
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
   // wall's face to the kitchen's west wall, flush on the kitchen side. Options that live in the pantry fall back to none.
   if (noPantry) { if (fridge === 'pantry') fridge = 'none'; if (laundry === 'pantry' || laundry === true) laundry = 'none'; }
@@ -1625,6 +1656,21 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
     if (!K.sink_y) K.sink_y = [16.95, 17.85];
     if (spec.renovation.island) Object.assign(spec.renovation.island, { x0: 2.06, x1: 3.16, y0: 16.75, y1: 17.6, stools: [[2.33, 17.56], [2.89, 17.56]] });
   }
+  // Standard L: the walnut kitchen's L (tall units at the hall end, cooktop on the north wall, sink under the window on
+  // the west return) rebuilt from stock carcass widths only, with fillers for the leftover (see K.std in the build).
+  // 'stdWhite' is the same kitchen in white handleless fronts with a marble-look stone top
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand') {
+    Object.assign(K, { std: true, white: kitchenStyle !== 'std', sh: kitchenStyle === 'secondhand', ikea: false, walnut: false, cream: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.438], uppers_z: [1.503, 2.403], uppers_depth: 0.33, cooktop_x: [3.012, 3.612], sink_x: null, sink_y: [17.02, 17.82], dishwasher_x: null });
+    if (spec.renovation.island) Object.assign(spec.renovation.island, { x0: 2.06, x1: 3.16, y0: 16.75, y1: 17.6, stools: [[2.33, 17.56], [2.89, 17.56]] });
+    // second-hand kitchen: its 927 wall cupboards and tall units top out at 2550 as in the listing photos
+    if (K.sh) K.uppers_z = [1.623, 2.55];
+  }
+  // Second-hand gloss U (Marketplace, Oct 2026, ~2015, gloss white handleless, grey-veined quartz, Fisher & Paykel 900 oven
+  // and 900 gas cooktop), placed as it stands, no recutting: the cooktop leg on the north wall with its 750 tall unit at the
+  // hall end, the sink leg (3000 over all) on the west wall, the 2950 x 1050 peninsula with its waterfall end across the
+  // room, and its fridge wall (fridge recess ~1000 + 1100 tall unit, 2230 high) on the east wall. Sizes from the seller's
+  // tape photos; the module splits inside each run are read off the photos (see K.u in the build).
+  if (kitchenStyle === 'gloss') Object.assign(K, { u: true, std: false, ikea: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.02], uppers_z: [1.53, 2.23], uppers_depth: 0.33, sink_y: [16.05, 16.73] });
   spec.renovation.curtains = !!curtains;
   spec.renovation.shutters = !!shutters;
   const c = spec.roof.covered, lounge = spec.rooms.find(r => r.name === 'Lounge / living');
@@ -1639,6 +1685,19 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
     const d = lounge.floor + spec.renovation.lounge.slider_head - w.head;
     if (d > 0) { w.sill += d; w.head += d; }
   }
+  // free office glass partition (Marketplace, 3805 x 2400) in place of the two west windows: floor to 2.4, centred on
+  // the lounge's west wall, three ~1.27 m panels in a black aluminium frame (listing photo)
+  if (glassWall) {
+    const ym = (lounge.y0 + lounge.y1) / 2;
+    spec.renovation.lounge.windows = [{ y0: ym - 1.9025, y1: ym + 1.9025, sill: lounge.floor, head: lounge.floor + 2.4, panels: 3, floorGlass: true }];
+  }
+  spec.renovation.lounge.glass_wall = !!glassWall;
+  // rear doors (Reno > Lounge > Back doors): second-hand sets on trial, centred on the back wall's 3.78 inside width.
+  // h is the overall frame height above the finished floor.
+  const BD = spec.renovation.back_doors[backDoors] || spec.renovation.back_doors.current;
+  const bx = BD.from != null ? [BD.from, BD.from + BD.w] : [(lounge.x0 + lounge.x1 - BD.w) / 2, (lounge.x0 + lounge.x1 + BD.w) / 2];
+  spec.renovation.lounge.door_pairs = [bx];
+  spec.renovation.lounge.back_door = { ...BD, from: bx[0], to: bx[1] };
   // bathroom 2 (the laundry, off the lounge) gets the same build-up and ceiling lift, so it stays flush with the lounge;
   // its ceiling stops at the bath and WC ceiling height (2.8), well under the wing roof
   const b2 = spec.rooms.find(r => r.name === 'Bathroom 2'), b2Top = Math.min(b2.floor + b2.ceil + roofRaise, 2.8);
@@ -1664,6 +1723,7 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.study = !!study;                                          // desk, monitor and office chair in bedroom 3
   if (noPantry) spec.doors.back.x0 = spec.renovation.pantry.x0;
   spec.renovation.white_woodwork = !!whiteWoodwork;
+  if (K.u) { spec.renovation.dining = null; spec.renovation.sideboard = null; spec.renovation.island = null; }   // the peninsula takes the dining space; the fridge wall the sideboard's
   spec.renovation.cream_exterior = !!creamExterior;
   spec.renovation.bay_hood = !!bayHood;
   spec.renovation.porch_screen = !!porchScreen;
@@ -1946,6 +2006,382 @@ export function buildHouse(spec) {
     const stone = M.kStone || (M.kStone = new THREE.MeshStandardMaterial({ color: 0xe6e3dc, roughness: 0.3 }));
     const tile = M.kTile || (M.kTile = new THREE.MeshStandardMaterial({ color: 0xf1f0ec, roughness: 0.25 }));
     const bh = 0.9, top = 0.04, handle = M.grille, kick = M.trimDark, wCuts = [];
+    if (K.u) {
+      // ---- Second-hand gloss U, as it stands (no recutting) ----
+      // North (cooktop leg), hall end to west wall: 260 new filler | 750 tall unit (2 drawers, 2 doors) | the 2270 cooktop
+      // leg: 470 drawers | 900 oven under the 900 gas cooktop | 900 corner (322 door, blind behind the sink leg).
+      // West (sink leg), north wall to 3000: corner | 310 door | 750 sink pair (bowls centred 1370 off the north wall, as cut)
+      // | 290 door | the peninsula's end. Peninsula 2950 x 1050 off the west wall, y 16.97-18.02: north face 600 dishwasher
+      // then three drawer stacks; south face six doors on shallow cupboards, the corner end left open; a 20 stone waterfall
+      // down its east end. East wall: the fridge recess (~1000, its 700 overhead) and the 1100 tall unit (3 drawers, 2 doors
+      // hiding the appliance shelf). Bench 910, top 40 edge, kick 100; tall units and 700 wall cupboards top at 2230, the
+      // seller's height; plasterboard bulkhead from there to the 2.8 ceiling.
+      const gloss = M.ghGloss || (M.ghGloss = new THREE.MeshStandardMaterial({ color: 0xf7f7f4, roughness: 0.1, metalness: 0.05 }));
+      const liner = M.ikLiner || (M.ikLiner = new THREE.MeshStandardMaterial({ color: 0xf3f3f0, roughness: 0.5 }));
+      const qz = M.ghQuartz || (M.ghQuartz = new THREE.MeshStandardMaterial({ map: marbleTexture(), roughness: 0.25, color: 0xe2e0dc }));   // grey quartz, paler veins
+      const glassBlack = M.ikBlack || (M.ikBlack = new THREE.MeshStandardMaterial({ color: 0x131416, roughness: 0.15, metalness: 0.25 }));
+      const kickM = M.ghKick || (M.ghKick = new THREE.MeshStandardMaterial({ color: 0x4a4744, roughness: 0.5, metalness: 0.4 }));
+      const st = steelMat(), gap = 0.0015, Q = m => surfUV(m, MARBLE_TILE);
+      const kz = 0.1, bz = 0.91, tz = 0.04, cz = bz - tz, cd = 0.56, dt = 0.018, tall = 2.23, [uz0, uz1] = K.uppers_z, ud = K.uppers_depth, ceil = 2.8;
+      const wy = K.run[2], wx = K.run[1], ex = 0.115;                                                          // north wall, west wall, east wall
+      const py0 = 16.97, py1 = 18.02, px0 = wx - 2.95;                                                       // peninsula
+      // fronts: a gloss slab with 3 mm gaps, standing proud of its carcass on the given face
+      const fN = (x0, x1, z0, z1, y = wy + cd) => box(int_, x0 + gap, x1 - gap, y, y + dt, z0 + gap, z1 - gap, gloss);      // facing south, off the north wall
+      const fW = (y0, y1, z0, z1, x = wx - cd) => box(int_, x - dt, x, y0 + gap, y1 - gap, z0 + gap, z1 - gap, gloss);      // facing east, off the west wall
+      const fE = (y0, y1, z0, z1, x = ex + cd) => box(int_, x, x + dt, y0 + gap, y1 - gap, z0 + gap, z1 - gap, gloss);      // facing west, off the east wall
+      const fPn = (x0, x1, z0, z1) => box(int_, x0 + gap, x1 - gap, py0 + 0.02, py0 + 0.02 + dt, z0 + gap, z1 - gap, gloss);   // peninsula, kitchen side
+      const fPs = (x0, x1, z0, z1) => box(int_, x0 + gap, x1 - gap, py1 - 0.02 - dt, py1 - 0.02, z0 + gap, z1 - gap, gloss);   // peninsula, dining side
+      const drawers = (f, a0, a1) => { for (const [z0, z1] of [[kz, 0.37], [0.37, 0.64], [0.64, cz]]) f(a0, a1, z0, z1); };
+      // ---- north: filler, tall unit, cooktop leg ----
+      const n0 = K.run[0], nT = n0 + 0.26, nC = nT + 0.75, nD = nC + 0.47, nO = nD + 0.9, nF = wx - cd - dt;   // nF: the sink leg's front plane
+      box(int_, n0, nT, wy, wy + cd + dt, 0, tall, gloss);                                                   // 260 filler (new board)
+      box(int_, nT, nC, wy, wy + cd, kz, tall, liner); box(int_, nT, nC, wy + 0.04, wy + cd - 0.05, 0, kz, kickM);
+      fN(nT, nC, kz, 0.48); fN(nT, nC, 0.48, 0.86);
+      fN(nT, (nT + nC) / 2, 0.86, tall); fN((nT + nC) / 2, nC, 0.86, tall);
+      box(int_, nC, wx, wy, wy + cd, kz, cz, liner); box(int_, nC, nF, wy + 0.04, wy + cd - 0.05, 0, kz, kickM);
+      drawers(fN, nC, nD);
+      { // Fisher & Paykel 900 built-in oven: black glass door, steel bar handle and kick strip, control panel down the right
+        const oz0 = kz + 0.12, oz1 = cz - 0.08, y = wy + cd;
+        fN(nD, nO, kz, oz0); fN(nD, nO, oz1, cz);
+        box(int_, nD + gap, nO - 0.17, y, y + 0.022, oz0 + 0.06, oz1, glassBlack); box(int_, nD + gap, nO - 0.17, y, y + 0.022, oz0, oz0 + 0.06, st);
+        box(int_, nO - 0.17, nO - gap, y, y + 0.022, oz0, oz1, glassBlack);
+        box(int_, nD + 0.04, nO - 0.21, y + 0.035, y + 0.05, oz1 - 0.08, oz1 - 0.06, st);
+        for (const hx of [nD + 0.06, nO - 0.23]) box(int_, hx - 0.008, hx + 0.008, y + 0.022, y + 0.035, oz1 - 0.08, oz1 - 0.06, st);
+        for (const kzz of [oz0 + 0.12, oz0 + 0.24]) { const k = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.025, 20), st); k.rotation.x = Math.PI / 2; k.position.copy(L(nO - 0.085, y + 0.034, kzz)); int_.add(k); }
+      }
+      fN(nO, nF, kz, cz);                                                                                     // corner door
+      // ---- west: sink leg ----
+      const s0 = wy + 0.6, s1 = s0 + 0.31, s2 = s1 + 0.75, [cy0, cy1] = K.sink_y, cut = [wx - 0.5, wx - 0.1, cy0, cy1];
+      box(int_, wx - cd, wx, s0, py0, kz, cz - 0.25, liner);
+      box(int_, wx - cd + 0.04, wx - 0.04, s0, py0 + 0.02, 0, kz, kickM);
+      fW(s0, s1, kz, cz); fW(s1, (s1 + s2) / 2, kz, cz); fW((s1 + s2) / 2, s2, kz, cz); fW(s2, py0 + 0.02, kz, cz);
+      // ---- peninsula: dishwasher and drawers to the kitchen, shallow cupboards to the dining side, waterfall end ----
+      const pE = px0 + 0.02, pD = nF - 0.6;
+      box(int_, pE, nF, py0 + 0.038, py0 + 0.6, kz, cz, liner); box(int_, pE, nF - 0.02, py0 + 0.6, py1 - 0.038, kz, cz, liner);
+      box(int_, pE, nF, py0 + 0.08, py1 - 0.08, 0, kz, kickM);
+      fPn(pD, nF, kz, cz); box(int_, pD + 0.02, nF - 0.02, py0 + 0.018, py0 + 0.02, cz - 0.07, cz - 0.03, st);   // dishwasher panel, its control strip on top
+      const dw = (pD - pE) / 3; for (let i = 0; i < 3; i++) drawers(fPn, pE + i * dw, pE + (i + 1) * dw);
+      const cw = (nF - 0.02 - pE) / 6; for (let i = 0; i < 6; i++) fPs(pE + i * cw, pE + (i + 1) * cw, kz, cz);
+      box(int_, nF - 0.02, nF, py0 + 0.6, py1, 0, cz, qz);                                                  // stone panel closing the open corner end
+      // ---- stone: tops (40 edge), waterfall, splashbacks ----
+      Q(box(int_, nT + 0.75, wx - 0.6, wy, wy + 0.6, cz, bz, qz));                                            // cooktop leg (its corner runs under the sink leg's top)
+      benchWithCut(int_, wx - 0.6, wx, wy, py0, cz, bz, qz, cut, Q);                                          // sink leg
+      Q(box(int_, px0, wx, py0, py1, cz, bz, qz));                                                            // peninsula
+      Q(box(int_, px0, px0 + 0.02, py0, py1, 0, cz, qz));                                                     // waterfall
+      realSink(int_, ...cut, bz, 2, 'y', { x: wx - 0.065, y: (cy0 + cy1) / 2, face: '-x' });
+      gasCooktop(int_, nD + 0.02, nO - 0.02, wy + 0.05, wy + 0.55, bz);
+      const sp = 0.015, ws = Win.W3_kitchen;
+      Q(box(int_, nC, wx, wy, wy + sp, bz, uz0, qz));
+      for (const [a, b, z0, z1] of [[wy + sp, ws.y0, bz, uz0], [ws.y0, Math.min(ws.y1, py1), bz, ws.sill]]) if (b - a > 0.005) Q(box(int_, wx - sp, wx, a, b, z0, z1, qz));
+      // ---- wall cupboards, 700 high: four 445 doors on the north wall (the middle pair over the cooktop, with the
+      // slide-out hood under them), a 485 and a 445 on the west wall north of the window; fillers to suit ----
+      const n1 = nC + 0.03;
+      box(int_, nC, wx - ud, wy, wy + ud, uz0, uz1, liner); box(int_, wx - ud, wx, wy, ws.y0, uz0, uz1, liner);
+      for (let i = 0; i < 4; i++) fN(n1 + i * 0.445, n1 + (i + 1) * 0.445, uz0, uz1, wy + ud);
+      fN(nC, n1, uz0, uz1, wy + ud); fN(n1 + 1.78, wx - ud, uz0, uz1, wy + ud);
+      const w1 = wy + ud + dt; fW(w1, w1 + 0.485, uz0, uz1, wx - ud); fW(w1 + 0.485, w1 + 0.93, uz0, uz1, wx - ud); fW(w1 + 0.93, ws.y0, uz0, uz1, wx - ud);
+      { const h0 = n1 + 0.445, h1 = h0 + 0.89;                                                               // slide-out hood
+        box(int_, h0 + 0.01, h1 - 0.01, wy + 0.03, wy + ud + dt, uz0 - 0.05, uz0, st); box(int_, h0 + 0.04, h1 - 0.04, wy + 0.05, wy + ud - 0.03, uz0 - 0.052, uz0 - 0.05, M.frameA); }
+      // ---- east wall: fridge recess (stand-in French-door fridge) with its overhead, then the 1100 tall unit ----
+      const e0 = 16.15, e1 = e0 + 1.0, e2 = e1 + 1.1;
+      box(int_, ex, ex + cd + dt, e0, e0 + 0.018, 0, tall, gloss); box(int_, ex, ex + cd + dt, e1 - 0.018, e1, 0, tall, gloss);
+      box(int_, ex, ex + cd, e0 + 0.018, e1 - 0.018, uz0, tall, liner); fE(e0 + 0.018, (e0 + e1) / 2, uz0, tall); fE((e0 + e1) / 2, e1 - 0.018, uz0, tall);
+      box(int_, ex + 0.05, ex + 0.7, e0 + 0.06, e1 - 0.06, 0.02, 1.8, st); box(int_, ex + 0.7, ex + 0.712, (e0 + e1) / 2 - 0.002, (e0 + e1) / 2 + 0.002, 0.76, 1.78, M.frameA);
+      box(int_, ex, ex + cd, e1, e2, kz, tall, liner); box(int_, ex + 0.04, ex + cd - 0.05, e1, e2, 0, kz, kickM);
+      drawers(fE, e1, e2); fE(e1, (e1 + e2) / 2, cz, tall); fE((e1 + e2) / 2, e2, cz, tall);
+      // ---- plasterboard bulkheads from the 2230 tops to the ceiling, flush with the fronts ----
+      box(int_, n0, nC, wy, wy + cd + dt, tall, ceil, M.ceiling); box(int_, nC, wx, wy, wy + ud + dt, uz1, ceil, M.ceiling);
+      box(int_, wx - ud - dt, wx, wy + ud + dt, ws.y0, uz1, ceil, M.ceiling); box(int_, ex, ex + cd + dt, e0, e2, tall, ceil, M.ceiling);
+    } else
+    if (K.std) {
+      // ---- Standard L: stock carcasses only (widths 300/450/600/800/900), fillers for the leftover ----
+      // North wall, hall end to west wall, 3280: end panel 18 | fridge housing 600 | pantry 450 | filler 84 | drawers 450 |
+      // oven + gas cooktop 600 | blind corner 900 (450 door), stood 178 off the west wall as a blind corner is.
+      // West return, corner to 200 short of the lounge opening's line: filler 50 | drawers 450 | drawers 900 | sink 800
+      // (under the window, 30 off its centre) | dishwasher 600 | end panel 18.
+      // Kick 150, carcass 720 x 560, 18 doors, 33 top 600 deep: bench 903. Wall cabinets 900 high x 330 deep, 600 over the
+      // bench (1503-2403), except a 720 over the cooktop so the slide-out hood is 780 over the bench (gas clearance).
+      // Tall units a stock 2250 carcass on the 150 kick (2400), 3 under the wall cabinets' tops. The west wall cupboards
+      // start clear of the north run (the corner left as a closed dead box). A plasterboard bulkhead fills from the
+      // cupboard tops to the 2.8 ceiling. K.white: white fronts and a marble-look stone top instead of walnut and laminate.
+      // Every door and drawer opens (E / the door button in Walk): hollow white carcasses with things in them; doors swing
+      // from the hinge side that keeps them clear of their neighbours, drawers slide out 450, the oven and dishwasher drop.
+      const wy0 = K.run[2], wx = K.run[1], cd = 0.56, dt = 0.018, kz = 0.15, cz = 0.87, bz = 0.903, [uz0, uz1] = K.uppers_z, ud = K.uppers_depth;
+      const WH = K.white, tz1 = K.sh ? 2.55 : 2.4, ct = 0.016;                                                      // tall units' top, carcass board
+      // 'walnut' is the front finish: walnut veneer, or white matt for the white kitchen
+      const walnut = WH ? (M.stdWhite || (M.stdWhite = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))
+        : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: 0xffffff })));
+      const channel = WH ? (M.stdWhiteCh || (M.stdWhiteCh = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))   // the finger channel, white like the fronts
+        : (M.wnChannel || (M.wnChannel = new THREE.MeshStandardMaterial({ color: 0x21150d, roughness: 0.85 })));
+      const laminate = K.sh ? (M.qStone || (M.qStone = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.22 })))   // Quantum Stone, plain white
+        : WH ? (M.stdMarble || (M.stdMarble = new THREE.MeshStandardMaterial({ map: marbleTexture(true), roughness: 0.2, color: 0xffffff })))
+        : (M.stdLaminate || (M.stdLaminate = new THREE.MeshStandardMaterial({ map: limestoneTexture(), roughness: 0.55 })));
+      const TT = WH ? MARBLE_TILE : LIME_TILE;
+      const liner = M.ikLiner || (M.ikLiner = new THREE.MeshStandardMaterial({ color: 0xf3f3f0, roughness: 0.5 }));   // white melamine inside
+      const glassBlack = M.ikBlack || (M.ikBlack = new THREE.MeshStandardMaterial({ color: 0x131416, roughness: 0.15, metalness: 0.25 }));
+      const smoke = M.wnSmoke || (M.wnSmoke = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.08, metalness: 0.3 }));
+      const enamel = M.ovenEnamel || (M.ovenEnamel = new THREE.MeshStandardMaterial({ color: 0x1d1e21, roughness: 0.45 }));
+      const clear = M.ikClear || (M.ikClear = new THREE.MeshStandardMaterial({ color: 0xe8f0f2, roughness: 0.15, transparent: true, opacity: 0.35, depthWrite: false }));
+      const led = M.ikLed || (M.ikLed = new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xffe6b8, emissiveIntensity: 1.4 }));
+      const tint = c => M['ikc' + c] || (M['ikc' + c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+      const st = steelMat(), g = 0.0015;
+      const kickMat = WH ? (M.stdWhiteKick || (M.stdWhiteKick = new THREE.MeshStandardMaterial({ color: 0xe4e2dc, roughness: 0.7 }))) : M.trimDark;
+      const ventMat = WH ? tint(0x9d9a93) : M.frameA;
+      // both runs in one frame: 'N' along x off the north wall, 'W' along y off the west wall; a along the run, d depth from the wall
+      const RB = (r, a0, a1, d0, d1) => r === 'N' ? [a0, a1, wy0 + d0, wy0 + d1] : [wx - d1, wx - d0, a0, a1];
+      const B = (r, a0, a1, d0, d1, z0, z1, m) => box(int_, ...RB(r, a0, a1, d0, d1), z0, z1, m);
+      const P = (r, a, d) => r === 'N' ? [a, wy0 + d] : [wx - d, a];
+      const U = { N: [1, 0], W: [0, 1] }, OUT = { N: [0, 1], W: [-1, 0] };
+      const scyl = (rad, h, m, [x, y], z) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, h, 20), m); c.position.copy(L(x, y, z + h / 2)); c.castShadow = c.receiveShadow = true; int_.add(c); return c; };
+      // ---- operable pieces: an assembly (what the door button toggles) holding pivots; everything added to a pivot moves with it ----
+      const asmNew = () => { const a = new THREE.Group(); a.userData.operable = true; a.userData.open = false; int_.add(a); return a; };
+      const part = (asm, r, pa, pd, pz) => {
+        const [px, py] = P(r, pa, pd), pv = new THREE.Group(); pv.position.copy(L(px, py, pz)); asm.add(pv);
+        const add = (x0, x1, y0, y1, z0, z1, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, z1 - z0, y1 - y0), m); b.position.copy(L((x0 + x1) / 2 - px, (y0 + y1) / 2 - py, (z0 + z1) / 2 - pz)); b.castShadow = b.receiveShadow = true; b.userData.door = true; pv.add(b); return b; };
+        const AB = (rr, a0, a1, d0, d1, z0, z1, m) => add(...RB(rr, a0, a1, d0, d1), z0, z1, m);
+        const cyl = (rad, h, m, a, d, z) => { const [x, y] = P(r, a, d), c = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, h, 20), m); c.position.copy(L(x - px, y - py, z + h / 2 - pz)); c.castShadow = true; c.userData.door = true; pv.add(c); return c; };
+        return { AB, cyl, set(u) { pv.userData.closedPosition = pv.position.clone(); Object.assign(pv.userData, u); } };
+      };
+      // a front: the flat face with the finger channel along its top (or plain), into the static kitchen or onto a pivot
+      const SB = (r, a0, a1, d0, d1, z0, z1, m) => B(r, a0, a1, d0, d1, z0, z1, m);
+      const face = (T, r, a0, a1, z0, z1, d = cd, chan = true) => {
+        if (K.sh) chan = false;                                                                        // second-hand: handles off, push-to-open, plain fronts
+        const ch = chan ? 0.035 : g;
+        T(r, a0 + g, a1 - g, d, d + dt, z0 + g, z1 - ch, walnut);
+        if (chan) T(r, a0 + g, a1 - g, d, d + 0.004, z1 - ch, z1 - g, channel);
+      };
+      // hinged door, hinge on its a0 or a1 edge at the face, opening out just past square
+      const door = (r, a0, a1, z0, z1, hinge, { d = cd, chan = true, asm = asmNew(), lining } = {}) => {
+        const p = part(asm, r, hinge === 'a0' ? a0 : a1, d + dt, z0), dir = hinge === 'a0' ? 1 : -1, u = U[r], n = OUT[r];
+        face(p.AB, r, a0, a1, z0, z1, d, chan);
+        if (lining) lining(p);
+        p.set({ swing: Math.sign(-u[1] * dir * n[0] + u[0] * dir * n[1]) * 0.55 * Math.PI });   // the free edge moves out into the room
+        return asm;
+      };
+      // drop-down door (oven, dishwasher), hinged along its bottom edge at the face
+      const dropDoor = (r, a0, a1, z0, z1, build) => {
+        const asm = asmNew(), p = part(asm, r, a0, cd + dt, z0);
+        build(p); p.set(r === 'N' ? { tilt: 0.5 * Math.PI, tiltAxis: 'x' } : { tilt: -0.5 * Math.PI, tiltAxis: 'z' });
+        return asm;
+      };
+      // drawer: front plus a white box behind it on full-extension runners, slides out 450 with whatever is in it
+      const drawer = (r, a0, a1, z0, z1, fill) => {
+        const asm = asmNew(), p = part(asm, r, a0, cd, z0), s0 = a0 + 0.03, s1 = a1 - 0.03, d0 = 0.04, d1 = cd - 0.004, b0 = z0 + 0.02, b1 = Math.max(b0 + 0.06, z1 - 0.06), t = 0.012;
+        face(p.AB, r, a0, a1, z0, z1);
+        p.AB(r, s0, s1, d0, d1, b0, b0 + t, liner);
+        p.AB(r, s0, s0 + t, d0, d1, b0, b1, liner); p.AB(r, s1 - t, s1, d0, d1, b0, b1, liner); p.AB(r, s0, s1, d0, d0 + t, b0, b1, liner);
+        if (fill) fill(p, r, s0 + t, s1 - t, d0 + t, d1, b0 + t, b1);
+        const n = OUT[r]; p.set({ slide: L(n[0] * 0.45, n[1] * 0.45, 0) });
+        return asm;
+      };
+      // hollow carcass: two sides, bottom, back, and a top (or front and back rails under a sink); fixed shelves at zs
+      const carc = (r, a0, a1, z0, z1, { d1 = cd, top = true, zs = [] } = {}) => {
+        B(r, a0, a0 + ct, 0, d1, z0, z1, liner); B(r, a1 - ct, a1, 0, d1, z0, z1, liner);
+        B(r, a0 + ct, a1 - ct, 0, d1, z0, z0 + ct, liner); B(r, a0 + ct, a1 - ct, 0, ct, z0 + ct, z1, liner);
+        if (top) B(r, a0 + ct, a1 - ct, 0, d1, z1 - ct, z1, liner);
+        else { B(r, a0 + ct, a1 - ct, d1 - 0.1, d1, z1 - ct, z1, liner); B(r, a0 + ct, a1 - ct, ct, 0.1, z1 - ct, z1, liner); }
+        for (const z of zs) B(r, a0 + ct, a1 - ct, ct, d1 - 0.02, z, z + ct, liner);
+      };
+      // ---- what's in them ----
+      const cutlery = (p, r, a0, a1, d0, d1, z0) => {                                                   // grey insert, dividers, knives and forks
+        const tray = tint(0x8a8d90);
+        p.AB(r, a0, a1, d0, d1, z0, z0 + 0.006, tray);
+        const n = Math.max(3, Math.floor((a1 - a0) / 0.09)), w = (a1 - a0) / n;
+        for (let i = 1; i < n; i++) p.AB(r, a0 + i * w - 0.002, a0 + i * w + 0.002, d0, d1, z0, z0 + 0.045, tray);
+        for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) { const c = a0 + (i + 0.5) * w + (k - 1) * 0.014; p.AB(r, c - 0.004, c + 0.004, d0 + 0.08, d0 + 0.08 + (i % 2 ? 0.2 : 0.17), z0 + 0.006 + k * 0.004, z0 + 0.01 + k * 0.004, st); }
+      };
+      const tubs = (p, r, a0, a1, d0, d1, z0, z1) => {                                                  // food containers with coloured lids
+        const h = Math.min(0.12, z1 - z0 - 0.02), cols = [0x6f9a3a, 0xc8452e, 0x2a6fb5, 0xd88a3a];
+        for (let a = a0 + 0.02, i = 0; a + 0.16 < a1; a += 0.18, i++) for (const [e0, e1] of [[d0 + 0.03, d0 + 0.2], [d0 + 0.25, d0 + 0.42]]) {
+          p.AB(r, a, a + 0.15, e0, e1, z0, z0 + h - 0.015, clear); p.AB(r, a, a + 0.15, e0, e1, z0 + h - 0.015, z0 + h, tint(cols[(i + (e0 > d0 + 0.1 ? 1 : 0)) % 4]));
+        }
+      };
+      const pots = (p, r, a0, a1, d0, d1, z0, z1) => {                                                  // saucepans and a frying pan, nested
+        const h = Math.min(0.16, z1 - z0 - 0.02);
+        for (let a = a0 + 0.12, i = 0; a + 0.1 < a1; a += 0.24, i++) { p.cyl(0.1, h, st, a, (d0 + d1) / 2 - 0.08, z0); p.cyl(0.085, 0.01, st, a, (d0 + d1) / 2 - 0.08, z0 + h); p.cyl(0.11, 0.05, enamel, a, (d0 + d1) / 2 + 0.15, z0); }
+      };
+      const plates = (r, a0, a1, z, d = 0.17) => { for (let a = a0 + 0.14; a + 0.12 < a1; a += 0.27) { scyl(0.12, 0.08, tint(0xf6f4ee), P(r, a, d), z); } };   // stacks of plates
+      const glasses = (r, a0, a1, z, d = 0.12) => { for (let a = a0 + 0.06; a + 0.05 < a1; a += 0.09) { scyl(0.035, 0.12, clear, P(r, a, d), z); scyl(0.035, 0.12, clear, P(r, a, d + 0.1), z); } };
+      const jars = (r, a0, a1, z, d = 0.2) => {
+        const fills = [0xd9a066, 0xa8472f, 0xe8e2d4, 0x8f5a36, 0xc98b4a, 0xb33a3a, 0xf0ead8];
+        for (let a = a0 + 0.07, i = 0; a + 0.06 < a1; a += 0.13, i++) { const h = 0.16 + (i % 3) * 0.03; scyl(0.055, h, clear, P(r, a, d), z); scyl(0.049, h * 0.85, tint(fills[i % 7]), P(r, a, d), z + 0.004); scyl(0.057, 0.02, tint(0xc9a877), P(r, a, d), z + h); }
+      };
+      const tins = (r, a0, a1, z, d = 0.4) => { const c = [0xb5422e, 0x2f6b3a, 0xe0c060, 0x3a5a9a]; for (let a = a0 + 0.05, i = 0; a + 0.04 < a1; a += 0.085, i++) scyl(0.037, 0.11, tint(c[i % 4]), P(r, a, d), z); };
+      const lay = (start, mods, total) => {                                                         // widths in mm so the sums are exact
+        if (mods.reduce((a, [, w]) => a + w, 0) !== total) console.warn('standard kitchen modules do not add up', mods);
+        const at = {}; let p = start; for (const [k, w] of mods) { at[k] = [p, p + w / 1000]; p += w / 1000; } return at;
+      };
+      // K.sh, the second-hand white kitchen (Marketplace, Seaford, 2014, white melamine, Quantum Stone) re-planned into this L:
+      // North: end panel 18 | fridge cavity 905 with its 730 overhead | half the 1340 tall bank, 670 | its 450 drawers (keep
+      // the burners clear of the tall side) | a standard 600 oven under a gas cooktop (not their Smeg) | 59 filler to the return's
+      // fronts, so the oven door drops clear of them; the corner dead behind. West: filler 22 | its 998 drawers | the peninsula's
+      // 390 drawers, 790 double-sink cupboard and 600 dishwasher | end panel 18. Bench assumed lowered from its 995 to 903.
+      const N = K.sh ? lay(K.run[0], [['panel', 18], ['fridge', 905], ['tall', 670], ['drawers', 450], ['oven', 600], ['fill', 59], ['void', 578]], 3280)
+        : lay(K.run[0], [['panel', 18], ['fridge', 600], ['pantry', 450], ['fill', 84], ['drawers', 450], ['oven', 600], ['corner', 900], ['void', 178]], 3280);
+      const R = K.sh ? lay(K.return[2], [['fill', 22], ['d998', 998], ['d390', 390], ['sink', 790], ['dw', 600], ['panel', 18]], 2818)
+        : lay(K.return[2], [['fill', 50], ['d450', 450], ['d900', 900], ['sink', 800], ['dw', 600], ['panel', 18]], 2818);
+      const sinkCut = [wx - 0.5, wx - 0.1, R.sink[0] + 0.06, R.sink[1] - 0.06];
+      // three drawers, 300 / 270 / 150 fronts: cutlery on top, tubs in the middle, pots at the bottom
+      const drawers3 = (r, a0, a1) => { carc(r, a0, a1, kz, cz); drawer(r, a0, a1, kz, 0.45, pots); drawer(r, a0, a1, 0.45, 0.72, tubs); drawer(r, a0, a1, 0.72, cz, cutlery); };
+      const oven600 = () => { // oven: a hollow enamel cavity with two racks, a drop-down black glass door, the control strip fixed above it, a
+        // shallow drawer of baking trays under it
+        const [a0, a1] = N.oven, oz = 0.27, dz = 0.8;
+        carc('N', a0, a1, kz, cz);
+        B('N', a0 + ct, a1 - ct, 0.04, cd, oz, oz + 0.012, enamel); B('N', a0 + ct, a1 - ct, 0.04, cd, dz - 0.012, dz, enamel);
+        B('N', a0 + ct, a0 + ct + 0.012, 0.04, cd, oz, dz, enamel); B('N', a1 - ct - 0.012, a1 - ct, 0.04, cd, oz, dz, enamel); B('N', a0 + ct, a1 - ct, 0.04, 0.052, oz, dz, enamel);
+        for (const z of [0.42, 0.58]) for (let i = 0; i < 7; i++) { const a = a0 + 0.06 + i * 0.08; B('N', a, a + 0.004, 0.06, cd - 0.03, z, z + 0.004, st); }
+        dropDoor('N', a0, a1, oz, dz, p => {
+          p.AB('N', a0 + g, a1 - g, cd, cd + 0.02, oz + g, dz - g, glassBlack);
+          p.AB('N', a0 + 0.06, a1 - 0.06, cd + 0.02, cd + 0.024, oz + 0.06, oz + 0.38, smoke);
+          p.AB('N', a0 + 0.06, a1 - 0.06, cd + 0.035, cd + 0.05, oz + 0.43, oz + 0.45, M.metal);
+          for (const ha of [a0 + 0.08, a1 - 0.08]) p.AB('N', ha - 0.008, ha + 0.008, cd + 0.02, cd + 0.035, oz + 0.43, oz + 0.45, M.metal);
+        });
+        B('N', a0 + g, a1 - g, cd, cd + 0.02, dz + g, cz - g, glassBlack);                                   // control strip
+        B('N', a0 + 0.2, a1 - 0.2, cd + 0.02, cd + 0.023, dz + 0.015, dz + 0.055, M.frameA);                 // display
+        drawer('N', a0, a1, kz, oz, (p, r, b0, b1, e0, e1, z) => { p.AB(r, b0 + 0.02, b1 - 0.02, e0 + 0.02, e1 - 0.02, z, z + 0.01, enamel); p.AB(r, b0 + 0.04, b1 - 0.04, e0 + 0.04, e1 - 0.04, z + 0.01, z + 0.02, st); });
+      };
+      if (K.sh) {
+        // ---- end panel, fridge cavity (fridge not included: a stainless French-door stands in) and its two-door overhead ----
+        B('N', ...N.panel, 0, cd + dt, 0, tz1, walnut);
+        { const [a0, a1] = N.fridge, oz = tz1 - 0.73, f0 = a0 + 0.015, f1 = a1 - 0.015, fm = (f0 + f1) / 2, fd = 0.68;
+          carc('N', a0, a1, oz, tz1, { d1: cd, zs: [oz + 0.36] });
+          const pair = asmNew(); door('N', a0, (a0 + a1) / 2, oz, tz1, 'a0', { asm: pair }); door('N', (a0 + a1) / 2, a1, oz, tz1, 'a1', { asm: pair });
+          B('N', f0, f1, 0.04, fd - 0.02, 0.02, 1.79, st);                                                     // cabinet
+          B('N', f0, fm - 0.002, fd - 0.02, fd, 0.78, 1.79, st); B('N', fm + 0.002, f1, fd - 0.02, fd, 0.78, 1.79, st);   // French doors
+          B('N', f0, f1, fd - 0.02, fd, 0.04, 0.765, st);                                                      // freezer drawer
+          for (const x of [fm - 0.03, fm + 0.025]) B('N', x, x + 0.012, fd, fd + 0.03, 0.95, 1.45, M.metal);
+          B('N', f0 + 0.08, f1 - 0.08, fd, fd + 0.03, 0.68, 0.695, M.metal);
+          B('N', f0 + 0.02, f1 - 0.02, 0.06, fd - 0.04, 0, 0.02, M.frameA); }
+        { // ---- tall bank, 670: two doors wide, low doors to just over the bench line and tall ones above, shelves of jars ----
+          const [a0, a1] = N.tall, m = (a0 + a1) / 2, sz = 0.95;
+          carc('N', a0, a1, kz, tz1, { zs: [0.55, sz, 1.3, 1.65, 2.0, 2.3] });
+          for (const z of [sz, 1.3, 1.65, 2.0]) { jars('N', a0 + ct, a1 - ct, z + ct, 0.18); tins('N', a0 + ct, a1 - ct, z + ct, 0.42); }
+          const lo = asmNew(); door('N', a0, m, kz, sz, 'a0', { asm: lo }); door('N', m, a1, kz, sz, 'a1', { asm: lo });
+          const hi = asmNew(); door('N', a0, m, sz, tz1, 'a0', { asm: hi }); door('N', m, a1, sz, tz1, 'a1', { asm: hi });
+        }
+      drawers3('N', ...N.drawers); oven600();
+        face(SB, 'N', ...N.fill, kz, cz, cd, false);                                                     // 59 filler to the return's fronts
+      } else {
+      // ---- north base ----
+      drawers3('N', ...N.drawers);
+      { // blind corner 900: 450 door hinged on its hall side so it swings clear of the return; a shelf of bowls and trays,
+        // the blind end reaching in under the return
+        const [a0, a1] = N.corner, dEnd = a0 + 0.45, fEnd = wx - cd - dt;
+        carc('N', a0, a1, kz, cz, { zs: [0.5] });
+        scyl(0.13, 0.1, tint(0xe8e2d4), P('N', a0 + 0.2, 0.3), 0.5 + ct); scyl(0.11, 0.08, tint(0xc9d4d8), P('N', a0 + 0.2, 0.3), 0.6 + ct);
+        B('N', a0 + 0.05, a0 + 0.4, 0.05, 0.45, kz + ct, kz + ct + 0.03, st); B('N', a0 + 0.55, a1 - 0.05, 0.05, 0.5, kz + ct, kz + ct + 0.25, tint(0x8a8d90));   // trays; a box in the blind end
+        door('N', a0, dEnd, kz, cz, 'a0');
+        face(SB, 'N', dEnd, fEnd, kz, cz, cd, false);                                                     // corner filler to the return's face
+      }
+      face(SB, 'N', ...N.fill, kz, cz, cd, false);                                                       // 84 filler between the pantry and the drawers
+      // ---- tall units at the hall end: end panel, fridge housing, pantry; 2400 ----
+      B('N', ...N.panel, 0, cd + dt, 0, tz1, walnut);
+      const nz0 = kz + ct, nz1 = nz0 + 1.78, tz = nz1 + 0.009;                                         // fridge niche 560 x 1780 x 550; door line
+      { // fridge housing: the integrated fridge's white liner, glass shelves, crispers, a light and food; its door carries
+        // the cabinet panel and opens from the end panel side, the cupboard over it the same way
+        const [a0, a1] = N.fridge, i0 = a0 + ct + 0.02, i1 = a1 - ct - 0.02, back = 0.04, front_ = cd - 0.06;
+        carc('N', a0, a1, kz, tz1, { zs: [nz1] });
+        B('N', i0, i1, back - 0.01, back, nz0 + 0.03, nz1 - 0.03, liner);                                          // the fridge's liner
+        B('N', i0 - 0.01, i0, back, front_, nz0 + 0.03, nz1 - 0.03, liner); B('N', i1, i1 + 0.01, back, front_, nz0 + 0.03, nz1 - 0.03, liner);
+        B('N', i0, i1, back, front_, nz0 + 0.03, nz0 + 0.05, liner); B('N', i0, i1, back, front_, nz1 - 0.05, nz1 - 0.03, liner);
+        for (const z of [0.6, 0.95, 1.3, 1.62]) B('N', i0, i1, back, front_ - 0.03, z - 0.006, z, clear);
+        for (const [c0, c1, col] of [[i0, (i0 + i1) / 2 - 0.005, 0x6f9a3a], [(i0 + i1) / 2 + 0.005, i1, 0xc8452e]]) { B('N', c0, c1, back + 0.01, front_ - 0.03, nz0 + 0.06, 0.55, clear); B('N', c0 + 0.03, c1 - 0.03, back + 0.05, front_ - 0.08, nz0 + 0.07, 0.36, tint(col)); }
+        const light = M.ikFridgeLight || (M.ikFridgeLight = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xeaf4ff, emissiveIntensity: 1.2 }));
+        B('N', i0 + 0.1, i1 - 0.1, back + 0.05, back + 0.25, nz1 - 0.065, nz1 - 0.05, light);
+        B('N', i0 + 0.04, i0 + 0.13, back + 0.06, back + 0.15, 0.6, 0.84, tint(0xf5f5f2)); B('N', i0 + 0.04, i0 + 0.13, back + 0.06, back + 0.15, 0.84, 0.86, tint(0x2a6fb5));   // milk
+        scyl(0.045, 0.07, tint(0xf2eee4), P('N', i0 + 0.25, back + 0.15), 0.6); scyl(0.045, 0.07, tint(0xe8c8d8), P('N', i0 + 0.36, back + 0.15), 0.6);   // yoghurt
+        B('N', i0 + 0.05, i0 + 0.3, back + 0.04, back + 0.26, 0.95, 1.04, clear); B('N', i0 + 0.06, i0 + 0.29, back + 0.05, back + 0.25, 0.95, 1.01, tint(0xd88a3a));   // leftovers
+        scyl(0.1, 0.07, tint(0xf4f2ec), P('N', i0 + 0.38, back + 0.2), 1.3); scyl(0.085, 0.04, tint(0x7a9a3a), P('N', i0 + 0.38, back + 0.2), 1.345);
+        scyl(0.035, 0.26, tint(0x4a7a3a), P('N', i0 + 0.1, back + 0.12), 1.62); scyl(0.05, 0.12, tint(0xf0d060), P('N', i0 + 0.3, back + 0.18), 1.62);
+        door('N', a0, a1, kz, tz, 'a0', { lining: p => {                                                   // the fridge door's liner and bins, behind the panel
+          p.AB('N', i0, i1, front_ + 0.01, cd, nz0 + 0.03, nz1 - 0.03, liner);
+          for (const z of [0.4, 1.02, 1.45]) { p.AB('N', i0 + 0.03, i1 - 0.03, front_ - 0.06, front_ + 0.01, z, z + 0.1, clear); p.AB('N', i0 + 0.03, i1 - 0.03, front_ - 0.06, front_ + 0.01, z - 0.008, z, liner); }
+          [[0.08, 0.28, 0x2f6b3a], [0.17, 0.24, 0xe8e2d0], [0.26, 0.3, 0xb5422e]].forEach(([o, h, c]) => p.cyl(0.03, h, tint(c), i0 + o, front_ - 0.025, 0.4));
+        } });
+        door('N', a0, a1, tz, tz1, 'a0', { chan: false });
+        B('N', a0 + ct, a1 - ct, ct, cd - 0.02, tz + 0.12, tz + 0.12 + ct, liner);                              // a shelf in the cupboard over it, trays on it
+        B('N', a0 + 0.05, a1 - 0.05, 0.05, 0.45, tz + 0.12 + ct, tz + 0.15 + ct, st);
+      }
+      { // pantry 450: hinged on its bench side so it and the fridge open as a pair; shelves of jars and tins
+        const [a0, a1] = N.pantry;
+        carc('N', a0, a1, kz, tz1, { zs: [0.55, 0.9, 1.25, 1.6, nz1] });
+        for (const z of [0.55, 0.9, 1.25, 1.6]) { jars('N', a0 + ct, a1 - ct, z + ct, 0.18); tins('N', a0 + ct, a1 - ct, z + ct, 0.42); }
+        B('N', a0 + 0.05, a1 - 0.05, 0.08, 0.45, kz + ct, kz + ct + 0.3, tint(0xc9a877));                       // a basket of potatoes and onions on the floor
+        door('N', a0, a1, kz, tz, 'a1');
+        door('N', a0, a1, tz, tz1, 'a1', { chan: false });
+      }
+      // finer fridge vent in the kick under the housing (the top vents through the back of the cupboard over it)
+      for (let i = 0; i < 14; i++) { const va = N.fridge[0] + 0.06 + i * 0.035; B('N', va, va + 0.012, cd - 0.0505, cd - 0.049, 0.035, kz - 0.035, ventMat); }
+      }
+      // ---- west return: filler, drawers, sink under the window, dishwasher, end panel ----
+      face(SB, 'W', wy0 + cd, R.fill[1], kz, cz, cd, false);                                            // return filler, run back to the north run's fronts so the corner is closed
+      if (K.sh) { drawers3('W', ...R.d998); drawers3('W', ...R.d390); } else { drawers3('W', ...R.d450); drawers3('W', ...R.d900); }
+      { // sink: two doors hinged at the outer edges, opening as a pair; the bowls' wastes and trap, a bin, cleaning things
+        const [a0, a1] = R.sink, m = (a0 + a1) / 2, sm = (sinkCut[2] + sinkCut[3]) / 2;
+        carc('W', a0, a1, kz, cz, { top: false });
+        const pipe = tint(0xe9e9e6);
+        for (const y of [(sinkCut[2] + sm) / 2, (sm + sinkCut[3]) / 2]) scyl(0.022, 0.2, pipe, [wx - 0.3, y], 0.45);
+        B('W', sinkCut[2] + 0.1, sinkCut[3] - 0.1, 0.28, 0.32, 0.43, 0.47, pipe); B('W', sm - 0.02, sm + 0.02, ct, 0.3, 0.43, 0.47, pipe);   // trap across to the wall waste
+        B('W', a0 + 0.04, a0 + 0.34, 0.08, 0.42, kz + ct, kz + ct + 0.3, tint(0x5b6166));                        // pull-out bin
+        [[0.42, 0x2a6fb5], [0.5, 0xd8c040], [0.58, 0x3a9a5a]].forEach(([o, c]) => scyl(0.035, 0.22, tint(c), P('W', a0 + o, 0.42), kz + ct));
+        const pair = asmNew(); door('W', a0, m, kz, cz, 'a0', { asm: pair }); door('W', m, a1, kz, cz, 'a1', { asm: pair });
+      }
+      { // integrated dishwasher: steel tub, two racks of plates and glasses; the panelled door drops down
+        const [a0, a1] = R.dw, i0 = a0 + 0.02, i1 = a1 - 0.02;
+        B('W', i0, i1, 0.03, 0.04, kz + 0.02, cz - 0.02, st); B('W', i0, i0 + 0.01, 0.04, cd, kz + 0.02, cz - 0.02, st); B('W', i1 - 0.01, i1, 0.04, cd, kz + 0.02, cz - 0.02, st);
+        B('W', i0, i1, 0.04, cd, kz + 0.02, kz + 0.03, st); B('W', i0, i1, 0.04, cd, cz - 0.03, cz - 0.02, st);
+        for (const z of [0.24, 0.56]) { B('W', i0 + 0.02, i1 - 0.02, 0.06, cd - 0.03, z, z + 0.006, M.metal); B('W', i0 + 0.02, i1 - 0.02, 0.06, 0.066, z, z + 0.08, M.metal); }
+        for (let i = 0; i < 8; i++) { const a = i0 + 0.07 + i * 0.06, disc = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.008, 24), tint(0xf6f4ee)); disc.rotation.x = Math.PI / 2; disc.position.copy(L(wx - 0.3, a, 0.37)); disc.castShadow = true; int_.add(disc); }   // plates on edge
+        for (let i = 0; i < 6; i++) for (const d of [0.15, 0.3, 0.45]) scyl(0.035, 0.11, clear, P('W', i0 + 0.06 + i * 0.09, d), 0.566);   // glasses upside down
+        dropDoor('W', a0, a1, kz, cz, p => { face(p.AB, 'W', a0, a1, kz, cz); p.AB('W', i0, i1, cd - 0.02, cd, kz + 0.02, cz - 0.02, st); });
+      }
+      B('W', ...R.panel, 0, cd + dt, 0, cz, walnut);
+      // kick, set back 50, along both runs
+      if (K.sh) B('N', N.tall[0], N.fill[1], 0.04, cd - 0.05, 0, kz, kickMat); else B('N', N.fridge[0], wx, 0.04, cd - 0.05, 0, kz, kickMat);
+      B('W', wy0 + cd, R.dw[1], 0.04, cd - 0.05, 0, kz, kickMat);
+      // tops, 33 thick, 600 deep: the north top runs into the corner, the return's meets it
+      surfUV(B('N', K.sh ? N.tall[1] : N.pantry[1], wx, 0, 0.6, cz, bz, laminate), TT);
+      benchWithCut(int_, wx - 0.6, wx, K.return[2], R.panel[1], cz, bz, laminate, sinkCut, m => surfUV(m, TT));
+      realSink(int_, ...sinkCut, bz, 2, 'y', { x: wx - 0.065, y: (sinkCut[2] + sinkCut[3]) / 2, face: '-x' });
+      gasCooktop(int_, N.oven[0] + 0.02, N.oven[1] - 0.02, wy0 + 0.06, wy0 + 0.55, bz);
+      // splashback in the top's stone: the north wall, and the west wall cut round the window
+      surfUV(B('N', K.sh ? N.tall[1] : N.pantry[1], wx, 0, 0.012, bz, uz0, laminate), TT);
+      { const ws = Win.W3_kitchen, y0 = wy0 + 0.012, y1 = R.panel[1];
+        for (const [a, b, z0, z1] of [[y0, ws.y0, bz, uz0], [ws.y1, y1, bz, uz0], [ws.y0, ws.y1, bz, ws.sill]])
+          if (b - a > 0.005 && z1 - z0 > 0.005) surfUV(B('W', a, b, 0, 0.012, z0, z1, laminate), TT); }
+      // ---- wall cabinets, 900 x 330, two shelves of plates and glasses ----
+      const wall = (r, a0, a1, hinges, { z0 = uz0, fill = true } = {}) => {
+        carc(r, a0, a1, z0, uz1, { d1: ud, zs: [z0 + 0.3, z0 + 0.6].filter(z => z < uz1 - 0.15) });
+        if (fill) { plates(r, a0 + ct, a1 - ct, z0 + ct); glasses(r, a0 + ct, a1 - ct, z0 + 0.3 + ct); }
+        const asm = asmNew(), n = hinges.length, w = (a1 - a0) / n;
+        hinges.forEach((h, i) => door(r, a0 + i * w, a0 + (i + 1) * w, z0, uz1, h, { d: ud, chan: false, asm }));
+      };
+      const ledUnder = (r, a0, a1) => B(r, a0 + 0.02, a1 - 0.02, ud - 0.03, ud - 0.01, uz0 - 0.006, uz0, led);
+      if (!K.sh) { face(SB, 'N', ...N.fill, uz0, uz1, ud, false); B('N', ...N.fill, 0, ud, uz0, uz1, walnut); }   // 84 filler over the base filler
+      wall('N', ...N.drawers, ['a0']); ledUnder('N', ...N.drawers);
+      { const [a0, a1] = N.oven, hz = K.sh ? bz + 0.78 : uz1 - 0.72, vz = hz + 0.04;   // second-hand: its cupboards top at 2550, so a taller one                                       // 600 rangehood space: a 720 cupboard with the
+        carc('N', a0, a1, hz, uz1, { d1: ud });                                                          // slide-out hood in its base, 780 over the bench;
+        scyl(0.075, uz1 - hz - 0.04, tint(0xb8bcbf), P('N', (a0 + a1) / 2, 0.15), hz + 0.02);              // its duct up through the cupboard
+        door('N', a0, a1, vz, uz1, 'a0', { d: ud, chan: false });
+        surfUV(B('N', a0, a1, 0, 0.012, uz0, hz, laminate), TT);                                       // splashback on up behind the hood
+        B('N', a0 + 0.004, a1 - 0.004, ud - 0.01, ud + dt + 0.01, hz, vz, st);                         // visor
+        B('N', a0 + 0.04, a1 - 0.04, 0.03, ud - 0.04, hz - 0.002, hz, M.frameA); }                     // filter
+      if (K.sh) { B('N', N.oven[1], wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', N.oven[1], wx - ud, uz0, uz1, ud, false); }   // filler on to the west cupboards
+      else { const c0 = N.corner[0], c1 = c0 + 0.6;                                                           // 600 hinged on the corner side, then a 148
+        wall('N', c0, c1, ['a1']); ledUnder('N', c0, c1);                                                // filler to the west run's face
+        B('N', c1, wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false); }
+      { const w0 = wy0 + ud + dt, f1 = w0 + 0.072, t1 = f1 + 0.9;                                       // west: 72 filler, then a 900 (a pair of
+        B('W', w0, f1, 0, ud + dt, uz0, uz1, walnut);                                                     // doors), stopping 150 short of the window
+        wall('W', f1, t1, ['a0', 'a1']); ledUnder('W', f1, t1);
+        B('W', wy0, w0, 0, ud, uz0 - dt, uz0, walnut);                                                    // the dead corner's underside, closed
+        // plasterboard bulkhead from the cupboard tops to the ceiling, flush with the fronts: deeper over the tall units
+        const ceil = 2.8, bh_ = M.ceiling;
+        const tallEnd = K.sh ? N.tall[1] : N.fill[0];
+        B('N', N.panel[0], tallEnd, 0, cd + dt, tz1, ceil, bh_);
+        B('N', tallEnd, wx, 0, ud + dt, uz1, ceil, bh_);
+        B('W', wy0 + ud + dt, t1, 0, ud + dt, uz1, ceil, bh_); }
+      if (!WH) { int_.updateMatrixWorld(true); int_.traverse(o => { if (o.isMesh && o.material === walnut) surfUV(o, WALNUT_TILE); }); }
+    } else
     if (K.ikea) {
       // ---- IKEA-style kitchen ----
       const ikCuts = [];                                                                          // sink cut-outs, filled in before the west bays
@@ -2318,6 +2754,7 @@ export function buildHouse(spec) {
       if (x >= rx0 - 0.1 && x <= rx1) {
         let d = K.uppers_depth;
         if (K.ikea) { if (x < rx0 + 1.85) d = 0.6; if (x > rx1 - 0.72) d = 0.67; }
+        if (K.std && x < rx0 + (K.sh ? 1.6 : 1.1)) d = K.sh ? 0.7 : 0.6;                                     // the fridge and pantry
         const fr = spec.renovation.fridge;
         if (fr && ((x >= fr.x0 - 0.05 && x <= fr.x1 + 0.05) || (fr.pantry && x >= fr.pantry[0] - 0.05 && x <= fr.pantry[1] + 0.05))) d = Math.max(d, fr.y1 - ry0);
         y = Math.max(y, ry0 + d + 0.4);
@@ -2922,7 +3359,7 @@ export function buildHouse(spec) {
     // King Living 1977 modular sofa: puffy rounded modules in cream boucle, backs against the west wall (6 cm off it,
     // clear of the skirting), laid out from the south-west corner north: corner, chairs, then the chaise
     const C = LF.couch, wx = C.wall_x - (spec.renovation.curtains ? 0.21 : 0.06);          // off the wall a little further with sheers behind it
-    const trimZ = Math.min(...spec.renovation.lounge.windows.map(w => w.sill)) - 0.1;       // under the sill board and apron
+    const trimZ = Math.min(Infinity, ...spec.renovation.lounge.windows.filter(w => !w.floorGlass).map(w => w.sill)) - 0.1;       // under the sill board and apron
     const seatZ = fz + C.seat_h, backZ = Math.min(fz + C.back_h, trimZ), bt = C.back_t;
     const boucle = M.boucle || (M.boucle = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 1 }));
     const hidden = M.hiddenSolid || (M.hiddenSolid = new THREE.MeshBasicMaterial({ visible: false }));
@@ -3601,7 +4038,7 @@ export function buildHouse(spec) {
       }
     }
     // Solid thresholds across the rear and side openings.
-    worldUV(box(G.floors,2.55,5.9,24.77,25.0,loungeFloor-0.05,loungeFloor,M.timber),BOARD_TILE);
+    { const [tx0, tx1] = spec.renovation.lounge.door_pairs[0]; worldUV(box(G.floors,tx0,tx1,24.77,25.0,loungeFloor-0.05,loungeFloor,M.timber),BOARD_TILE); }
     box(G.floors,5.18,6.02,19.31,19.54,loungeFloor-0.04,loungeFloor+0.003,M.concrete);
     // bathroom 2 door threshold, up to the higher of the two floors
     const b2Floor = spec.rooms.find(r => r.name === 'Bathroom 2').floor;
@@ -3617,7 +4054,7 @@ export function buildHouse(spec) {
         if (nosing) box(G.site, x0, x1, dir > 0 ? yb : yb - 0.012, dir > 0 ? yb + 0.012 : yb, zLow, zt, nosing);
       }
     };
-    stepsUp(2.55, 6.0, 25.0, 1, rs.z, M.tess, M.tessRed);
+    { const [sx0, sx1] = spec.renovation.lounge.door_pairs[0]; stepsUp(Math.min(sx0, 2.55), Math.max(sx1 + 0.1, 6.0), 25.0, 1, rs.z, M.tess, M.tessRed); }
     stepsUp(spec.renovation.lounge.side_door[0] - 0.05, spec.renovation.lounge.side_door[1] + 0.05, 19.31, -1, S.west_path.z, M.concrete);
     // Concrete continues around the extension into the backyard along the fence.
     // the rear bed bulges out round the lemon tree (the real brick edge curves out there), one bed with it
@@ -3750,11 +4187,11 @@ export function buildHouse(spec) {
   const top = x => cr.z_top_east + (cr.z_top_west-cr.z_top_east)*(x-cr.x0)/(cr.x1-cr.x0)-lr.roof_thickness;
   const low = top(lr.wall_outer_x), floor = Lv.slab;
   wallRect(ext,lr.wall_x,lr.wall_outer_x,19.54,25.0,floor,low,
-    lr.windows.map(w=>({from:w.y0,to:w.y1,sill:w.sill,head:w.head,kind:'window',frame:'white'})),M.white);
+    lr.windows.map(w=>({from:w.y0,to:w.y1,sill:w.sill,head:w.head,kind:'window',frame:w.floorGlass?'alu':'white',panels:w.panels,floorGlass:w.floorGlass,trim:w.floorGlass?false:undefined})),M.white);
   // Fill to the sloping ceiling along the inner wall face.
   box(ext,lr.wall_x,lr.wall_outer_x,19.54,25.0,low,top(lr.wall_x),M.intWall);
   wallRect(ext,2.25,lr.wall_x,lr.south_y,25.0,floor,low,
-    lr.door_pairs.map(([from,to])=>({from,to,sill:loungeFloor,head:loungeFloor+lr.slider_head,kind:'sliding',frame:'whiteAlu'})),M.white);
+    [{from:lr.back_door.from,to:lr.back_door.to,sill:loungeFloor,head:loungeFloor+lr.back_door.h,kind:lr.back_door.kind,frame:lr.back_door.frame,leaves:lr.back_door.leaves,stack:lr.back_door.stack,screens:lr.back_door.screens,swing:lr.back_door.swing}],M.white);
   wallRect(ext,4.92,lr.wall_outer_x,19.31,19.54,floor,low,
     [{from:lr.side_door[0],to:lr.side_door[1],sill:loungeFloor,head:loungeFloor+lr.slider_head,kind:'glassDoor',hinge:'end',frame:'whiteAlu'}],M.white);   // hinged on the west (left, from inside)
   // A raised roof can clear the wing and kitchen walls (plate 3.35): carry them up as parapets to meet it.

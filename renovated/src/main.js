@@ -11,7 +11,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'simple', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'simple', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -711,6 +711,7 @@ function poseDoor(door,t) {
   for(const pivot of door.children) {
     pivot.position.copy(pivot.userData.closedPosition);
     if(pivot.userData.slide) pivot.position.addScaledVector(pivot.userData.slide,t);
+    else if(pivot.userData.tilt) pivot.rotation[pivot.userData.tiltAxis]=pivot.userData.tilt*t;   // drop-down doors: oven, dishwasher
     else pivot.rotation.y=pivot.userData.swing*t;
   }
   door.updateWorldMatrix(true,true);
@@ -930,7 +931,7 @@ for (const [key, rangeId, numId] of RENO) {
 // front bedroom bed: none, queen or king
 // hall: open straight through (false), classic cased archway (true) or simple archway ('simple')
 const hallKey = v => v === 'simple' ? 'simple' : v ? 'classic' : 'open';
-for (const [key, id] of [['skylight', 'renoSkylight'], ['openingRaise', 'renoOpening'], ['kitchenTall', 'renoTall'], ['noPantry', 'renoNoPantry'], ['bedside', 'renoBedside'], ['whiteWoodwork', 'renoWhite'], ['creamExterior', 'renoCream'], ['bayHood', 'renoBayHood'], ['porchScreen', 'renoScreen'], ['sidePavers', 'renoPavers'], ['curtains', 'renoCurtains'], ['shutters', 'renoShutters']]) {
+for (const [key, id] of [['skylight', 'renoSkylight'], ['openingRaise', 'renoOpening'], ['kitchenTall', 'renoTall'], ['noPantry', 'renoNoPantry'], ['bedside', 'renoBedside'], ['whiteWoodwork', 'renoWhite'], ['creamExterior', 'renoCream'], ['bayHood', 'renoBayHood'], ['porchScreen', 'renoScreen'], ['sidePavers', 'renoPavers'], ['glassWall', 'renoGlassWall'], ['curtains', 'renoCurtains'], ['shutters', 'renoShutters']]) {
   $(id).checked = !!reno[key];
   $(id).addEventListener('change', () => {
     reno[key] = $(id).checked;
@@ -950,6 +951,7 @@ const PICKS = {
   lstyle: [() => reno.loungeStyle === 'fireplace' ? 'walnut' : reno.loungeStyle || 'standard', v => { reno.loungeStyle = v; }],
   tvu: [() => reno.tvUnit || 'white', v => { reno.tvUnit = v; }],
   ct: [() => reno.coffeeTable || 'round', v => { reno.coffeeTable = v; }],
+  bd: [() => reno.backDoors || 'current', v => { reno.backDoors = v; }],
   laundry: [() => reno.laundry, v => { reno.laundry = v; }],
   fbed: [() => reno.frontBed, v => { reno.frontBed = v; }],
   hall: [() => hallKey(reno.hallDoorway), v => { reno.hallDoorway = { open: false, classic: true, simple: 'simple' }[v]; }],
@@ -964,8 +966,9 @@ function renoSummary() {
   const pick = k => document.querySelector(`select[data-pick="${k}"]`);
   for (const [k, [get]] of Object.entries(PICKS)) pick(k).value = get();
   // the IKEA kitchen has its own integrated fridge and full-height units; the pantry spot goes with the pantry wall
-  const ikea = ['ikea', 'walnut', 'cream'].includes(reno.kitchenStyle);   // both built on the IKEA layout
+  const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
   pick('fridge').disabled = ikea; $('renoTall').disabled = ikea;
+  pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
   pick('fridge').querySelector('[value=pantry]').disabled = reno.noPantry;
   pick('laundry').querySelector('[value=pantry]').disabled = reno.fridge === 'pantry' || reno.noPantry;
   $('renoDtNote').textContent = note(cat.dining_tables?.[(reno.diningTable || 'oak').replace('Ext', '')]);
@@ -973,6 +976,9 @@ function renoSummary() {
   pick('tvu').disabled = reno.loungeStyle !== 'standard';   // the walnut + stone wall has its own run
   $('renoTvuNote').textContent = note(cat.tv_units?.[reno.tvUnit || 'white']);
   $('renoCtNote').textContent = note(cat.coffee_tables?.[reno.coffeeTable || 'round']);
+  const bd = cat.back_doors?.[reno.backDoors || 'current'];
+  $('renoBdNote').textContent = bd?._note || '';
+  $('renoBdLink').hidden = !bd?.url; if (bd?.url) $('renoBdLink').href = bd.url;   // the seller's listing, when we have it
 }
 if (!(reno.fridge in FRIDGE_SPOTS)) reno.fridge = 'none';
 $('renoIsland').checked = !!reno.island;
@@ -983,8 +989,8 @@ if (!['single', 'none'].includes(reno.kitchenDoor)) reno.kitchenDoor = 'double';
 $('renoIsland').addEventListener('change', () => { reno.island = $('renoIsland').checked; saveReno(); renoSummary(); rebuild(); });
 $('renoReset').addEventListener('click', () => {
   for (const [key] of RENO) setReno(key, RENO_DEFAULT[key] * 100, null, false);
-  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry });
-  $('renoSkylight').checked = reno.skylight; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise;
+  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current' });
+  $('renoSkylight').checked = reno.skylight; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise; reno.glassWall = RENO_DEFAULT.glassWall; $('renoGlassWall').checked = reno.glassWall;
   $('renoIsland').checked = reno.island;
   saveReno(); renoSummary(); rebuild();
 });
