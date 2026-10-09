@@ -966,9 +966,9 @@ function renoSummary() {
   const pick = k => document.querySelector(`select[data-pick="${k}"]`);
   for (const [k, [get]] of Object.entries(PICKS)) pick(k).value = get();
   // the IKEA kitchen has its own integrated fridge and full-height units; the pantry spot goes with the pantry wall
-  const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
+  const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss', 'glossL'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
   pick('fridge').disabled = ikea; $('renoTall').disabled = ikea;
-  pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
+  pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss', 'glossL'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
   pick('fridge').querySelector('[value=pantry]').disabled = reno.noPantry;
   pick('laundry').querySelector('[value=pantry]').disabled = reno.fridge === 'pantry' || reno.noPantry;
   $('renoDtNote').textContent = note(cat.dining_tables?.[(reno.diningTable || 'oak').replace('Ext', '')]);

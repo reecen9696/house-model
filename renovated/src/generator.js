@@ -1534,8 +1534,8 @@ export const FRIDGE_SPOTS = {
 };
 
 export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current' } = {}) {
-  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss') fridge = 'none';                          // the fridge is built into the tall run
-  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
+  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL') fridge = 'none';                          // the fridge is built into the tall run
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
   // wall's face to the kitchen's west wall, flush on the kitchen side. Options that live in the pantry fall back to none.
   if (noPantry) { if (fridge === 'pantry') fridge = 'none'; if (laundry === 'pantry' || laundry === true) laundry = 'none'; }
@@ -1659,11 +1659,13 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // Standard L: the walnut kitchen's L (tall units at the hall end, cooktop on the north wall, sink under the window on
   // the west return) rebuilt from stock carcass widths only, with fillers for the leftover (see K.std in the build).
   // 'stdWhite' is the same kitchen in white handleless fronts with a marble-look stone top
-  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand') {
-    Object.assign(K, { std: true, white: kitchenStyle !== 'std', sh: kitchenStyle === 'secondhand', ikea: false, walnut: false, cream: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.438], uppers_z: [1.503, 2.403], uppers_depth: 0.33, cooktop_x: [3.012, 3.612], sink_x: null, sink_y: [17.02, 17.82], dishwasher_x: null });
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'glossL') {
+    Object.assign(K, { std: true, white: kitchenStyle !== 'std', sh: kitchenStyle === 'secondhand' || kitchenStyle === 'glossL', gl: kitchenStyle === 'glossL', ikea: false, walnut: false, cream: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.438], uppers_z: [1.503, 2.403], uppers_depth: 0.33, cooktop_x: [3.012, 3.612], sink_x: null, sink_y: [17.02, 17.82], dishwasher_x: null });
     if (spec.renovation.island) Object.assign(spec.renovation.island, { x0: 2.06, x1: 3.16, y0: 16.75, y1: 17.6, stools: [[2.33, 17.56], [2.89, 17.56]] });
     // second-hand kitchen: its 927 wall cupboards and tall units top out at 2550 as in the listing photos
     if (K.sh) K.uppers_z = [1.623, 2.55];
+    // the gloss U's cupboards re-planned into the same L: its 700 wall cupboards and tall units top at 2230
+    if (K.gl) K.uppers_z = [1.53, 2.23];
   }
   // Second-hand gloss U (Marketplace, Oct 2026, ~2015, gloss white handleless, grey-veined quartz, Fisher & Paykel 900 oven
   // and 900 gas cooktop), placed as it stands, no recutting: the cooktop leg on the north wall with its 750 tall unit at the
@@ -2107,13 +2109,15 @@ export function buildHouse(spec) {
       // Every door and drawer opens (E / the door button in Walk): hollow white carcasses with things in them; doors swing
       // from the hinge side that keeps them clear of their neighbours, drawers slide out 450, the oven and dishwasher drop.
       const wy0 = K.run[2], wx = K.run[1], cd = 0.56, dt = 0.018, kz = 0.15, cz = 0.87, bz = 0.903, [uz0, uz1] = K.uppers_z, ud = K.uppers_depth;
-      const WH = K.white, tz1 = K.sh ? 2.55 : 2.4, ct = 0.016;                                                      // tall units' top, carcass board
+      const WH = K.white, tz1 = K.gl ? 2.23 : K.sh ? 2.55 : 2.4, ct = 0.016;                                                      // tall units' top, carcass board
       // 'walnut' is the front finish: walnut veneer, or white matt for the white kitchen
-      const walnut = WH ? (M.stdWhite || (M.stdWhite = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))
+      const walnut = K.gl ? (M.ghGloss || (M.ghGloss = new THREE.MeshStandardMaterial({ color: 0xf7f7f4, roughness: 0.1, metalness: 0.05 })))   // gloss white
+        : WH ? (M.stdWhite || (M.stdWhite = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))
         : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: 0xffffff })));
       const channel = WH ? (M.stdWhiteCh || (M.stdWhiteCh = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))   // the finger channel, white like the fronts
         : (M.wnChannel || (M.wnChannel = new THREE.MeshStandardMaterial({ color: 0x21150d, roughness: 0.85 })));
-      const laminate = K.sh ? (M.qStone || (M.qStone = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.22 })))   // Quantum Stone, plain white
+      const laminate = K.gl ? (M.ghQuartz || (M.ghQuartz = new THREE.MeshStandardMaterial({ map: marbleTexture(), roughness: 0.25, color: 0xe2e0dc })))   // its grey quartz
+        : K.sh ? (M.qStone || (M.qStone = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.22 })))   // Quantum Stone, plain white
         : WH ? (M.stdMarble || (M.stdMarble = new THREE.MeshStandardMaterial({ map: marbleTexture(true), roughness: 0.2, color: 0xffffff })))
         : (M.stdLaminate || (M.stdLaminate = new THREE.MeshStandardMaterial({ map: limestoneTexture(), roughness: 0.55 })));
       const TT = WH ? MARBLE_TILE : LIME_TILE;
@@ -2216,9 +2220,16 @@ export function buildHouse(spec) {
       // the burners clear of the tall side) | a standard 600 oven under a gas cooktop (not their Smeg) | 59 filler to the return's
       // fronts, so the oven door drops clear of them; the corner dead behind. West: filler 22 | its 998 drawers | the peninsula's
       // 390 drawers, 790 double-sink cupboard and 600 dishwasher | end panel 18. Bench assumed lowered from its 995 to 903.
-      const N = K.sh ? lay(K.run[0], [['panel', 18], ['fridge', 905], ['tall', 670], ['drawers', 450], ['oven', 600], ['fill', 59], ['void', 578]], 3280)
+      // K.gl, the second-hand gloss U (Oct 2026) re-planned into this L. North: end panel 18 | its fridge recess cut to 900
+      // with a 450 overhead | its 470 drawers | its 900 oven under its 900 gas cooktop | 414 corner front (its 322 corner
+      // door + 92 filler) | dead corner. West: filler 22 | two of the peninsula's drawer stacks, trimmed to 569 | its 290 door |
+      // its 750 sink pair (bowls 55 off the window's centre) | its 600 dishwasher | end panel 18. Its 750 and 1100 tall units
+      // and the peninsula's six cupboards are left over. Wall cupboards 700, tops at 2230 with its tall units.
+      const N = K.gl ? lay(K.run[0], [['panel', 18], ['fridge', 900], ['drawers', 470], ['oven', 900], ['fill', 414], ['void', 578]], 3280)
+        : K.sh ? lay(K.run[0], [['panel', 18], ['fridge', 905], ['tall', 670], ['drawers', 450], ['oven', 600], ['fill', 59], ['void', 578]], 3280)
         : lay(K.run[0], [['panel', 18], ['fridge', 600], ['pantry', 450], ['fill', 84], ['drawers', 450], ['oven', 600], ['corner', 900], ['void', 178]], 3280);
-      const R = K.sh ? lay(K.return[2], [['fill', 22], ['d998', 998], ['d390', 390], ['sink', 790], ['dw', 600], ['panel', 18]], 2818)
+      const R = K.gl ? lay(K.return[2], [['fill', 22], ['d569a', 569], ['d569b', 569], ['door', 290], ['sink', 750], ['dw', 600], ['panel', 18]], 2818)
+        : K.sh ? lay(K.return[2], [['fill', 22], ['d998', 998], ['d390', 390], ['sink', 790], ['dw', 600], ['panel', 18]], 2818)
         : lay(K.return[2], [['fill', 50], ['d450', 450], ['d900', 900], ['sink', 800], ['dw', 600], ['panel', 18]], 2818);
       const sinkCut = [wx - 0.5, wx - 0.1, R.sink[0] + 0.06, R.sink[1] - 0.06];
       // three drawers, 300 / 270 / 150 fronts: cutlery on top, tubs in the middle, pots at the bottom
@@ -2243,16 +2254,16 @@ export function buildHouse(spec) {
       if (K.sh) {
         // ---- end panel, fridge cavity (fridge not included: a stainless French-door stands in) and its two-door overhead ----
         B('N', ...N.panel, 0, cd + dt, 0, tz1, walnut);
-        { const [a0, a1] = N.fridge, oz = tz1 - 0.73, f0 = a0 + 0.015, f1 = a1 - 0.015, fm = (f0 + f1) / 2, fd = 0.68;
-          carc('N', a0, a1, oz, tz1, { d1: cd, zs: [oz + 0.36] });
+        { const [a0, a1] = N.fridge, oz = tz1 - (K.gl ? 0.45 : 0.73), fh = Math.min(1.79, oz - 0.01), f0 = a0 + 0.015, f1 = a1 - 0.015, fm = (f0 + f1) / 2, fd = 0.68;
+          carc('N', a0, a1, oz, tz1, { d1: cd, zs: K.gl ? [] : [oz + 0.36] });
           const pair = asmNew(); door('N', a0, (a0 + a1) / 2, oz, tz1, 'a0', { asm: pair }); door('N', (a0 + a1) / 2, a1, oz, tz1, 'a1', { asm: pair });
-          B('N', f0, f1, 0.04, fd - 0.02, 0.02, 1.79, st);                                                     // cabinet
-          B('N', f0, fm - 0.002, fd - 0.02, fd, 0.78, 1.79, st); B('N', fm + 0.002, f1, fd - 0.02, fd, 0.78, 1.79, st);   // French doors
+          B('N', f0, f1, 0.04, fd - 0.02, 0.02, fh, st);                                                     // cabinet
+          B('N', f0, fm - 0.002, fd - 0.02, fd, 0.78, fh, st); B('N', fm + 0.002, f1, fd - 0.02, fd, 0.78, fh, st);   // French doors
           B('N', f0, f1, fd - 0.02, fd, 0.04, 0.765, st);                                                      // freezer drawer
           for (const x of [fm - 0.03, fm + 0.025]) B('N', x, x + 0.012, fd, fd + 0.03, 0.95, 1.45, M.metal);
           B('N', f0 + 0.08, f1 - 0.08, fd, fd + 0.03, 0.68, 0.695, M.metal);
           B('N', f0 + 0.02, f1 - 0.02, 0.06, fd - 0.04, 0, 0.02, M.frameA); }
-        { // ---- tall bank, 670: two doors wide, low doors to just over the bench line and tall ones above, shelves of jars ----
+        if (N.tall) { // ---- tall bank, 670: two doors wide, low doors to just over the bench line and tall ones above, shelves of jars ----
           const [a0, a1] = N.tall, m = (a0 + a1) / 2, sz = 0.95;
           carc('N', a0, a1, kz, tz1, { zs: [0.55, sz, 1.3, 1.65, 2.0, 2.3] });
           for (const z of [sz, 1.3, 1.65, 2.0]) { jars('N', a0 + ct, a1 - ct, z + ct, 0.18); tins('N', a0 + ct, a1 - ct, z + ct, 0.42); }
@@ -2315,7 +2326,8 @@ export function buildHouse(spec) {
       }
       // ---- west return: filler, drawers, sink under the window, dishwasher, end panel ----
       face(SB, 'W', wy0 + cd, R.fill[1], kz, cz, cd, false);                                            // return filler, run back to the north run's fronts so the corner is closed
-      if (K.sh) { drawers3('W', ...R.d998); drawers3('W', ...R.d390); } else { drawers3('W', ...R.d450); drawers3('W', ...R.d900); }
+      if (K.gl) { drawers3('W', ...R.d569a); drawers3('W', ...R.d569b); carc('W', ...R.door, kz, cz, { zs: [0.5] }); door('W', ...R.door, kz, cz, 'a0', { chan: false }); }
+      else if (K.sh) { drawers3('W', ...R.d998); drawers3('W', ...R.d390); } else { drawers3('W', ...R.d450); drawers3('W', ...R.d900); }
       { // sink: two doors hinged at the outer edges, opening as a pair; the bowls' wastes and trap, a bin, cleaning things
         const [a0, a1] = R.sink, m = (a0 + a1) / 2, sm = (sinkCut[2] + sinkCut[3]) / 2;
         carc('W', a0, a1, kz, cz, { top: false });
@@ -2337,15 +2349,15 @@ export function buildHouse(spec) {
       }
       B('W', ...R.panel, 0, cd + dt, 0, cz, walnut);
       // kick, set back 50, along both runs
-      if (K.sh) B('N', N.tall[0], N.fill[1], 0.04, cd - 0.05, 0, kz, kickMat); else B('N', N.fridge[0], wx, 0.04, cd - 0.05, 0, kz, kickMat);
+      if (K.sh) B('N', (N.tall || N.drawers)[0], N.fill[1], 0.04, cd - 0.05, 0, kz, kickMat); else B('N', N.fridge[0], wx, 0.04, cd - 0.05, 0, kz, kickMat);
       B('W', wy0 + cd, R.dw[1], 0.04, cd - 0.05, 0, kz, kickMat);
       // tops, 33 thick, 600 deep: the north top runs into the corner, the return's meets it
-      surfUV(B('N', K.sh ? N.tall[1] : N.pantry[1], wx, 0, 0.6, cz, bz, laminate), TT);
+      surfUV(B('N', K.sh ? (N.tall || N.fridge)[1] : N.pantry[1], wx, 0, 0.6, cz, bz, laminate), TT);
       benchWithCut(int_, wx - 0.6, wx, K.return[2], R.panel[1], cz, bz, laminate, sinkCut, m => surfUV(m, TT));
       realSink(int_, ...sinkCut, bz, 2, 'y', { x: wx - 0.065, y: (sinkCut[2] + sinkCut[3]) / 2, face: '-x' });
       gasCooktop(int_, N.oven[0] + 0.02, N.oven[1] - 0.02, wy0 + 0.06, wy0 + 0.55, bz);
       // splashback in the top's stone: the north wall, and the west wall cut round the window
-      surfUV(B('N', K.sh ? N.tall[1] : N.pantry[1], wx, 0, 0.012, bz, uz0, laminate), TT);
+      surfUV(B('N', K.sh ? (N.tall || N.fridge)[1] : N.pantry[1], wx, 0, 0.012, bz, uz0, laminate), TT);
       { const ws = Win.W3_kitchen, y0 = wy0 + 0.012, y1 = R.panel[1];
         for (const [a, b, z0, z1] of [[y0, ws.y0, bz, uz0], [ws.y1, y1, bz, uz0], [ws.y0, ws.y1, bz, ws.sill]])
           if (b - a > 0.005 && z1 - z0 > 0.005) surfUV(B('W', a, b, 0, 0.012, z0, z1, laminate), TT); }
@@ -2359,14 +2371,16 @@ export function buildHouse(spec) {
       const ledUnder = (r, a0, a1) => B(r, a0 + 0.02, a1 - 0.02, ud - 0.03, ud - 0.01, uz0 - 0.006, uz0, led);
       if (!K.sh) { face(SB, 'N', ...N.fill, uz0, uz1, ud, false); B('N', ...N.fill, 0, ud, uz0, uz1, walnut); }   // 84 filler over the base filler
       wall('N', ...N.drawers, ['a0']); ledUnder('N', ...N.drawers);
-      { const [a0, a1] = N.oven, hz = K.sh ? bz + 0.78 : uz1 - 0.72, vz = hz + 0.04;   // second-hand: its cupboards top at 2550, so a taller one                                       // 600 rangehood space: a 720 cupboard with the
+      { const [a0, a1] = N.oven, hz = K.gl ? uz0 : K.sh ? bz + 0.78 : uz1 - 0.72, vz = hz + 0.04;   // second-hand: its cupboards top at 2550, so a taller one                                       // 600 rangehood space: a 720 cupboard with the
         carc('N', a0, a1, hz, uz1, { d1: ud });                                                          // slide-out hood in its base, 780 over the bench;
         scyl(0.075, uz1 - hz - 0.04, tint(0xb8bcbf), P('N', (a0 + a1) / 2, 0.15), hz + 0.02);              // its duct up through the cupboard
-        door('N', a0, a1, vz, uz1, 'a0', { d: ud, chan: false });
-        surfUV(B('N', a0, a1, 0, 0.012, uz0, hz, laminate), TT);                                       // splashback on up behind the hood
+        if (K.gl) { const pr = asmNew(); door('N', a0, (a0 + a1) / 2, vz, uz1, 'a0', { d: ud, chan: false, asm: pr }); door('N', (a0 + a1) / 2, a1, vz, uz1, 'a1', { d: ud, chan: false, asm: pr }); }   // its pair of 445s, hood under
+        else door('N', a0, a1, vz, uz1, 'a0', { d: ud, chan: false });
+        if (hz > uz0) surfUV(B('N', a0, a1, 0, 0.012, uz0, hz, laminate), TT);                                       // splashback on up behind the hood
         B('N', a0 + 0.004, a1 - 0.004, ud - 0.01, ud + dt + 0.01, hz, vz, st);                         // visor
         B('N', a0 + 0.04, a1 - 0.04, 0.03, ud - 0.04, hz - 0.002, hz, M.frameA); }                     // filter
-      if (K.sh) { B('N', N.oven[1], wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', N.oven[1], wx - ud, uz0, uz1, ud, false); }   // filler on to the west cupboards
+      if (K.gl) { const c1 = N.oven[1] + 0.445; wall('N', N.oven[1], c1, ['a1']); B('N', c1, wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false); }   // a 445, filler to the west cupboards
+      else if (K.sh) { B('N', N.oven[1], wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', N.oven[1], wx - ud, uz0, uz1, ud, false); }   // filler on to the west cupboards
       else { const c0 = N.corner[0], c1 = c0 + 0.6;                                                           // 600 hinged on the corner side, then a 148
         wall('N', c0, c1, ['a1']); ledUnder('N', c0, c1);                                                // filler to the west run's face
         B('N', c1, wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false); }
@@ -2376,7 +2390,7 @@ export function buildHouse(spec) {
         B('W', wy0, w0, 0, ud, uz0 - dt, uz0, walnut);                                                    // the dead corner's underside, closed
         // plasterboard bulkhead from the cupboard tops to the ceiling, flush with the fronts: deeper over the tall units
         const ceil = 2.8, bh_ = M.ceiling;
-        const tallEnd = K.sh ? N.tall[1] : N.fill[0];
+        const tallEnd = K.sh ? (N.tall || N.fridge)[1] : N.fill[0];
         B('N', N.panel[0], tallEnd, 0, cd + dt, tz1, ceil, bh_);
         B('N', tallEnd, wx, 0, ud + dt, uz1, ceil, bh_);
         B('W', wy0 + ud + dt, t1, 0, ud + dt, uz1, ceil, bh_); }
@@ -2754,7 +2768,7 @@ export function buildHouse(spec) {
       if (x >= rx0 - 0.1 && x <= rx1) {
         let d = K.uppers_depth;
         if (K.ikea) { if (x < rx0 + 1.85) d = 0.6; if (x > rx1 - 0.72) d = 0.67; }
-        if (K.std && x < rx0 + (K.sh ? 1.6 : 1.1)) d = K.sh ? 0.7 : 0.6;                                     // the fridge and pantry
+        if (K.std && x < rx0 + (K.gl ? 0.92 : K.sh ? 1.6 : 1.1)) d = K.sh ? 0.7 : 0.6;                                     // the fridge and pantry
         const fr = spec.renovation.fridge;
         if (fr && ((x >= fr.x0 - 0.05 && x <= fr.x1 + 0.05) || (fr.pantry && x >= fr.pantry[0] - 0.05 && x <= fr.pantry[1] + 0.05))) d = Math.max(d, fr.y1 - ry0);
         y = Math.max(y, ry0 + d + 0.4);
