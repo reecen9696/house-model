@@ -1869,6 +1869,9 @@ function lamp(group, BL, room, x, y, z0, kind = 'table', layer = 'kLamp') {
 // painted robe joinery (white), door with a raised moulded panel inset 70, small round silver knob
 const ROBE_KICK = 0.1;
 const robePaint = () => M.robeWhite || (M.robeWhite = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.45 }));
+// the front bedroom bed's centre line (lot y): centred between the bay wall and the robe, then 200 toward the bay
+// (client 2026-10-21); everything aligned to the bed (split system, wall-wash, reading spots, the art pair) uses it
+const frontBedY = sp => { const r = sp.rooms.find(q => q.name === 'Front bedroom'); return (r.y0 + sp.fixtures.robe_front.y0) / 2 - 0.2; };
 function robeDoor(int_, x0, x1, yf, z0, z1) {
   const p = robePaint(), t = 0.018, m = Math.min(0.07, (x1 - x0) / 5), b = 0.016, d = 0.006, yo = yf - t;
   box(int_, x0, x1, yo, yf, z0, z1, p);                                                       // slab
@@ -2833,10 +2836,18 @@ export function buildHouse(spec) {
     const n = Math.round((r.x1 - r.x0) / 0.6), w = (r.x1 - r.x0) / n, rail = Math.min(2.08, r.z1 - 0.62);   // overhead doors ~0.4 x the long ones (photo)
     for (let i = 0; i < n; i++) {
       const x0 = r.x0 + i * w + 0.0015, x1 = r.x0 + (i + 1) * w - 0.0015;
-      robeDoor(int_, x0, x1, r.y0, ROBE_KICK, rail);                                          // tall door
-      robeDoor(int_, x0, x1, r.y0, rail + 0.012, r.z1);                                       // overhead door
       const single = n % 2 === 1 && i === n - 1, kx = single ? x0 + 0.05 : i % 2 === 0 ? x1 - 0.05 : x0 + 0.05;
-      robeKnob(int_, kx, r.y0, 1.1); robeKnob(int_, kx, r.y0, rail + 0.1);
+      // the doors open (Walk: face them and press E; client 2026-10-21): the tall and overhead door of each column on one
+      // assembly, each hinged on the edge away from its knob, swinging ~100 degrees out into the room
+      const hx = kx > (x0 + x1) / 2 ? x0 : x1, assembly = new THREE.Group(); assembly.userData.operable = true; assembly.userData.open = false; int_.add(assembly);
+      for (const [z0, z1, kz] of [[ROBE_KICK, rail, 1.1], [rail + 0.012, r.z1, rail + 0.1]]) {
+        const pivot = new THREE.Group(); pivot.position.copy(L(hx, r.y0 - 0.018, 0));
+        const leaf = new THREE.Group(); leaf.position.copy(pivot.position).negate(); pivot.add(leaf);
+        robeDoor(leaf, x0, x1, r.y0, z0, z1); robeKnob(leaf, kx, r.y0, kz);
+        leaf.traverse(o => { if (o.isMesh) o.userData.door = true; });
+        pivot.userData.closedPosition = pivot.position.clone(); pivot.userData.swing = (hx === x0 ? -1 : 1) * 1.75;
+        assembly.add(pivot);
+      }
     }
   }
   // --- front bedroom: sheer curtains across the bay end (Reno sheet's sheer curtains), on a ceiling track 220 in from
@@ -2887,7 +2898,7 @@ export function buildHouse(spec) {
     };
     const KW50 = [0.316, 0.997, 0.227], KW35 = [0.316, 0.94, 0.224], KW25 = [0.294, 0.881, 0.194];
     const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2'), b3 = spec.rooms.find(r => r.name === 'Bedroom 3');
-    split(fr.x1, (fr.y0 + F.robe_front.y0) / 2, -1, 0, KW35, 2.65, 'Front bedroom');
+    split(fr.x1, frontBedY(spec), -1, 0, KW35, 2.65, 'Front bedroom');
     const w1 = Win.W1_bed2; split(b2.x1, (w1.y1 + 0.07 + F.robe_bed2.y0) / 2, -1, 0, KW25, 2.65, 'Bedroom 2');
     if (b3) { const w2 = Win.W2_living; split(b3.x1, (w2.y0 + w2.y1) / 2, -1, 0, KW25, w2.head + 0.075 + 0.08 + 0.05 + KW25[0], 'Bedroom 3'); }   // clear of the roller blind's cassette over the architrave
     { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen;
@@ -2936,7 +2947,7 @@ export function buildHouse(spec) {
       // front bedroom on the hall wall, 0.8 m off it on the bed's centre line (past the foot of the bed); bedroom 2's
       // bed faces the robe, so its one goes on the robe's centre, 0.8 m out from the doors (over the foot of the bed)
       const T = Math.tan(35 * Math.PI / 180);
-      spot(fr.x0 + 0.8, (fr.y0 + F.robe_front.y0) / 2, -T, 0, 'Front bedroom', 'wallwash', 600, 'wash');
+      spot(fr.x0 + 0.8, frontBedY(spec), -T, 0, 'Front bedroom', 'wallwash', 600, 'wash');
       spot((F.robe_bed2.x0 + F.robe_bed2.x1) / 2, F.robe_bed2.y0 - 0.8, 0, T, 'Bedroom 2', 'wallwash', 500, 'wash');
     }
     if (spec.renovation.bed_lights === 'pendantSheer') {
@@ -2977,7 +2988,7 @@ export function buildHouse(spec) {
       }
     }
     // aim: from the spot to a book about 0.7 m out from the wall at 0.8 m, 0.35 m off the bed's centre line
-    if (spec.renovation.bed_lights === 'proposed') { const yc = (fr.y0 + F.robe_front.y0) / 2, x = fr.x1 - 0.45; for (const sg of [-1, 1]) spot(x, yc + sg * 0.6, (fr.x1 - 0.7 - x) / 2.35, -sg * 0.25 / 2.35, 'Front bedroom'); }
+    if (spec.renovation.bed_lights === 'proposed') { const yc = frontBedY(spec), x = fr.x1 - 0.45; for (const sg of [-1, 1]) spot(x, yc + sg * 0.6, (fr.x1 - 0.7 - x) / 2.35, -sg * 0.25 / 2.35, 'Front bedroom'); }
     if (spec.renovation.bed_lights === 'proposed') { const xc = (b2.x0 + b2.x1) / 2 + 0.05, y = b2.y0 + 0.45; for (const sg of [-1, 1]) spot(xc + sg * 0.6, y, -sg * 0.25 / 2.35, (b2.y0 + 0.7 - y) / 2.35, 'Bedroom 2'); }
     // robe top: aluminium channel at the back, tilted 45 degrees up and out into the room (washes the ceiling and
     // cornice, can't be seen from the floor); and a strip under the doors aimed down at the floor for getting up at night
@@ -3109,7 +3120,7 @@ export function buildHouse(spec) {
     // 6. front bedroom, the hall wall you see from the bed: a calm pair, 800 x 1000 each, 100 apart, centred on the
     //    bed's line, centre 1.50, hung flush on the wall from two D-rings each on plugged screws in the brick (client
     //    2026-10-21: no chains or cords from the picture rail in this room)
-    const fb = rm('Front bedroom'), byc = (fb.y0 + F.robe_front.y0) / 2, fx = fb.x0;
+    const fb = rm('Front bedroom'), byc = frontBedY(spec), fx = fb.x0;
     [-0.45, 0.45].forEach((dy, i) => {
       const yc = byc + dy;
       hangArt(int_, 'x', fx, 1, yc, fb.floor + 1.5, 0.8, 1.0, artTex(14 + i, 'calm', 0.75 / 0.95), { depth: 0.035 });
@@ -4385,7 +4396,7 @@ export function buildHouse(spec) {
   // space between the bay wall and the built-in
   if (spec.renovation.front_bed) {
     const FB = spec.renovation.front_bed, rm = spec.rooms.find(r => r.name === 'Front bedroom');
-    placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson', 'cloud'), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
+    placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson', 'cloud'), 'west', rm.x1, frontBedY(spec));
   }
   // bedroom 2: the west wall has the window and the south wall is all robe, so the headboard goes on the north wall,
   // with the foot 690 short of the robe doors. The hall door swings in across the foot corner, so the bed sits 50 west
