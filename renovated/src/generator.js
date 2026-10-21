@@ -1806,6 +1806,22 @@ function switchPlate(group, along, face, inward, u, z, gangs = 1, { dim = 0, lab
     } else b(0.01, 0.014, uc - Math.min(0.012, cw / 2 - 0.003), uc + Math.min(0.012, cw / 2 - 0.003), zc - rh / 2 + 0.002, zc + rh / 2 - 0.002, rock);
   }
 }
+// Power point (AU double GPO, e.g. Clipsal Iconic horizontal: ~120 x 75, 10 proud): two 3-pin outlets, each with its
+// rocker; kind 'phone': a small single plate with one RJ socket. Same wall conventions as switchPlate.
+function gpoPlate(group, along, face, inward, u, z, kind = 'double') {
+  const plate = M.swPlate || (M.swPlate = new THREE.MeshStandardMaterial({ color: 0xf6f6f3, roughness: 0.35 }));
+  const rock = M.swRock || (M.swRock = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+  const slot = M.gpoSlot || (M.gpoSlot = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6 }));
+  const b = (d0, d1, u0, u1, z0, z1, m) => { const p0 = face + inward * d0, p1 = face + inward * d1, lo = Math.min(p0, p1), hi = Math.max(p0, p1);
+    along === 'x' ? box(group, u0, u1, lo, hi, z0, z1, m) : box(group, lo, hi, u0, u1, z0, z1, m); };
+  if (kind === 'phone') { b(0.001, 0.01, u - 0.035, u + 0.035, z - 0.057, z + 0.057, plate); b(0.01, 0.012, u - 0.008, u + 0.008, z - 0.012, z + 0.002, slot); return; }
+  b(0.001, 0.01, u - 0.06, u + 0.06, z - 0.0375, z + 0.0375, plate);
+  for (const s of [-1, 1]) {
+    const c = u + s * 0.03;
+    for (const [du, dz, w, h] of [[-0.009, 0.004, 0.003, 0.011], [0.009, 0.004, 0.003, 0.011], [0, -0.011, 0.003, 0.01]]) b(0.01, 0.0115, c + du - w / 2 - (s < 0 ? 0.006 : 0), c + du + w / 2 - (s < 0 ? 0.006 : 0), z + dz - h / 2, z + dz + h / 2, slot);   // the three pins
+    b(0.01, 0.014, c + (s < 0 ? 0.017 : 0.012) - 0.005, c + (s < 0 ? 0.017 : 0.012) + 0.005, z - 0.012, z + 0.012, rock);   // its rocker
+  }
+}
 // Roller blind face-fixed on the wall above an opening (client 2026-10-21): a white cassette (h tall, 80 deep) on the wall
 // just above the head, white blockout fabric 100 wider than the opening each side, rolled up (only the bottom bar shows). along: 'x' or
 // 'y' (the wall runs along lot x or y), face: the wall's room face, inward: +1/-1 toward the room
@@ -4487,6 +4503,15 @@ export function buildHouse(spec) {
     sw('Lounge / living', 'y', 4.69, -1, 18.95, 1, 2, 'pelmet wash + skylight (dimmer); TV wall lights (dimmer); joinery glow');
     // bathroom: outside, on the kitchen side of the bath door's latch (inside, the room ends at the latch jamb): light + fan
     sw('Bath', 'x', 18.88, -1, 2.12, 2, 0, 'bathroom light; exhaust fan (run-on timer)');
+  }
+  // --- power points found on site (photo and video survey 2026-10-21, POWER-POINTS.md): the ones that survive the
+  // renovation, at the height they sit now (on or just above the skirting). Positions along the wall are +-0.2-0.4 m.
+  {
+    const GP = spec.renovation.gpos = [];
+    const gp = (room, along, face, inward, u, z, kind, note) => { gpoPlate(int_, along, face, inward, u, z, kind); GP.push({ room, along, face, u, z, kind, note }); };
+    gp('Front bedroom', 'y', H.x_west_inner, -1, 6.4, 0.3, 'double', 'west wall, ~1 m north of the robe: behind the south bedside');
+    gp('Bedroom 3', 'y', H.x_west_inner, -1, 13.75, 0.2, 'double', 'old living west wall, just south of W2 (the gas heater beside it goes)');
+    gp('Bedroom 3', 'y', H.x_west_inner, -1, 12.9, 0.16, 'phone', 'old living, under W2 at the skirting (low confidence: may be a loose adapter)');
   }
   // --- lounge roller blinds above the big glazing (client 2026-10-21): the west glass wall and the rear sliders
   {
