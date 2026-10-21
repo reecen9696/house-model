@@ -2044,6 +2044,9 @@ function glowTexture(kind) {                                               // in
     } else if (kind === 'strip') {                                         // a linear wash from the base, fading up, soft at both ends
       const ends = sm(Math.min(1, u / 0.08)) * sm(Math.min(1, (1 - u) / 0.08));
       a = ends * sm(Math.min(1, v / 0.05)) * Math.exp(-v * 2.6) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
+    } else if (kind === 'tall') {                                          // a full-height wash: brightest low, still well lit at the top
+      const ends = sm(Math.min(1, u / 0.06)) * sm(Math.min(1, (1 - u) / 0.06));
+      a = ends * (0.5 + 0.5 * Math.exp(-v * 2)) * sm(Math.min(1, v / 0.04)) * (1 - sm(Math.max(0, (v - 0.85) / 0.15)));
     } else {                                                               // a soft ambient pool
       const x = (u - 0.5) * 2, y = (v - 0.5) * 2, r2 = x * x + y * y;
       a = Math.exp(-r2 * 3.2) * (1 - sm(Math.min(1, Math.max(0, (Math.sqrt(r2) - 0.75) / 0.25))));
@@ -5526,7 +5529,7 @@ export function buildHouse(spec) {
         const jy0 = Math.min(...LgW.map(w => w.y0)) - 1.0, jy1 = Math.max(...LgW.map(w => w.y1)) + 1.0, jz = rz, jf = wf - 0.12;
         box(G.site, jf - 0.025, jf, jy0 + 0.05, jy1 - 0.05, jz, jz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
         box(G.site, jf - 0.02, jf - 0.005, jy0 + 0.05, jy1 - 0.05, jz + 0.02, jz + 0.023, bedGlow('lGarden'));
-        wallFace(G.site, 'x', wf - 0.16, -1, (jy0 + jy1) / 2, jz + 0.95, jy1 - jy0, 1.9, glowMat('strip', 0.85));
+        wallFace(G.site, 'x', wf - 0.3, -1, (jy0 + jy1) / 2, jz + 1.0, jy1 - jy0, 2.0, glowMat('tall', 1.25));   // in front of the vines, so the leaves read lit, not silhouetted (client)
       }
       // the side path by the kitchen: recessed uplights in the bistro deck beside the fence, and spike uplights in the
       // planted bed further north, grazing the white palings
