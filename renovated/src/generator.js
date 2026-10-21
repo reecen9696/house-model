@@ -1540,6 +1540,16 @@ function bedPendant(int_, BL, room, x, y, zc, style = 'augustOval', zb = 2.35, l
     BL.points.push({ room, layer, kind: 'down', x, y, z: zb + 0.02, lm: 900 });
     return;
   }
+  if (style === 'woven') {
+    // natural rattan bell, ~350 across x 300 high (moodboard hall photos): a dense weave that glows warm and lets light
+    // out all round, softly dappled; ~700 lm out of a 1,000 lm lamp
+    const h = 0.3, prof = [[0.03, h], [0.06, h - 0.01], [0.11, h - 0.08], [0.15, h - 0.18], [0.172, h - 0.26], [0.175, 0]].map(([r, y]) => new THREE.Vector2(r, y));
+    const mat = M.weave || (M.weave = (() => { const m = bedGlow('hallPendant').clone(); const t = weaveTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xd8bf98); m.emissive.set(0xfff0dc); m.side = THREE.DoubleSide; m.userData.bedLamp = 'hallPendant'; m.userData.glowK = 0.55; return m; })());
+    const shade = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), mat); shade.position.copy(L(x, y, zb)); shade.castShadow = false; int_.add(shade);
+    canopy(0.1); cord(zb + h);
+    BL.points.push({ room, layer, kind: 'omni', x, y, z: zb + 0.14, lm: 700 });
+    return;
+  }
   const [w, h] = style === 'augustRound' ? [0.3, 0.29] : style === 'globe' ? [0.4, 0.4] : [0.4, 0.24];
   const zcen = zb + h / 2, glass = new THREE.Mesh(new THREE.SphereGeometry(0.5, 40, 24), bedGlow(layer));
   glass.scale.set(w, h, w); glass.position.copy(L(x, y, zcen)); glass.castShadow = false; int_.add(glass);
@@ -1559,6 +1569,96 @@ function robeDoor(int_, x0, x1, yf, z0, z1) {
 function robeKnob(int_, x, yf, z) {
   const k = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0125, 0.024, 16), M.knobSilver || (M.knobSilver = new THREE.MeshStandardMaterial({ color: 0xe4e6e8, roughness: 0.35, metalness: 0.35 })));
   k.rotation.x = Math.PI / 2; k.position.copy(L(x, yf - 0.018 - 0.012, z)); k.castShadow = false; int_.add(k);
+}
+// soft abstract painting (stand-in art): warm earthy fields in the moodboard's palette, seeded per piece
+function artTexture(seed) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 320; const g = c.getContext('2d');
+  let r = seed * 9301 + 49297; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  const pal = [['#e9dccb', '#c98f6b', '#8a6a52', '#d9b8a0', '#f3ece2'], ['#eee6da', '#b98a7a', '#7d8a7a', '#d8c3a5', '#a46c55'], ['#f0e8dc', '#9fa9a0', '#c7a57e', '#6f5a4c', '#e2cbb5']][(seed - 1) % 3];
+  g.fillStyle = pal[0]; g.fillRect(0, 0, 256, 320);
+  for (let i = 0; i < 26; i++) { g.globalAlpha = 0.25 + rnd() * 0.45; g.fillStyle = pal[1 + Math.floor(rnd() * 4)]; g.beginPath(); g.ellipse(rnd() * 256, rnd() * 320, 20 + rnd() * 90, 8 + rnd() * 40, rnd() * 3, 0, 7); g.fill(); }
+  g.globalAlpha = 1; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+// --- plaster cornices and roses (site photos: Downloads/circle.jpeg, the hall photos of Sep 25) -----------------------
+// Profiles are [o, t] pairs: o out from the wall into the room, t down from the ceiling, listed from the wall end to the
+// ceiling end. 'ornate' (entry, hall, bedrooms 2 and 3): a lip on the wall, a deep cove, then a raised band on the
+// ceiling carrying a running leaf garland (a relief map, not geometry) and a bead on its outer edge: ~140 on the
+// ceiling, ~120 down the wall. 'plain' (front bedroom, with its picture rail): a smaller moulded cove, no enrichment.
+const arcPts = (co, ct, ro, rt, n = 8) => Array.from({ length: n + 1 }, (_, i) => { const a = Math.PI / 2 * i / n; return [co - ro * Math.cos(a), ct - rt * Math.sin(a)]; });
+const CORNICE = {
+  ornate: { cove: [[0, 0.12], [0.012, 0.12], [0.014, 0.11], ...arcPts(0.062, 0.11, 0.048, 0.075).slice(1), [0.066, 0.035], [0.068, 0.024]],
+            band: [[0.068, 0.024], [0.082, 0.027], [0.095, 0.028], [0.108, 0.027], [0.122, 0.024]],
+            bead: [[0.122, 0.024], [0.129, 0.026], [0.136, 0.021], [0.14, 0.01], [0.142, 0]] },
+  plain: { cove: [[0, 0.09], [0.01, 0.09], [0.012, 0.08], ...arcPts(0.05, 0.08, 0.038, 0.05).slice(1), [0.055, 0.03], [0.057, 0.02], [0.075, 0.02], [0.081, 0.016], [0.085, 0.008], [0.086, 0]] },
+};
+function corniceMats() {
+  const base = M.ceiling;
+  M.cornice = M.cornice || (() => { const m = base.clone(); m.side = THREE.DoubleSide; return m; })();
+  M.corniceOrn = M.corniceOrn || (() => { const m = M.cornice.clone(); m.bumpMap = garlandTexture(); m.bumpScale = 1.5; m.map = garlandTexture(true); return m; })();
+}
+// running leaf garland, as a height map: a waving stem with paired leaves and small berries; one repeat = 160 mm
+// (shade = true: the same garland as a colour map, white on white with faint soft shadows, so the relief reads under
+// any light while the plaster stays white like the rest of the cornice)
+function garlandTexture(shade = false) {
+  const c = document.createElement('canvas'); c.width = 384; c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = shade ? '#ffffff' : '#606060'; g.fillRect(0, 0, 384, 128); g.filter = 'blur(2px)';
+  if (shade) { g.shadowColor = 'rgba(120,110,100,0.28)'; g.shadowBlur = 5; g.shadowOffsetY = 3; }
+  g.strokeStyle = shade ? '#ffffff' : '#b0b0b0'; g.lineWidth = 7; g.beginPath();
+  for (let x = 0; x <= 384; x += 4) { const y = 64 + 18 * Math.sin(x / 384 * Math.PI * 4); x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  for (let k = 0; k < 8; k++) {
+    const x = 24 + k * 48, y = 64 + 18 * Math.sin(x / 384 * Math.PI * 4), up = k % 2 ? 1 : -1;
+    for (const [dx, ang] of [[-6, -0.5], [6, 0.5]]) { g.save(); g.translate(x + dx, y + up * 14); g.rotate(ang * up + (up > 0 ? Math.PI : 0)); g.fillStyle = shade ? '#ffffff' : '#e8e8e8'; g.beginPath(); g.ellipse(0, -10, 8, 20, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = shade ? '#f2f0ec' : '#9a9a9a'; g.fillRect(-1, -26, 2, 30); g.restore(); }
+    g.fillStyle = shade ? '#ffffff' : '#f0f0f0'; g.beginPath(); g.arc(x + 24, y - up * 16, 6, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; if (shade) t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+// one cornice run along a wall face: the wall line at 'line' (lot y if alongX, else x), from a to b along it, 'dir'
+// pointing into the room; each end mitred for an inside corner, or for an outside corner when aOut / bOut
+function corniceRun(group, alongX, line, a, b, dir, zc, kind = 'ornate', { aOut = false, bOut = false, scale = 1 } = {}) {
+  corniceMats();
+  const P = CORNICE[kind];
+  const sweep = (pts, mat) => {
+    pts = pts.map(([o, t]) => [o * scale, t * scale]);
+    const acc = [0]; for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const pos = [], uv = [], idx = [];
+    pts.forEach(([o, t], i) => {
+      const w = line + dir * o;
+      for (const u of [a + (aOut ? -o : o), b - (bOut ? -o : o)]) { const v = alongX ? L(u, w, zc - t) : L(w, u, zc - t); pos.push(v.x, v.y, v.z); uv.push(u / 0.16, acc[i] / acc[acc.length - 1]); }
+      if (i) { const k = 2 * i; idx.push(k - 2, k, k - 1, k - 1, k, k + 1); }
+    });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+    group.add(new THREE.Mesh(geo, mat));
+  };
+  sweep(P.cove, M.cornice);
+  if (P.band) { sweep(P.band, M.corniceOrn); sweep(P.bead, M.cornice); }
+}
+// ornate ceiling rose (entry, Downloads/circle.jpeg): ~750 across. Out from the centre: a domed boss, stepped rings, a
+// bead, a plain flat ring, then a wide outer band of radial leaves (acanthus-like) inside a small edge lip
+function ornateRose(group, x, y, zc, dia = 0.75) {
+  corniceMats();
+  const R = dia / 2, k = R / 0.375;
+  const prof = [[0, 0.075], [0.03, 0.073], [0.055, 0.066], [0.065, 0.055], [0.075, 0.05], [0.1, 0.05], [0.105, 0.042], [0.14, 0.04], [0.15, 0.034],
+    [0.175, 0.032], [0.185, 0.026], [0.2, 0.026], [0.215, 0.03], [0.23, 0.026], [0.24, 0.016], [0.3, 0.014], [0.305, 0.01], [0.365, 0.008], [0.372, 0.004], [0.375, 0]];
+  const lathe = new THREE.LatheGeometry(prof.map(([r, t]) => new THREE.Vector2(r * k, -t * k)), 64);
+  const m = new THREE.Mesh(lathe, M.cornice); m.position.copy(L(x, y, zc)); group.add(m);
+  for (const [r, t, tube, n] of [[0.208, 0.03, 0.007, 0], [0.16, 0.036, 0.005, 0]]) {   // beaded rings
+    const tor = new THREE.Mesh(new THREE.TorusGeometry(r * k, tube * k, 6, 64), M.cornice); tor.rotation.x = Math.PI / 2; tor.position.copy(L(x, y, zc - t * k)); group.add(tor);
+  }
+  const leaf = new THREE.SphereGeometry(1, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+  for (let i = 0; i < 36; i++) {                                         // the leaf band: 36 leaves, each with a smaller one between
+    for (const [r, len, wid, ht, off] of [[0.335, 0.034, 0.016, 0.016, 0], [0.338, 0.022, 0.009, 0.011, 0.5]]) {
+      const a = (i + off) / 36 * Math.PI * 2, lm = new THREE.Mesh(leaf, M.cornice);
+      lm.scale.set(wid * k, ht * k, len * k); lm.rotation.set(Math.PI, 0, 0); lm.rotateY(-a);
+      lm.position.copy(L(x, y, zc - 0.009 * k)).add(new THREE.Vector3(Math.sin(a) * r * k, 0, Math.cos(a) * r * k)); group.add(lm);
+    }
+  }
+}
+// rattan weave: warm cane strands over-and-under with small gaps (the gaps glow through the emissive map)
+function weaveTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#3a2a18'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) { const over = (i + j) % 2; g.fillStyle = over ? '#e3c08a' : '#c99d62'; g.fillRect(i * 8 + (over ? 0 : 1), j * 8 + (over ? 1 : 0), over ? 8 : 6, over ? 6 : 8); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 4); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 function dlFitting() {
   const g = new THREE.Group();
@@ -1607,7 +1707,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'rail' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'woven' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -1783,7 +1883,9 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   b2.floor = spec.levels.slab + floorBuildup;
   b2.ceil = b2Top - b2.floor;
   // hall: false = opened straight through, true = classic cased archway, 'simple' = tall opening with plain wide white casing
-  spec.renovation.hall_doorway = hallDoorway === 'simple' ? 'simple' : !!hallDoorway;
+  // hall end: 'door' = the original living-room doorway kept at its size and place (x 0.20-0.92, head 2.05), a plain
+  // cased opening with no door; 'simple' / true = wider archways; false = open right through
+  spec.renovation.hall_doorway = ['simple', 'door', 'arch'].includes(hallDoorway) ? hallDoorway : !!hallDoorway;
   spec.renovation.no_pantry = !!noPantry;
   spec.renovation.tv_unit = ['rimowar', 'capello', 'archie'].includes(tvUnit) ? tvUnit : 'white';
   spec.renovation.coffee_table = ['monolith', 'matched'].includes(coffeeTable) ? coffeeTable : 'round';
@@ -1814,11 +1916,18 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // the robes stop well short of the ceiling in every version, with the LED strip in the gap on top. Front robe photo
   // (Downloads/33.jpeg): against the side wall's cornice the top is about 0.4-0.5 m below the cornice, so about 2.55
   // (0.6 under the ceiling); bedroom 2's robe assumed the same. To be measured
-  // hall: 'rail' = a pendant back on the entry rose + an LED uplight on a picture rail down both walls; 'downlights' = the
-  // earlier flush row down the centre
-  spec.renovation.hall_lights = hallLights === 'downlights' ? 'downlights' : 'rail';
+  // hall: 'art' = a pendant back on the entry rose + three paintings on the long party wall, each lit by its own
+  // adjustable spot; 'downlights' = the earlier flush row down the centre. (A picture-rail uplight was tried and dropped:
+  // the hall has no rail and it added a line that isn't there.)
+  spec.renovation.hall_lights = hallLights === 'downlights' ? 'downlights' : 'art';
+  // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
+  spec.renovation.hall_pendant = ['woven', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'woven';
   spec.renovation.pendant_style = ['augustOval', 'augustRound', 'pipete', 'globe'].includes(pendant) ? pendant : 'augustOval';
+  // bedroom 3's robe (the full south wall, drawn from fixed numbers before) joins the same treatment as the front two
+  spec.fixtures.robe_bed3 = { x0: 1.43, x1: 4.67, y0: 14.31, y1: 14.89, z1: 2.55 };
   for (const k of ['robe_front', 'robe_bed2']) spec.fixtures[k].z1 = 2.55;
+  // the split systems replace the ducted gas heating: its floor grille in the entry comes out (patched with matching boards)
+  spec.fixtures.floor_vents = [];
   // front bedroom: the open shelving beside the robe narrows from 1.02 to 450 and the robe takes the rest (more
   // cupboard): robe 2.66 wide, four doors
   { const F = spec.fixtures; F.shelves_front.x1 = F.shelves_front.x0 + 0.45; F.robe_front.x0 = F.shelves_front.x1; }
@@ -2033,13 +2142,68 @@ export function buildHouse(spec) {
     { from: D.bed2.y0, to: D.bed2.y1, sill: 0, head: D.bed2.head, kind: 'door', swing: -1 }], M.intWall);
   wallRect(int_, hs.rear_wall_x0, H.x_west_inner, hs.step_y, hs.step_y + iw, 0, W.plate_z, [], M.intWall);   // bed1 / bed2, including the step's return
   // bed2+hall / bed3+hall extension; with the reno hall doorway off, the hall part comes out and the hall runs straight through
-  if (spec.renovation.hall_doorway !== false) {
+  if (spec.renovation.hall_doorway === 'arch') {
+    // 'arch' (default): the original doorway, widened a little, with a round arched head
+    // springing at its old head height (2.05), crown ~2.48, and period mouldings on both faces after the client's
+    // reference (Downloads/archway.jpeg, corbels removed): a flat casing band, a stepped outer band and a bead round the
+    // opening, carried down the jambs to plinth blocks. Painted white like the woodwork.
+    // widened to 860 clear and centred in the hall, as in the site photo (Downloads/arch.jpeg: the old doorway's architrave
+    // nearly fills the end wall)
+    const hl = spec.rooms.find(r => r.name === 'Hall'), cx = (hl.x0 + hl.x1) / 2, r = 0.43, ax0 = cx - r, ax1 = cx + r;
+    const zs = spec.doors.hall_living.head, crown = zs + r, y0 = 11.49, y1 = 11.60, T = y1 - y0;
+    wallRect(int_, W.party_half, H.x_west_inner, y0, y1, 0, W.plate_z, [{ from: ax0, to: ax1, sill: 0, head: crown, kind: 'opening', trim: false }], M.intWall);
+    const paint = M.archWhite || (M.archWhite = new THREE.MeshStandardMaterial({ color: 0xf6f5f1, roughness: 0.5 }));
+    // shapes are drawn in three.js X (= -lot x) and height, extruded along lot y (three Z)
+    const X = x => -x, seg = 40;
+    const extrude = (shape, ya, depth, mat) => { const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: seg }); const m = new THREE.Mesh(g, mat); m.position.set(0, 0, ya); int_.add(m); return m; };
+    // spandrels: fill the wall between the square opening and the arch, through the wall's thickness
+    for (const side of [-1, 1]) {
+      const sh = new THREE.Shape(), ex = side < 0 ? ax0 : ax1;
+      sh.moveTo(X(ex), zs); sh.lineTo(X(ex), crown); sh.lineTo(X(cx), crown);
+      sh.absarc(X(cx), zs, r, Math.PI / 2, side < 0 ? 0 : Math.PI, side < 0);   // three X runs opposite to lot x
+      extrude(sh, y0, T, M.intWall);
+    }
+    // half-annulus band from radius ri to ro, plus straight legs from the floor (or z0) to the spring line
+    const band = (ri, ro, depth, faceY, dir, z0 = 0) => {
+      const sh = new THREE.Shape();
+      sh.moveTo(X(cx - ro), z0); sh.lineTo(X(cx - ro), zs); sh.absarc(X(cx), zs, ro, 0, Math.PI, false);
+      sh.lineTo(X(cx + ro), z0); sh.lineTo(X(cx + ri), z0); sh.lineTo(X(cx + ri), zs); sh.absarc(X(cx), zs, ri, Math.PI, 0, true); sh.lineTo(X(cx - ri), z0);
+      extrude(sh, dir > 0 ? faceY : faceY - depth, depth, paint);
+    };
+    for (const [faceY, dir] of [[y0, -1], [y1, 1]]) {                 // hall face (out toward -y) and extension face (+y)
+      band(r, r + 0.075, 0.02, faceY, dir, 0.15);                      // flat casing, above the plinth block
+      band(r + 0.075, r + 0.1, 0.035, faceY, dir, 0.15);               // stepped outer band
+      const bead = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 10, seg, Math.PI), paint);   // bead at the opening's edge
+      bead.position.set(-cx, zs, faceY + dir * 0.01); int_.add(bead);
+      for (const sgn of [-1, 1]) {                                     // bead down the jambs, plinth blocks at the floor
+        const xj = cx + sgn * (r + 0.004);
+        box(int_, xj - 0.012, xj + 0.012, Math.min(faceY, faceY + dir * 0.022), Math.max(faceY, faceY + dir * 0.022), 0.15, zs, paint);
+        const xa = sgn < 0 ? cx - r - 0.11 : cx + r - 0.005, xb = sgn < 0 ? cx - r + 0.005 : cx + r + 0.11;
+        box(int_, xa, xb, Math.min(faceY, faceY + dir * 0.045), Math.max(faceY, faceY + dir * 0.045), 0, 0.15, paint);
+      }
+    }
+    box(int_, ax0, ax0 + 0.006, y0, y1, 0, zs, paint); box(int_, ax1 - 0.006, ax1, y0, y1, 0, zs, paint);   // painted jamb linings
+    // impost blocks where the arch springs (a moulded capital over each leg, stepped twice) and a keystone at the crown
+    for (const [faceY, dir] of [[y0, -1], [y1, 1]]) {
+      const fy = (d) => [Math.min(faceY, faceY + dir * d), Math.max(faceY, faceY + dir * d)];
+      for (const sgn of [-1, 1]) {
+        const xi = cx + sgn * r, xo = cx + sgn * (r + 0.105), [a0, a1] = [Math.min(xi, xo), Math.max(xi, xo)];
+        box(int_, a0 - 0.008, a1 + 0.008, ...fy(0.05), zs - 0.07, zs - 0.035, paint);
+        box(int_, a0 - 0.016, a1 + 0.016, ...fy(0.06), zs - 0.035, zs, paint);
+      }
+      const kw0 = 0.05, kw1 = 0.075, kh = 0.15, kz = zs + r - 0.004, ks = new THREE.Shape();   // tapered keystone
+      ks.moveTo(-cx - kw0 / 2, kz); ks.lineTo(-cx + kw0 / 2, kz); ks.lineTo(-cx + kw1 / 2, kz + kh); ks.lineTo(-cx - kw1 / 2, kz + kh); ks.closePath();
+      extrude(ks, dir > 0 ? faceY : faceY - 0.05, 0.05, paint);
+    }
+  } else if (spec.renovation.hall_doorway !== false) {
     // cased archway: a wide plastered opening with flat painted casings on both faces, a deeper head casing and a
     // small projecting cap moulding over it (reference: classic hallway cased opening, light warm grey trim)
     // 'simple': taller and wider, one plain flat white casing all round, no cap or plinth blocks
-    const simple = spec.renovation.hall_doorway === 'simple';
-    const inset = simple ? 0.08 : 0.12, ahead = simple ? 2.6 : 2.45, cw = simple ? 0.075 : 0.09, headH = simple ? cw : 0.14, ct = 0.02;
-    const ax0 = W.party_half + inset, ax1 = hs.rear_wall_x0 - inset;
+    // 'door': the original doorway (plan; site photo hallway2.jpeg): door-sized, square head, the same plain architrave
+    // as the other doors, no leaf
+    const doorSized = spec.renovation.hall_doorway === 'door', simple = spec.renovation.hall_doorway === 'simple' || doorSized;
+    const inset = simple ? 0.08 : 0.12, ahead = doorSized ? spec.doors.hall_living.head : simple ? 2.6 : 2.45, cw = simple ? 0.075 : 0.09, headH = simple ? cw : 0.14, ct = 0.02;
+    const ax0 = doorSized ? spec.doors.hall_living.x0 : W.party_half + inset, ax1 = doorSized ? spec.doors.hall_living.x1 : hs.rear_wall_x0 - inset;
     wallRect(int_, W.party_half, H.x_west_inner, 11.49, 11.60, 0, W.plate_z, [{ from: ax0, to: ax1, sill: 0, head: ahead, kind: 'opening', trim: false }], M.intWall);
     const paint = simple ? (M.archWhite || (M.archWhite = new THREE.MeshStandardMaterial({ color: 0xf6f5f1, roughness: 0.5 })))
       : (M.archTrim || (M.archTrim = new THREE.MeshStandardMaterial({ color: 0xd8d3ca, roughness: 0.6 })));
@@ -2065,8 +2229,7 @@ export function buildHouse(spec) {
   wallRect(int_, 1.30, 1.41, 11.60, 14.91, 0, W.plate_z, [
     { from: spec.renovation.bedroom3.door_y0, to: spec.renovation.bedroom3.door_y1, sill: 0, head: 2.04, kind: 'door', swing: -1 }
   ], M.intWall);
-  box(int_, 1.43, 4.67, 14.31, 14.89, 0, 2.65, M.robe);
-  for (let x = 1.45; x < 4.6; x += 0.64) box(int_, x, Math.min(x + 0.61, 4.65), 14.29, 14.31, 0.08, 2.6, M.robePanel);
+  // (bedroom 3's robe is built with the other two, below: spec.fixtures.robe_bed3)
   const ks = spec.kitchen_south_wall;
   // bath door wall, then a 0.6 m deep pantry whose front steps forward into the kitchen
   const pn = spec.renovation.pantry;
@@ -2098,7 +2261,7 @@ export function buildHouse(spec) {
   // Robes as in the photos (Downloads/wadrobe.jpeg, 33.jpeg), to be painted white: tall doors over a recessed plinth,
   // a row of overhead cupboard doors above a slim shadow gap, every door with a raised moulded panel, small round
   // silver knobs: tall doors in pairs with the knobs at the meeting stiles about 1.1 m up, overheads near the bottom
-  for (const r of [F.robe_front, F.robe_bed2]) {
+  for (const r of [F.robe_front, F.robe_bed2, F.robe_bed3]) {
     box(int_, r.x0, r.x1, r.y0, r.y1, ROBE_KICK, r.z1, robePaint());                        // carcass
     box(int_, r.x0, r.x1, r.y0 + 0.04, r.y1, 0, ROBE_KICK, robePaint());                    // plinth, set back 40
     const n = Math.round((r.x1 - r.x0) / 0.6), w = (r.x1 - r.x0) / n, rail = Math.min(2.08, r.z1 - 0.62);   // overhead doors ~0.4 x the long ones (photo)
@@ -2109,6 +2272,59 @@ export function buildHouse(spec) {
       const single = n % 2 === 1 && i === n - 1, kx = single ? x0 + 0.05 : i % 2 === 0 ? x1 - 0.05 : x0 + 0.05;
       robeKnob(int_, kx, r.y0, 1.1); robeKnob(int_, kx, r.y0, rail + 0.1);
     }
+  }
+  // --- front bedroom: sheer curtains across the bay end (Reno sheet's sheer curtains), on a ceiling track 220 in from
+  // the bay wall (clear of the cornice), wall to wall, OPEN: each side gathered into a ~450 stack beside the window
+  if (spec.renovation.curtains) {
+    const fr = spec.rooms.find(r => r.name === 'Front bedroom'), zc = fr.floor + fr.ceil, y = fr.y0 + 0.22, x0 = fr.x0 + 0.12, x1 = fr.x1 - 0.12;
+    const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
+    const sheerMat = M.sheer || (M.sheer = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false }));
+    box(int_, x0, x1, y - 0.016, y + 0.016, zc - 0.022, zc, track);
+    const stack = (a0, a1) => {                                         // gathered sheer: deep folds, 90 pitch
+      const n = Math.ceil((a1 - a0) / 0.004), rows = 14, zB = 0.012, zT = zc - 0.025, pos = [], idx = [];
+      for (let i = 0; i <= n; i++) {
+        const u = a0 + (a1 - a0) * i / n, w = Math.sin(2 * Math.PI * (u - a0) / 0.09), sw = Math.sign(w) * Math.pow(Math.abs(w), 0.6);
+        for (let r = 0; r <= rows; r++) { const z = zB + (zT - zB) * r / rows, v = L(u, y + 0.07 + 0.06 * sw * (1 + 0.35 * (1 - r / rows)), z); pos.push(v.x, v.y, v.z); if (i && r) { const k = i * (rows + 1) + r, kp = k - (rows + 1); idx.push(kp - 1, k - 1, kp, k - 1, k, kp); } }
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, sheerMat); m.renderOrder = 2; m.castShadow = false; int_.add(m);
+    };
+    stack(x0, x0 + 0.45); stack(x1 - 0.45, x1);
+  }
+  // --- split system heads (Rinnai T Series wall splits), each on the room's outside (west, side-path) wall so the
+  // pipes, drain and cable go straight out to outdoor units on the side path. Indoor units (H x W x D): 5.0 kW
+  // HINRT50B 316 x 997 x 227; 3.5 kW HINRT35B 316 x 940 x 224; 2.5 kW HINRT25B 294 x 881 x 194.
+  //  - front bedroom: 3.5 kW, centred over the bed on the west wall, top 2.65 (100 under the 2.75 picture rail). Its
+  //    window is the street bay: no wall beside or above it for a unit, and pipes would run down the front facade.
+  //  - bedroom 2: 2.5 kW, west wall between the window and the robe (~200 clear each side), top 2.65.
+  //  - bedroom 3: 2.5 kW, west wall above the window (the wall beside it is only 0.65 m), bottom 50 above the
+  //    window's architrave, ~240 under the cornice.
+  //  - kitchen / dining: 5.0 kW, west wall centred over the window (its only outside wall), top at 2.65: 50 under the
+  //    100 cove cornice, bottom ~50 over the window head (2.28).
+  // Shadowing: lit from the pendant at about its own height and the robe strip at a low angle, so only soft slivers;
+  // keep wall-grazing light (downlights near the wall, uplights) off these walls.
+  {
+    const white = M.splitWhite || (M.splitWhite = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: 0.4 }));
+    const dark = M.splitVent || (M.splitVent = new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.7 }));
+    const split = (cx, cy, nx, ny, [h, w, d], z1, room) => {    // centre on the wall face, n = into the room
+      const z0 = z1 - h;
+      // its box, for the shader's shadows (bedroom lights only); lot frame
+      if (room) { const x0 = nx ? Math.min(cx, cx + nx * d) : cx - w / 2, x1 = nx ? Math.max(cx, cx + nx * d) : cx + w / 2, y0 = nx ? cy - w / 2 : Math.min(cy, cy + ny * d), y1 = nx ? cy + w / 2 : Math.max(cy, cy + ny * d);
+        (G.ceilings.userData.bedLamps.occ ||= []).push({ room, min: [x0, y0, z0], max: [x1, y1, z1] }); }
+      const u = (a0, a1, b0, b1, za, zb, m) => nx
+        ? box(int_, Math.min(cx + nx * b0, cx + nx * b1), Math.max(cx + nx * b0, cx + nx * b1), cy + a0, cy + a1, za, zb, m)
+        : box(int_, cx + a0, cx + a1, Math.min(cy + ny * b0, cy + ny * b1), Math.max(cy + ny * b0, cy + ny * b1), za, zb, m);
+      u(-w / 2, w / 2, 0, d - 0.02, z0 + 0.02, z1, white);                                        // body
+      u(-w / 2 + 0.01, w / 2 - 0.01, d - 0.02, d, z0 + 0.06, z1 - 0.01, white);                    // front panel
+      u(-w / 2 + 0.03, w / 2 - 0.03, 0.05, d - 0.03, z0, z0 + 0.02, dark);                         // outlet louvre underneath
+      u(w / 2 - 0.12, w / 2 - 0.06, d, d + 0.002, z0 + 0.08, z0 + 0.095, dark);                    // display
+    };
+    const KW50 = [0.316, 0.997, 0.227], KW35 = [0.316, 0.94, 0.224], KW25 = [0.294, 0.881, 0.194];
+    const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2'), b3 = spec.rooms.find(r => r.name === 'Bedroom 3');
+    split(fr.x1, (fr.y0 + F.robe_front.y0) / 2, -1, 0, KW35, 2.65, 'Front bedroom');
+    const w1 = Win.W1_bed2; split(b2.x1, (w1.y1 + 0.07 + F.robe_bed2.y0) / 2, -1, 0, KW25, 2.65, 'Bedroom 2');
+    if (b3) { const w2 = Win.W2_living; split(b3.x1, (w2.y0 + w2.y1) / 2, -1, 0, KW25, w2.head + 0.07 + 0.05 + KW25[0], 'Bedroom 3'); }
+    { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen; split(kd.x1, (w3.y0 + w3.y1) / 2, -1, 0, KW50, kd.floor + kd.ceil - 0.15); }
   }
   // --- bedroom lighting (spec.renovation.bed_lights): robe-top strip and night light always; angled downlights,
   // corner downlights or reading spots by version ---
@@ -2195,7 +2411,7 @@ export function buildHouse(spec) {
     if (spec.renovation.bed_lights === 'proposed') { const xc = (b2.x0 + b2.x1) / 2 + 0.05, y = b2.y0 + 0.45; for (const sg of [-1, 1]) spot(xc + sg * 0.6, y, -sg * 0.25 / 2.35, (b2.y0 + 0.7 - y) / 2.35, 'Bedroom 2'); }
     // robe top: aluminium channel at the back, tilted 45 degrees up and out into the room (washes the ceiling and
     // cornice, can't be seen from the floor); and a strip under the doors aimed down at the floor for getting up at night
-    for (const [r, room] of [[F.robe_front, 'Front bedroom'], [F.robe_bed2, 'Bedroom 2']]) {
+    for (const [r, room] of [[F.robe_front, 'Front bedroom'], [F.robe_bed2, 'Bedroom 2'], [F.robe_bed3, 'Bedroom 3']]) {
       // floor strip under the doors (and under the front room's open shelving), aimed at the floor: a low glow, part
       // of the default. Kept dim, 25 lm/m (about 50-70 lm per room), the same 2700 K tape as the top (one colour
       // temperature in a view), on the same dimmer
@@ -2212,22 +2428,38 @@ export function buildHouse(spec) {
       // degrees below horizontal, and without a lip a thin streak can reach the opposite wall
       box(int_, sx0 - 0.03, r.x1, r.y0, r.y0 + 0.018, r.z1, r.z1 + 0.025, robePaint());
     }
-    // Hall (spec.renovation.hall_lights 'rail'): a white timber picture rail at 2.70 down both long walls, broken at the
-    // archway, 90 deep with a 40 upstand, and an LED strip on it tilted 30 degrees up into the hall, washing the walls'
-    // top band, the cornice and the ceiling from both sides: an even, glare-free glow and no holes in the hall ceiling.
-    // 120 lm/m, 2700 K, on the hall's own (ceiling) circuit; night mode = the same strip at 5-10% on a motion sensor.
-    if (spec.renovation.hall_lights === 'rail') {
-      const en = spec.rooms.find(r => r.name === 'Entry'), ha = spec.rooms.find(r => r.name === 'Hall'), ext = spec.rooms.find(r => r.name === 'Hall extension');
-      const zr = 2.7, dep = 0.09;
-      const rail = (wx, dir, y0, y1) => {                                    // wall face x, dir = +1 if the hall is +x of it
-        const xa = Math.min(wx, wx + dir * dep), xb = Math.max(wx, wx + dir * dep), xu = wx + dir * (dep - 0.009), xs = wx + dir * 0.045;
-        box(int_, xa, xb, y0, y1, zr - 0.03, zr, M.ceiling);                                         // ledge
-        box(int_, xu - 0.009, xu + 0.009, y0, y1, zr, zr + 0.04, M.ceiling);                         // upstand hiding the tape
-        box(int_, xs - 0.008, xs + 0.008, y0 + 0.03, y1 - 0.03, zr, zr + 0.01, bedGlow('hallRail'));  // tape
-        BL.lines.push({ room: 'Hall', layer: 'hallRail', mode: 0, along: 'y', x0: y0 + 0.03, x1: y1 - 0.03, y: xs, z: zr + 0.015, ay: dir * 0.5, az: 0.866, lmPerM: 120 });
+    // Hall (spec.renovation.hall_lights 'art'), after Mint's period halls (Crescent project: opal pendants on the
+    // centreline, one painting on the long wall, no downlights; their 10 m halls carry one or two pieces, and
+    // spot-per-painting appears only in collectors' houses). The hall end keeps its original door-sized opening, so the
+    // short extension beyond is its own space: a rhythm of three pendants down the centreline, ~3.6-4 m apart, bottoms at
+    // 2.1 (door-head height):
+    //  - the entry pendant on the original rose (August oval, set in the roses loop);
+    //  - mid-hall and mid-extension: smaller August rounds (300, the hall is 1.19 wide) on new small plain plaster roses;
+    //  - ONE painting, ~900 x 1100, on the long party wall (no doors on it), centred on the mid-hall pendant (its light
+    //    falls evenly across it and the two read as one composition), centre 1.55 m,
+    //    slim frame, lit by that pendant (a 30-degree spot would sit almost against the opposite wall in 1.19 m).
+    if (spec.renovation.hall_lights === 'art') {
+      const ha = spec.rooms.find(r => r.name === 'Hall'), ext = spec.rooms.find(r => r.name === 'Hall extension');
+      const wx = W.party_half, zc = ha.floor + ha.ceil, cx = (wx + ha.x1) / 2;
+      const hallPendant = y => {
+        for (const [f, hh] of [[1, 0.025], [0.6, 0.04]]) { const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * f, 0.15 * f * 1.04, hh, 32), M.ceiling); ring.position.copy(L(cx, y, zc - hh / 2)); int_.add(ring); }
+        bedPendant(int_, BL, 'Hall', cx, y, zc, spec.renovation.hall_pendant, 2.1, 'hallPendant');
       };
-      rail(W.party_half, 1, en.y0, ha.y1); rail(W.party_half, 1, ext.y0, ext.y1);                     // party wall, either side of the arch
-      rail(en.x1, -1, en.y0, en.y1); rail(ha.x1, -1, ha.y0, ha.y1); rail(ext.x1, -1, ext.y0, ext.y1);  // bedroom side
+      const yHall = (ha.y0 + ha.y1) / 2;
+      // three in all: the entry's, mid-hall, and mid-extension (with the door-sized opening the extension is its own
+      // space; tried with two and it fell dim, the kitchen's light doesn't carry that far)
+      hallPendant(yHall); hallPendant((spec.renovation.bedroom3.door_y1 + ext.y1) / 2);
+      const frameM = M.artFrame || (M.artFrame = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.6 }));
+      const w = 0.9, h = 1.1, za = 1.55, yc = yHall;                                                // centred on the hall pendant
+      box(int_, wx, wx + 0.03, yc - w / 2, yc + w / 2, za - h / 2, za + h / 2, frameM);
+      const c = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.06, h - 0.06), new THREE.MeshStandardMaterial({ map: artTexture(1), roughness: 0.85 }));
+      c.rotation.y = -Math.PI / 2; c.position.copy(L(wx + 0.031, yc, za)); int_.add(c);
+      // a second, smaller piece (700 x 900) centred on the extension pendant: the same pendant-and-painting pairing,
+      // seen framed by the arch from the hall. Two pieces over ~10 m, as in Mint's period halls; the entry stays clear
+      const y2 = (spec.renovation.bedroom3.door_y1 + ext.y1) / 2, w2 = 0.7, h2 = 0.9;
+      box(int_, wx, wx + 0.03, y2 - w2 / 2, y2 + w2 / 2, za - h2 / 2, za + h2 / 2, frameM);
+      const c2 = new THREE.Mesh(new THREE.PlaneGeometry(w2 - 0.06, h2 - 0.06), new THREE.MeshStandardMaterial({ map: artTexture(2), roughness: 0.85 }));
+      c2.rotation.y = -Math.PI / 2; c2.position.copy(L(wx + 0.031, y2, za)); int_.add(c2);
     }
   }
   // --- renovated kitchen: white flat-panel joinery, stone top, tall units on the party wall (spec.renovation.kitchen) ---
@@ -2984,17 +3216,12 @@ export function buildHouse(spec) {
       const fr = spec.renovation.fridge, tallX = Math.min(K.run[0], fr?.at?.startsWith('runEnd') ? (fr.pantry ? fr.pantry[0] : fr.x0 - 0.02) : Infinity);
       if (tallX - 1.30 > 0.3) cornices.push([1.30, tallX, 15.02, 15.12]);   // not on the 110 mm jamb beside the tall units
     }
-    // decorative plaster cornice as in the kitchen photo, built like the hall's as a stepped cove (widest on the ceiling,
-    // narrowing down the wall), a little smaller for the lower ceiling: about 100 across the ceiling, 120 down the wall
-    const KC = [[0.1, 0, 0.025], [0.078, 0.025, 0.05], [0.056, 0.05, 0.075], [0.034, 0.075, 0.1], [0.015, 0.1, 0.12]];
+    // decorative plaster cornice as in the kitchen photo: the hall's enriched cove at 85% for the lower ceiling
     for (const [x0, x1, y0, y1, lineOv, dirOv] of cornices) {
       const alongX = x1 - x0 > y1 - y0;                                     // wall line on the band's outer edge
       let line = alongX ? (y0 < 15.5 ? y0 : spec.kitchen_south_wall.y0) : (x0 < 1 ? x0 : x1), dir = alongX ? (y0 < 15.5 ? 1 : -1) : (x0 < 1 ? 1 : -1);
       if (lineOv !== undefined) { line = lineOv; dir = dirOv; }                 // explicit wall line (the rear wall over the opening)   // south run on the bath/pantry wall's kitchen face
-      for (const [d, t0, t1] of KC) {
-        const o1 = line + dir * d, lo = Math.min(line, o1), hi = Math.max(line, o1);
-        if (alongX) box(int_, x0, x1, lo, hi, 2.8 - t1, 2.8 - t0, M.ceiling); else box(int_, lo, hi, y0, y1, 2.8 - t1, 2.8 - t0, M.ceiling);
-      }
+      if (alongX) corniceRun(int_, true, line, x0, x1, dir, 2.8, 'ornate', { scale: 0.85 }); else corniceRun(int_, false, line, y0, y1, dir, 2.8, 'ornate', { scale: 0.85 });
     }
     // keep every fitting 400 mm clear of joinery that runs to the ceiling, so none sits in a cupboard top or throws a hard
     // scallop down the doors: the tall run (600, or the fridge and pantry cupboard), the corner cupboard (670 each way),
@@ -3942,14 +4169,20 @@ export function buildHouse(spec) {
   // ceiling roses and light fittings
   for (const cr of F.ceiling_roses) {
     const rm = spec.rooms.find(r => r.name === cr.room), zc = rm.floor + rm.ceil;
+    // the entry's original rose (Downloads/circle.jpeg): ~750 across with a leaf band; the others stay stepped discs
+    if (rm.name === 'Entry') ornateRose(int_, cr.x, cr.y, zc, 0.75);
+    else {
     const rose = new THREE.Mesh(new THREE.CylinderGeometry(cr.dia / 2, cr.dia / 2, 0.03, 32), M.ceiling); rose.position.copy(L(cr.x, cr.y, zc - 0.015)); int_.add(rose);
     // plaster rose, as in the photos: stepped up to a raised centre rather than a flat disc
     for (const [f, h] of [[0.78, 0.045], [0.55, 0.06], [0.3, 0.075]]) { const ring = new THREE.Mesh(new THREE.CylinderGeometry(cr.dia / 2 * f, cr.dia / 2 * f * 1.04, h, 32), M.ceiling); ring.position.copy(L(cr.x, cr.y, zc - h / 2)); int_.add(ring); }
+    }
     // Reno: the hanging fittings (chandeliers and pendants) come down; the plaster rose stays and the room gets flush
     // downlights like the kitchen's, one per 1.7 m or so each way, evenly spread
     // hall: the entry rose gets its pendant back (the hall's feature, as in the reference Page project): an August oval to
     // match the bedrooms, bottom at 2.1, level with the door heads (Mint's hall rule)
-    if (rm.name === 'Entry' && spec.renovation.hall_lights === 'rail') { bedPendant(int_, BL, 'Hall', cr.x, cr.y, zc, 'augustOval', 2.1, 'hallPendant'); continue; }
+    if (rm.name === 'Entry' && spec.renovation.hall_lights === 'art') { bedPendant(int_, BL, 'Hall', cr.x, cr.y, zc, spec.renovation.hall_pendant, 2.1, 'hallPendant'); continue; }
+    // bedroom 3: the default scheme in every version (pendant on its rose + robe strips) except the old downlight grid
+    if (rm.name === 'Bedroom 3' && spec.renovation.bed_lights !== 'downlights') { bedPendant(int_, BL, rm.name, cr.x, cr.y, zc, spec.renovation.pendant_style); continue; }
     if (BED_LIT.includes(rm.name) && spec.renovation.bed_lights === 'angled') continue;   // the rose stays, no fitting on it
     if (BED_LIT.includes(rm.name) && spec.renovation.bed_lights !== 'downlights') {
       bedPendant(int_, BL, rm.name, cr.x, cr.y, zc, spec.renovation.pendant_style);
@@ -3966,7 +4199,7 @@ export function buildHouse(spec) {
     }
   }
   // hall and wet rooms had no fittings: halls one row at 1.6 m, bathrooms and the WC at 1.3 m (90 mm cut-out fittings)
-  for (const [name, sp] of [['Hall', 1.6], ['Hall extension', 1.6], ['Bath', 1.3], ['WC', 1.3], ['Bathroom 2', 1.3]].filter(([n]) => !(spec.renovation.hall_lights === 'rail' && n.startsWith('Hall')))) {
+  for (const [name, sp] of [['Hall', 1.6], ['Hall extension', 1.6], ['Bath', 1.3], ['WC', 1.3], ['Bathroom 2', 1.3]].filter(([n]) => !(spec.renovation.hall_lights === 'art' && n.startsWith('Hall')))) {
     const rm = spec.rooms.find(r => r.name === name), zc = rm.floor + rm.ceil;
     for (const [dx, dy] of dlGrid(rm, sp)) { const dl = dlFitting(); dl.position.copy(L(dx, dy, zc - 0.004)); int_.add(dl); DL.push({ x: dx, y: dy, z: zc - 0.004, room: name }); }
   }
@@ -4063,25 +4296,16 @@ export function buildHouse(spec) {
     barge.position.copy(p0.clone().add(p1).multiplyScalar(0.5));
     barge.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir.normalize());
     barge.castShadow = true; G.roof.add(barge);
-    // plaster cornices, from the photos: an ornate cove (about 120 deep on the ceiling, 150 down the wall) in the entry,
-    // hall and bedroom 2 (and the old living room, now bedroom 3), and a plainer stepped cornice with a picture rail
-    // 400 below the ceiling in the front bedroom. Built as a stepped cove: widest against the ceiling, narrowing down
-    // the wall, never hanging lower at its front edge.
-    const ORNATE = [[0.12, 0, 0.03], [0.095, 0.03, 0.06], [0.07, 0.06, 0.09], [0.045, 0.09, 0.12], [0.02, 0.12, 0.15]];
-    const PLAIN = [[0.08, 0, 0.02], [0.06, 0.02, 0.045], [0.04, 0.045, 0.07], [0.02, 0.07, 0.09]];
-    // one cornice run along a wall face: 'side' is the wall line, the run goes from a to b along it, 'dir' points into the room
-    const corniceRun = (alongX, line, a, b, dir, zc, prof) => {
-      for (const [d, t0, t1] of prof) {
-        const o0 = line, o1 = line + dir * d, lo = Math.min(o0, o1), hi = Math.max(o0, o1);
-        if (alongX) box(int_, a, b, lo, hi, zc - t1, zc - t0, M.ceiling); else box(int_, lo, hi, a, b, zc - t1, zc - t0, M.ceiling);
-      }
-    };
+    // plaster cornices, from the photos: the enriched cove (leaf garland on the ceiling band) in the entry, hall and
+    // bedrooms 2 and 3, and a plainer moulded cove with a picture rail 400 below the ceiling in the front bedroom
+    const ORNATE = 'ornate', PLAIN = 'plain';
+    const cr = (alongX, line, a, b, dir, zc, kind, o) => corniceRun(int_, alongX, line, a, b, dir, zc, kind, o);
     const rect = (rm, prof, skip = {}) => {
       const zc = rm.floor + rm.ceil;
-      if (!skip.y0) corniceRun(true, rm.y0, rm.x0, rm.x1, 1, zc, prof);
-      if (!skip.y1) corniceRun(true, rm.y1, rm.x0, rm.x1, -1, zc, prof);
-      if (!skip.x0) corniceRun(false, rm.x0, rm.y0, rm.y1, 1, zc, prof);
-      if (!skip.x1) corniceRun(false, rm.x1, rm.y0, rm.y1, -1, zc, prof);
+      if (!skip.y0) cr(true, rm.y0, rm.x0, rm.x1, 1, zc, prof);
+      if (!skip.y1) cr(true, rm.y1, rm.x0, rm.x1, -1, zc, prof);
+      if (!skip.x0) cr(false, rm.x0, rm.y0, rm.y1, 1, zc, prof);
+      if (!skip.x1) cr(false, rm.x1, rm.y0, rm.y1, -1, zc, prof);
     };
     const room = n => spec.rooms.find(r => r.name === n);
     // entry and hall are one hallway: one continuous cornice down both walls, turning with the west wall where the hall
@@ -4089,13 +4313,12 @@ export function buildHouse(spec) {
     {
       const en = room('Entry'), ha = room('Hall'), zc = en.floor + en.ceil, ext = room('Hall extension');
       const end = spec.renovation.hall_doorway === false ? ext.y1 : ha.y1;
-      const d = ORNATE[0][0];
-      corniceRun(true, en.y0, en.x0, en.x1, 1, zc, ORNATE);                         // over the front door
-      corniceRun(false, en.x0, en.y0, end, 1, zc, ORNATE);                          // party wall, full length
-      corniceRun(false, en.x1, en.y0, en.y1, -1, zc, ORNATE);                       // entry west wall
-      corniceRun(true, en.y1, ha.x1, en.x1, -1, zc, ORNATE);                        // the step's return, facing the front door
-      corniceRun(false, ha.x1, en.y1 - d, end, -1, zc, ORNATE);                     // hall west wall, closing the outside corner
-      corniceRun(true, end, en.x0, ha.x1, -1, zc, ORNATE);                          // across the far end
+      cr(true, en.y0, en.x0, en.x1, 1, zc, ORNATE);                                 // over the front door
+      cr(false, en.x0, en.y0, end, 1, zc, ORNATE);                                  // party wall, full length
+      cr(false, en.x1, en.y0, en.y1, -1, zc, ORNATE);                               // entry west wall
+      cr(true, en.y1, ha.x1, en.x1, -1, zc, ORNATE, { aOut: true });                // the step's return, facing the front door
+      cr(false, ha.x1, en.y1, end, -1, zc, ORNATE, { aOut: true });                 // hall west wall, round the outside corner
+      cr(true, end, en.x0, ha.x1, -1, zc, ORNATE);                                  // across the far end
       if (spec.renovation.hall_doorway !== false) rect(ext, ORNATE);                // hall extension beyond the archway
     }
     for (const n of ['Bedroom 2', 'Bedroom 3']) if (room(n)) rect(room(n), ORNATE);

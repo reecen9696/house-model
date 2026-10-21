@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import SunCalc from 'suncalc';
 import { buildNeighbours } from '../../context/neighbours.js';
 import { buildHouse, applyReno, FRIDGE_SPOTS, L, setPlantModels } from './generator.js';
@@ -11,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'simple', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'rail' };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 2, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'woven' };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -41,6 +42,11 @@ if (savedReno && (savedReno.loungeV || 0) < 3) {
 // choices over once
 if (savedReno && (savedReno.furnitureV || 0) < 1) {
   Object.assign(reno, { diningTable: 'matched', sideboard: 'matched', coffeeTable: 'matched', furnitureV: 1 });
+  try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
+}
+// hall end: the original door-sized opening became the default (2026-10-21): move saved choices over once
+if (savedReno && (savedReno.hallV || 0) < 2) {
+  Object.assign(reno, { hallDoorway: 'arch', hallV: 2 });
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // bedrooms: the August oval pendant with the robe-top and robe-floor strips became the default (2026-10-21): move
@@ -146,7 +152,7 @@ scene.add(house);
 const SKY_SHARE = { 'Lounge / living': 0.22, 'Kitchen / dining': 0.28, 'Front bedroom': 0.25, 'Bedroom 2': 0.18, 'Bedroom 3': 0.15,
   Entry: 0.12, Hall: 0.08, 'Hall extension': 0.08, Bath: 0.14, WC: 0.11, 'Bathroom 2': 0.14, Porch: 0.6 };
 const SKYF = { field: { value: null }, xf: { value: new THREE.Vector4() }, bounce: { value: 0 },
-  lamp: { value: 0 }, lampCol: { value: new THREE.Color(0xfff0e2) } };   // lamp: 0/1 with the Lights switch; warm white (3000-3500 K as the eye sees it)
+  lamp: { value: 0 }, lampCol: { value: new THREE.Color(0xffecd6) } };   // lamp: 0/1 with the Lights switch; 2700 K as an adapted eye sees it (one colour temperature through the house)
 let skyGrid = null;                                                       // { x0, y0, nx, ny, v } for the exposure lookup
 // Proposed bedroom lighting (front bedroom and bedroom 2): pendant, wall lights, robe-top strip, night light. three.js
 // lights pass through walls, so these are lit in the shader instead, each only on surfaces inside its own room's
@@ -154,18 +160,18 @@ let skyGrid = null;                                                       // { x
 // bounce fill per room from the lumens that are on. Units match the downlights: DL_I (1.7) is a 700 lm fitting's
 // 261 cd, so 1 cd = 1.7 / 261, and a lumen of bounce is the lamp field's 0.00358 per lm.
 const V4 = n => Array.from({ length: n }, () => new THREE.Vector4());
-const BEDU = { bedOn: { value: 0 }, bedRm: { value: V4(4) }, bedBay: { value: new THREE.Vector4() }, bedBayY: { value: new THREE.Vector2() },
-  bedPt: { value: V4(8) }, bedPtK: { value: V4(8) }, bedLn: { value: V4(10) }, bedLnA: { value: V4(10) }, bedLnM: { value: new Array(10).fill(0) }, bedFill: { value: new THREE.Vector3() },
+const BEDU = { bedOn: { value: 0 }, bedRm: { value: V4(5) }, bedBay: { value: new THREE.Vector4() }, bedBayY: { value: new THREE.Vector2() },
+  bedPt: { value: V4(14) }, bedPtK: { value: V4(14) }, bedLn: { value: V4(10) }, bedLnA: { value: V4(10) }, bedLnM: { value: new Array(10).fill(0) }, bedFill: { value: new THREE.Vector4() }, bedSpill: { value: new THREE.Vector4() }, bedOccA: { value: V4(4) }, bedOccB: { value: V4(4) },
   bedCol: { value: new THREE.Color() }, bedNightCol: { value: new THREE.Color(0xffa860) } };
 // Bounce fill: Sumpner's inter-reflection formula, average indirect irradiance = flux x rho / (A x (1 - rho)), with
 // rho the area-weighted reflectance. These rooms: white ceiling ~0.85, off-white walls ~0.75, light cream carpet ~0.5
 // -> rho ~0.72, rho / (1 - rho) ~2.6. (The first version used a single 55% bounce, 0.00358 per lm: several times too
 // dark for white rooms, which made lit bedrooms read far darker than they will be.)
-// zones lit in the shader: the two bedrooms, and the hall (entry + hall + hall extension, open to each other)
-const BED_ROOMS = ['Front bedroom', 'Bedroom 2', 'Hall'], CD = 1.7 / 261, FILL_LM = CD * 2.6;
+// zones lit in the shader: the three bedrooms, and the hall (entry + hall + hall extension, open to each other)
+const BED_ROOMS = ['Front bedroom', 'Bedroom 2', 'Hall', 'Bedroom 3'], CD = 1.7 / 261, FILL_LM = CD * 2.6;
 const zoneRects = () => { const R = n => spec.rooms.find(r => r.name === n), ha = R('Hall'), ext = R('Hall extension');
-  return [R('Front bedroom'), R('Bedroom 2'), R('Entry'), { x0: ha.x0, x1: ha.x1, y0: ha.y0, y1: ext.y1, ceil: ha.ceil }]; };
-const ZONE_OF_RECT = [0, 1, 2, 2];
+  return [R('Front bedroom'), R('Bedroom 2'), R('Entry'), { x0: ha.x0, x1: ha.x1, y0: ha.y0, y1: ext.y1, ceil: ha.ceil }, R('Bedroom 3')]; };
+const ZONE_OF_RECT = [0, 1, 2, 2, 3];
 // every page load starts with the pendant, reading spots and robe-top strip on at full (scenes and switches are for
 // the visit only, not remembered)
 const bedState = { pendant: true, angled: true, reading: true, corner: true, cove: true, wallwash: true, sheer: true, night: true, dim: 100, dimSec: 100 };   // dim: ceiling circuit, dimSec: secondary
@@ -196,7 +202,9 @@ function bayRoom(pad = 0) {
 }
 function lampSeed(rooms, x0, y0, nx, ny) {
   const N = nx * ny, seed = new Float32Array(N), seeded = new Uint8Array(N), inBay = bayRoom();
-  const DLs = G.ceilings.userData.downlights, flux = DL_I * 2 * Math.PI * (1 - Math.cos(THREE.MathUtils.degToRad(55))) * 0.55;   // 0.75 washed rooms out (2026-09-27)
+  // bounce: Sumpner's inter-reflection, rho / (1 - rho) ~1.5 for these rooms (white walls and ceiling, timber floor), as
+  // the bedrooms and hall use; the single 55% bounce left the kitchen far darker than the hall beside it
+  const DLs = G.ceilings.userData.downlights, flux = DL_I * 2 * Math.PI * (1 - Math.cos(THREE.MathUtils.degToRad(55))) * 1.5;
   const inRoom = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
   const info = new Map();
   for (const r of rooms) {
@@ -338,7 +346,10 @@ function skyMaterial(src) {
     sh.vertexShader = 'varying vec3 vSkyP; varying vec3 vSkyN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
       { vec4 sp = modelMatrix * vec4( transformed, 1.0 ); vSkyN = normalize( mat3( modelMatrix ) * ${skyNormal} ); vSkyP = sp.xyz + vSkyN * 0.15; }`);
     sh.fragmentShader = 'uniform sampler2D skyField; uniform vec4 skyXf; uniform float skyBounce; uniform float lampOn; uniform vec3 lampCol; varying vec3 vSkyP; varying vec3 vSkyN;\n' +
-      'uniform float bedOn; uniform vec4 bedRm[4]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[8]; uniform vec4 bedPtK[8]; uniform vec4 bedLn[10]; uniform vec4 bedLnA[10]; uniform float bedLnM[10]; uniform vec3 bedFill; uniform vec3 bedCol; uniform vec3 bedNightCol;\n' +
+      'uniform float bedOn; uniform vec4 bedRm[5]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[14]; uniform vec4 bedPtK[14]; uniform vec4 bedLn[10]; uniform vec4 bedLnA[10]; uniform float bedLnM[10]; uniform vec4 bedFill; uniform vec3 bedCol; uniform vec3 bedNightCol; uniform vec4 bedSpill; uniform vec4 bedOccA[4]; uniform vec4 bedOccB[4];\n' +
+      // shadows of the split-system heads (axis-aligned boxes, lot frame): visibility of point L from P, 0..1
+      'float bedSeg( vec3 a, vec3 b, vec3 mn, vec3 mx ) { vec3 d = b - a + 1e-6, t0 = ( mn - a ) / d, t1 = ( mx - a ) / d; float tn = max( max( min( t0.x, t1.x ), min( t0.y, t1.y ) ), min( t0.z, t1.z ) ), tf = min( min( max( t0.x, t1.x ), max( t0.y, t1.y ) ), max( t0.z, t1.z ) ); return tf >= max( tn, 0.0 ) && tn <= 1.0 ? 0.0 : 1.0; }\n' +
+      'float bedVis( vec3 P, vec3 L, int room, float r ) { float v = 0.0; for ( int s = 0; s < 4; s ++ ) { vec3 o = vec3( s == 0 ? r : s == 1 ? -r : 0.0, s == 2 ? r : s == 3 ? -r : 0.0, 0.0 ); float h = 1.0; for ( int j = 0; j < 4; j ++ ) { if ( int( bedOccA[ j ].w + 0.5 ) != room ) continue; h *= bedSeg( P, L + o, bedOccA[ j ].xyz, bedOccB[ j ].xyz ); } v += h; } return v * 0.25; }\n' +
       sh.fragmentShader.replace('#include <aomap_fragment>', `{
         // three.js world (X, Z) is lot (-x, y); surfaces sample 150 mm in front of themselves, in the room they face
         // a double-sided sheet seen from its back (the lounge ceiling, drawn with its normal up) samples on the side
@@ -363,23 +374,34 @@ function skyMaterial(src) {
         if ( !outside && bedOn > 0.0 ) {
           vec3 bw = vSkyP - vSkyN * 0.15, bn = normalize( skyN );
           vec3 P = vec3( -bw.x, bw.z, bw.y ), N = vec3( -bn.x, bn.z, bn.y );
+          // which room a surface belongs to: decided at the point 150 mm in front of it (the side it faces), so a door leaf
+          // or a wall face inside a wall's thickness counts with the room it looks into; reveals and edges that face along
+          // the wall (no room in front) fall back to the nearest room around the surface itself
+          vec3 Q = vec3( -skyP.x, skyP.z, skyP.y );
           int room = -1;
-          for ( int r = 0; r < 4; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.02 && P.x <= b.z + 0.02 && P.y >= b.y - 0.02 && P.y <= b.w + 0.02 ) room = r == 3 ? 2 : r; }   // rect 3 (hall) is zone 2 with the entry
+          for ( int r = 0; r < 5; r ++ ) { vec4 b = bedRm[ r ]; if ( Q.x >= b.x && Q.x <= b.z && Q.y >= b.y && Q.y <= b.w ) room = r == 3 ? 2 : r == 4 ? 3 : r; }
+          if ( room < 0 ) for ( int r = 0; r < 5; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.08 && P.x <= b.z + 0.08 && P.y >= b.y - 0.08 && P.y <= b.w + 0.08 ) room = r == 3 ? 2 : r == 4 ? 3 : r; }   // rect 3 (hall) is zone 2 with the entry; rect 4 is bedroom 3
           if ( room < 0 && P.y >= bedBayY.x - 0.02 && P.y < bedRm[ 0 ].y ) {        // the front bedroom's bay
             float t = clamp( ( bedBayY.y - P.y ) / ( bedBayY.y - bedBayY.x ), 0.0, 1.0 );
             if ( P.x >= mix( bedBay.x, bedBay.z, t ) - 0.02 && P.x <= mix( bedBay.y, bedBay.w, t ) + 0.02 ) room = 0;
           }
+          // the hall's light carries a little way into the kitchen through the full-width opening at the hall's end, fading
+          // over ~1.5 m, so there is no hard edge on the floor where the hall's zone stops
+          float wSpill = 1.0;
+          if ( room < 0 && Q.x >= bedSpill.x && Q.x <= bedSpill.z && Q.y >= bedSpill.y && Q.y <= bedSpill.w ) { room = 2; wSpill = 1.0 - ( Q.y - bedSpill.y ) / ( bedSpill.w - bedSpill.y ); }
           if ( room >= 0 ) {
-            vec3 E = ( room == 0 ? bedFill.x : room == 1 ? bedFill.y : bedFill.z ) * ( 0.75 + 0.25 * N.z ) * bedCol;
-            for ( int i = 0; i < 8; i ++ ) {
+            vec3 Ps = P + N * 0.01;                                         // shadow rays start just off the surface
+            vec3 E = ( room == 0 ? bedFill.x : room == 1 ? bedFill.y : room == 2 ? bedFill.z : bedFill.w ) * ( 0.75 + 0.25 * N.z ) * bedCol;
+            for ( int i = 0; i < 14; i ++ ) {
               if ( int( bedPtK[ i ].x + 0.5 ) != room || bedPt[ i ].w <= 0.0 ) continue;
               vec3 d = bedPt[ i ].xyz - P; float d2 = max( dot( d, d ), 0.0025 ); vec3 l = d * inversesqrt( d2 );
               float I = bedPt[ i ].w;
               float ca = dot( -l, normalize( vec3( bedPtK[ i ].zw, -1.0 ) ) );
-              if ( bedPtK[ i ].y > 2.5 ) I *= max( l.z, 0.0 );                      // down only (stone pendant): Lambertian about straight down
+              if ( bedPtK[ i ].y > 3.5 ) I *= smoothstep( 0.88, 0.97, -l.z );      // floor uplight: narrow beam straight up
+              else if ( bedPtK[ i ].y > 2.5 ) I *= max( l.z, 0.0 );                 // down only (stone pendant): Lambertian about straight down
               else if ( bedPtK[ i ].y > 1.5 ) I *= smoothstep( 0.848, 0.951, ca );      // wash: 40 degree beam, soft edge to 64
               else if ( bedPtK[ i ].y > 0.5 ) I *= smoothstep( 0.906, 0.978, ca ); // reading spot: 24 degree beam, edge to 50
-              E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol;
+              E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol * bedVis( Ps, bedPt[ i ].xyz, room, 0.1 );   // soft shadows: the light sampled over ~200 mm
             }
             for ( int i = 0; i < 10; i ++ ) {
               vec4 ln = bedLn[ i ], la = bedLnA[ i ];
@@ -397,9 +419,12 @@ function skyMaterial(src) {
               float F0 = ( atan( s1 / r ) - atan( s0 / r ) ) / ( 2.0 * r2 * r ) + ( s1 / ( r2 + s1 * s1 ) - s0 / ( r2 + s0 * s0 ) ) / ( 2.0 * r2 );
               float F1 = 0.5 / ( r2 + s0 * s0 ) - 0.5 / ( r2 + s1 * s1 );
               float eN = max( dot( Nl, l0 ) * r2 * F0 + Nl.x * r * F1, 0.0 );
-              E += la.z * max( dot( ax, -l0 ), 0.0 ) * eN * ( mode == 1 ? bedNightCol : bedCol );
+              // shadows from the strip: three points along it (its ends and middle), back in the lot frame
+              float sv = 0.0;
+              for ( int k = 0; k < 3; k ++ ) { float f = float( k ) * 0.5; vec3 Sk = vec3( mix( ln.x, ln.y, f ), ln.z, ln.w ); sv += bedVis( Ps, alongY ? Sk.yxz : Sk, room, 0.0 ); }
+              E += la.z * max( dot( ax, -l0 ), 0.0 ) * eN * ( mode == 1 ? bedNightCol : bedCol ) * sv / 3.0;
             }
-            reflectedLight.directDiffuse += E * BRDF_Lambert( material.diffuseColor );
+            reflectedLight.directDiffuse += E * wSpill * BRDF_Lambert( material.diffuseColor );
           }
         }
         #if defined( USE_ENVMAP ) && defined( STANDARD )
@@ -433,6 +458,49 @@ function occludeInteriors() {
     if (!mat) { mat = skyMaterial(o.material); mat.userData.sky = true; clones.set(o.material.uuid, mat); }
     o.material = mat;
   });
+  mergeStatic();
+}
+// The house is ~3,200 small meshes (~4,800 draw calls a frame with the shadow pass), which made walking lag. Every plain
+// static piece is merged into one mesh per material per 3 m cell (cells keep some frustum culling). The originals stay in
+// place, hidden, so the walker's colliders and the sky-field rays still find them. Anything the app moves or reads on its
+// own (doors, drawers, tagged fittings), transparent pieces, instanced meshes and odd attribute sets are left as they are.
+function mergeStatic() {
+  if (/[?&]nomerge\b/.test(location.search)) return;                 // ?nomerge: compare against the unmerged build
+  const CELL = 3, rel = new THREE.Matrix4(), c = new THREE.Vector3();
+  for (const g of [G.exterior, G.interior, G.floors, G.ceilings, G.furniture, G.roof, G.site]) {
+    if (!g) continue;
+    g.updateMatrixWorld(true);
+    const inv = g.matrixWorld.clone().invert(), buckets = new Map();
+    g.traverse(o => {
+      if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible || o.userData.merged || o.userData.isMerged) return;
+      const m = o.material, geo = o.geometry;
+      if (!m || Array.isArray(m) || m.transparent || m.visible === false || o.renderOrder || geo.morphAttributes.position) return;   // a box's six face groups don't matter with one material
+      for (let p = o; p && p !== g; p = p.parent) { if (!p.visible || Object.keys(p.userData).length) return; }
+      const names = Object.keys(geo.attributes).sort();
+      if (!geo.attributes.position || !geo.attributes.normal) return;
+      if (names.some(n => { const at = geo.attributes[n]; return at.isInterleavedBufferAttribute || !(at.array instanceof Float32Array); })) return;
+      if (!geo.boundingSphere) geo.computeBoundingSphere();
+      c.copy(geo.boundingSphere.center).applyMatrix4(o.matrixWorld);
+      const key = [m.uuid, o.castShadow, o.receiveShadow, names.map(n => n + geo.attributes[n].itemSize).join(), Math.floor(c.x / CELL), Math.floor(c.z / CELL)].join('|');
+      let b = buckets.get(key); if (!b) buckets.set(key, b = { m, cast: o.castShadow, recv: o.receiveShadow, list: [] });
+      b.list.push(o);
+    });
+    for (const b of buckets.values()) {
+      if (b.list.length < 2) continue;
+      const geos = b.list.map(o => {
+        const q = o.geometry.clone(); q.clearGroups(); rel.multiplyMatrices(inv, o.matrixWorld); q.applyMatrix4(rel);
+        if (!q.index) { const n = q.attributes.position.count, idx = new (n > 65535 ? Uint32Array : Uint16Array)(n); for (let i = 0; i < n; i++) idx[i] = i; q.setIndex(new THREE.BufferAttribute(idx, 1)); }
+        return q;
+      });
+      const merged = mergeGeometries(geos, false);
+      geos.forEach(q => q.dispose());
+      if (!merged) continue;
+      const mesh = new THREE.Mesh(merged, b.m);
+      mesh.castShadow = b.cast; mesh.receiveShadow = b.recv; mesh.userData.isMerged = true;
+      g.add(mesh);
+      for (const o of b.list) { o.visible = false; o.userData.merged = true; }
+    }
+  }
 }
 occludeInteriors();
 
@@ -553,7 +621,7 @@ function setSun(date) {
 // The bounce that fills the room (ceiling included) is the lamp field, which walls do stop and every fitting feeds.
 const POOL = touch ? 10 : 16, pool = [];
 for (let i = 0; i < POOL; i++) {
-  const s = new THREE.SpotLight(0xfff0e2, 0, 4, THREE.MathUtils.degToRad(55), 1, 2);
+  const s = new THREE.SpotLight(0xffecd6, 0, 4, THREE.MathUtils.degToRad(55), 1, 2);
   s.visible = false; scene.add(s, s.target); pool.push(s);
 }
 const lampMats = [];                                                     // the fittings' lenses, glowing when on
@@ -614,7 +682,7 @@ function updateBedLights() {
   const on = !!BLs && !document.getElementById('sunOnly')?.checked;
   BEDU.bedOn.value = on ? 1 : 0;
   if (!bedMats) { bedMats = []; for (const g of Object.values(G)) g.traverse?.(o => { for (const m of [o.material].flat()) if (m?.userData?.bedLamp && !bedMats.includes(m)) bedMats.push(m); }); }
-  for (const m of bedMats) m.emissiveIntensity = (m.userData.bedLamp === 'night' ? 1 : 3) * bedLevel(m.userData.bedLamp);
+  for (const m of bedMats) m.emissiveIntensity = (m.userData.glowK ?? (m.userData.bedLamp === 'night' ? 1 : 3)) * bedLevel(m.userData.bedLamp);   // a woven shade glows less, so its weave reads
   if (!on) return;
   const rects = zoneRects(), b = spec.house.bay;
   rects.forEach((r, i) => BEDU.bedRm.value[i].set(r.x0, r.y0, r.x1, r.y1));
@@ -624,8 +692,8 @@ function updateBedLights() {
     if (!p) { v.set(0, 0, 0, 0); k.set(-1, 0, 0, 0); return; }
     // omni pendant: lumens over 4 pi; reading spot: about 80% of its lumens in a 24 degree beam (~0.14 sr), the rest
     // in the soft edge; wash: the same in 40 degrees (~0.38 sr). Aim held as its tilt per metre of drop
-    const I = p.kind === 'spot' ? 0.8 * p.lm / 0.14 : p.kind === 'wash' ? 0.8 * p.lm / 0.38 : p.kind === 'down' ? p.lm / Math.PI : p.lm / (4 * Math.PI);   // down: Lambertian, I0 = lm / pi
-    v.set(p.x, p.y, p.z, I * CD * bedLevel(p.layer)); k.set(BED_ROOMS.indexOf(p.room), { spot: 1, wash: 2, down: 3 }[p.kind] || 0, p.ax || 0, p.ay || 0);
+    const I = p.kind === 'spot' ? 0.8 * p.lm / 0.14 : p.kind === 'wash' ? 0.8 * p.lm / 0.38 : p.kind === 'down' ? p.lm / Math.PI : p.kind === 'up' ? 0.8 * p.lm / 0.24 : p.lm / (4 * Math.PI);   // down: Lambertian, I0 = lm / pi
+    v.set(p.x, p.y, p.z, I * CD * bedLevel(p.layer)); k.set(BED_ROOMS.indexOf(p.room), { spot: 1, wash: 2, down: 3, up: 4 }[p.kind] || 0, p.ax || 0, p.ay || 0);
   });
   BEDU.bedLn.value.forEach((v, i) => {
     const l = BLs.lines[i], a = BEDU.bedLnA.value[i];
@@ -635,7 +703,14 @@ function updateBedLights() {
   });
   const area = r => { const w = r.x1 - r.x0, d = r.y1 - r.y0, h = r.ceil; return 2 * (w * d + w * h + d * h); };
   const fill = z => bedLumens(BED_ROOMS[z]) * FILL_LM / rects.reduce((a, r, i) => a + (ZONE_OF_RECT[i] === z ? area(r) : 0), 0);
-  BEDU.bedFill.value.set(fill(0), fill(1), fill(2));
+  BEDU.bedFill.value.set(fill(0), fill(1), fill(2), fill(3));
+  // the hall's light spilling into the kitchen: the 1.5 m of kitchen beyond the hall's full-width opening
+  const ext = spec.rooms.find(r => r.name === 'Hall extension');
+  if (spec.renovation.hall_lights === 'art' && ext) BEDU.bedSpill.value.set(ext.x0, ext.y1, ext.x1, ext.y1 + 1.5); else BEDU.bedSpill.value.set(0, 0, 0, 0);
+  // split-system boxes that cast shadows from the bedroom lights
+  const occ = BLs.occ || [];
+  BEDU.bedOccA.value.forEach((v, i) => { const o = occ[i]; if (o) v.set(...o.min, BED_ROOMS.indexOf(o.room)); else v.set(0, 0, 0, -1); });
+  BEDU.bedOccB.value.forEach((v, i) => { const o = occ[i]; if (o) v.set(...o.max, 0); else v.set(0, 0, 0, 0); });
   BEDU.bedCol.value.copy(WARM.dim).lerp(WARM.full, Math.sqrt(Math.max(0, (bedState.dim - 5) / 95)));
   BEDU.bedNightCol.value.copy(WARM.full).lerp(WARM.dim, 1 - bedState.dimSec / 100);   // the floor strip is the top strip's 2700 K tape
 }
@@ -1062,7 +1137,7 @@ for (const [key, rangeId, numId] of RENO) {
 // lounge TV unit
 // front bedroom bed: none, queen or king
 // hall: open straight through (false), classic cased archway (true) or simple archway ('simple')
-const hallKey = v => v === 'simple' ? 'simple' : v ? 'classic' : 'open';
+const hallKey = v => v === 'simple' || v === 'door' || v === 'arch' ? v : v ? 'classic' : 'open';
 for (const [key, id] of [['skylight', 'renoSkylight'], ['openingRaise', 'renoOpening'], ['kitchenTall', 'renoTall'], ['noPantry', 'renoNoPantry'], ['bedside', 'renoBedside'], ['whiteWoodwork', 'renoWhite'], ['creamExterior', 'renoCream'], ['bayHood', 'renoBayHood'], ['porchScreen', 'renoScreen'], ['sidePavers', 'renoPavers'], ['glassWall', 'renoGlassWall'], ['curtains', 'renoCurtains'], ['shutters', 'renoShutters']]) {
   $(id).checked = !!reno[key];
   $(id).addEventListener('change', () => {
@@ -1088,8 +1163,9 @@ const PICKS = {
   fbed: [() => reno.frontBed, v => { reno.frontBed = v; }],
   blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
   pend: [() => reno.pendant || 'augustOval', v => { reno.pendant = v; }],
-  hlight: [() => reno.hallLights || 'rail', v => { reno.hallLights = v; }],
-  hall: [() => hallKey(reno.hallDoorway), v => { reno.hallDoorway = { open: false, classic: true, simple: 'simple' }[v]; }],
+  hlight: [() => reno.hallLights === 'downlights' ? 'downlights' : 'art', v => { reno.hallLights = v; }],
+  hpend: [() => reno.hallPendant || 'woven', v => { reno.hallPendant = v; }],
+  hall: [() => hallKey(reno.hallDoorway), v => { reno.hallDoorway = { open: false, classic: true, simple: 'simple', door: 'door', arch: 'arch' }[v]; }],
 };
 document.querySelectorAll('select[data-pick]').forEach(s => s.addEventListener('change', () => {
   PICKS[s.dataset.pick][1](s.value); saveReno(); renoSummary(); rebuild(); if (s.dataset.pick === 'blight') syncBedUI();
@@ -1166,7 +1242,7 @@ document.querySelectorAll('[data-bscene]').forEach(b => b.addEventListener('clic
 }));
 // stand in a bedroom (Walk): front bedroom from the bay corner by the hall wall, facing the bed and the robe; bedroom 2
 // in the window corner beside the bed, facing the robe across the room (the view from the bed, standing); frontBed: beside the front bed's head, facing the wall the bed faces
-const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 } };
+const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 } };
 document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click', () => {
   const v = BED_VIEWS[b.dataset.bview];
   if (!walk.on) setWalk(true); else window.closeSheets?.();
@@ -1194,7 +1270,7 @@ syncBedUI(); markScene(); syncSecButton();
 
 // Reno sheet shows one room at a time. Tapping a room tab picks it; in Walk the sheet follows you, switching to the
 // room you walk into (a pink dot marks where you are). Rooms with nothing to change keep the last tab and say so.
-const ROOM_TAB = { 'Kitchen / dining': 'kitchen', 'Lounge / living': 'lounge', 'Bathroom 2': 'laundry', 'Front bedroom': 'bedroom', 'Bedroom 2': 'bedroom', Porch: 'hall', Entry: 'hall', Hall: 'hall', 'Hall extension': 'hall' };
+const ROOM_TAB = { 'Kitchen / dining': 'kitchen', 'Lounge / living': 'lounge', 'Bathroom 2': 'laundry', 'Front bedroom': 'bedroom', 'Bedroom 2': 'bedroom', 'Bedroom 3': 'bedroom', Porch: 'hall', Entry: 'hall', Hall: 'hall', 'Hall extension': 'hall' };
 const ROOM_KEY = 'fern-reno-room';
 function showRoom(key, remember = true) {
   document.querySelectorAll('[data-room]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.room === key)));
@@ -1258,7 +1334,17 @@ function saveView() {
 setInterval(saveView, 500);
 addEventListener('pagehide', saveView);
 addEventListener('visibilitychange', () => { if (document.hidden) saveView(); });
-renderer.setAnimationLoop(() => { animateDoors(Math.min(doorClock.getDelta(), 0.1)); updateDoorHint(); followRoom(); placeLights(); adaptExposure(); if (walk.on) stepWalk(); else { walk.clock.getDelta(); controls.update(); } if (!precompiling) renderer.render(scene, camera); });
+// the shadow map only redraws when the sun, a door, a layer or the build changes (it was redrawn every frame; at night,
+// with the sun down, it never needs to)
+renderer.shadowMap.autoUpdate = false;
+let shadowKey = '', shadowG = null;
+function updateShadows() {
+  let k = sun.intensity > 0 ? sun.position.toArray().map(v => v.toFixed(3)).join() + sun.target.position.toArray().map(v => v.toFixed(3)).join() : 'dark';
+  for (const d of doors) k += d.rotation.y.toFixed(3) + d.position.x.toFixed(3) + d.position.z.toFixed(3);
+  k += [G.roof.visible, G.furniture.visible, G.ceilings.visible].join();
+  if (k !== shadowKey || shadowG !== G) { shadowKey = k; shadowG = G; renderer.shadowMap.needsUpdate = true; }
+}
+renderer.setAnimationLoop(() => { animateDoors(Math.min(doorClock.getDelta(), 0.1)); updateShadows(); updateDoorHint(); followRoom(); placeLights(); adaptExposure(); if (walk.on) stepWalk(); else { walk.clock.getDelta(); controls.update(); } if (!precompiling) renderer.render(scene, camera); });
 // the house is built and the first frame drawn: fade out the loading screen
 renderer.render(scene, camera);
 setTimeout(() => document.getElementById('loading')?.classList.add('done'), 60);

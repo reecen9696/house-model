@@ -162,7 +162,7 @@ body.clean > *:not(canvas) { display: none !important; }
 <section class="sheet" id="sheet-sun" hidden>
   <h2>Sun</h2>
   <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1zm13 8H4v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9z"/></svg>Date</span><span class="val" id="dayVal"></span></div><input type="range" id="day" min="1" max="365" step="1" value="172"></div>
-  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>Time</span><span class="val" id="timeVal"></span></div><input type="range" id="time" min="5" max="23.75" step="0.25" value="12"></div>
+  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>Time</span><span class="val" id="timeVal"></span></div><input type="range" id="time" min="5" max="23.75" step="0.25" value="21.5"></div>
   <div class="grid3"><button class="btn" type="button" data-time="12">Midday</button><button class="btn" type="button" data-time="18">6 pm</button><button class="btn" type="button" data-time="21.5">Night</button></div>
   <p class="note" id="sunInfo"></p>
 </section>
@@ -374,7 +374,7 @@ body.clean > *:not(canvas) { display: none !important; }
     <div class="field"><div class="lab"><span>Dimmer, ceiling circuit: pendant or downlights (2700 K, warm-dim)</span><span class="val" id="blDimVal"></span></div><input type="range" id="blDim" min="5" max="100" step="5" value="100"></div>
     <div class="field"><div class="lab"><span>Dimmer, secondary circuit: LED strips and accent downlight</span><span class="val" id="blDimSecVal"></span></div><input type="range" id="blDimSec" min="5" max="100" step="5" value="100"></div>
     <div class="grid3"><button class="btn" type="button" data-bscene="all">All on</button><button class="btn" type="button" data-bscene="evening">Evening</button><button class="btn" type="button" data-bscene="sleep">Sleep</button></div>
-    <div class="grid3"><button class="btn" type="button" data-bview="front">Front bedroom, robe</button><button class="btn" type="button" data-bview="frontBed">Front bedroom, from the bed</button><button class="btn" type="button" data-bview="bed2">Bedroom 2</button></div>
+    <div class="grid3"><button class="btn" type="button" data-bview="front">Front bedroom, robe</button><button class="btn" type="button" data-bview="frontBed">Front bedroom, from the bed</button><button class="btn" type="button" data-bview="bed2">Bedroom 2</button><button class="btn" type="button" data-bview="bed3">Bedroom 3</button></div>
     <div class="grid3"><button class="btn" type="button" data-bview="frontSheer">Front bedroom, bay</button><button class="btn" type="button" data-bview="frontPillow">Front bedroom, from the pillow</button></div>
     <p class="note">Scenes set the time and the switches: All on (everything, full) and Evening (downlights 25%, robe strip 50%) at 9:30 pm; Sleep (night light only, the ceiling dark) at 11:30 pm. Midday is on the Sun sheet. Two round buttons at the side work the two circuits: the bulb is the ceiling lights (the downlights or pendant, and the rest of the house), the strip beside it the secondary lights (robe LED, plus corner downlights or reading spots in those versions; K key).</p>
   </div>
@@ -383,6 +383,8 @@ body.clean > *:not(canvas) { display: none !important; }
     <div class="q">
       <span class="lab" id="renoHallLab">Doorway</span>
       <select data-pick="hall" aria-labelledby="renoHallLab">
+        <option value="arch">Door-width arch, ornate (original doorway, arched)</option>
+        <option value="door">Door-sized opening (original doorway)</option>
         <option value="open">Open</option>
         <option value="classic">Classic arch</option>
         <option value="simple">Simple arch</option>
@@ -391,10 +393,18 @@ body.clean > *:not(canvas) { display: none !important; }
     <div class="q">
       <span class="lab" id="renoHallLightLab">Lighting</span>
       <select data-pick="hlight" aria-labelledby="renoHallLightLab">
-        <option value="rail">Entry pendant + picture-rail uplight (recommended)</option>
+        <option value="art">Pendants + one painting, like Mint's period halls (recommended)</option>
         <option value="downlights">Downlights down the centre</option>
       </select>
-      <p class="note">August oval on the entry rose, bottom at 2.1 (door-head height). White picture rail at 2.7 m down both walls with a 2700 K LED strip on top (120 lm/m) washing the cornice and ceiling: no holes in the hall ceiling. Night: the same strip at 5-10% on a motion sensor. Switch two-way at the front door and the kitchen end, on a dimmer. Works with the bulb button.</p>
+      <p class="note">Three matching pendants on the centreline, bottoms at 2.1 m (door-head height): on the entry rose, mid-hall and mid-extension (new plain roses); the door-sized opening makes the extension its own space. Two paintings on the long party wall, each centred on a pendant (900 x 1100 mid-hall, 700 x 900 past the arch), centre 1.55 m, lit by their spill (no spotlight: in a 1.19 m hall a 30° spot would sit against the opposite wall; a frame-mounted picture light if wanted). No downlights.</p>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoHallPendLab">Hall pendants</span>
+      <select data-pick="hpend" aria-labelledby="renoHallPendLab">
+        <option value="woven">Woven rattan bell, ~350 (moodboard)</option>
+        <option value="augustOval">Lucci August oval, opal (matches the bedrooms)</option>
+        <option value="augustRound">Lucci August round, opal, 300</option>
+      </select>
     </div>
     <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="hallFront">Hall from the front door</button><button class="btn" type="button" data-bview="hallBack">Hall from the kitchen end</button></div>
   </div>
