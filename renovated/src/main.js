@@ -12,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1 };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 3, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1 };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -74,7 +74,8 @@ if (savedReno && (savedReno.artV || 0) < 1) {
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // the whole agreed setup became the default (simple archway, white woodwork, no pavers ...): move everyone over once
-if (savedReno && (savedReno.defaultsV || 0) < 2) {   // v2 (2026-09-27): walnut kitchen, sheer curtains, fridge by the pantry, old pantry out
+if (savedReno && (savedReno.defaultsV || 0) < 3) {   // v3 (2026-10-21): everyone back to the defaults once (client)
+     // v2 (2026-09-27): walnut kitchen, sheer curtains, fridge by the pantry, old pantry out
   const { kitchenV, laundryV, loungeV, furnitureV, ...all } = RENO_DEFAULT;
   Object.assign(reno, all);
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}

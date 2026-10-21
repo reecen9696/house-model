@@ -972,7 +972,7 @@ function mats() {
   const s = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, shadowSide: THREE.FrontSide, ...o });
   M.white = s(0xe8e4dc);                 // painted brick, main house
   { const bt = brickTextures(); M.red = s(0xffffff, { map: bt.map, bumpMap: bt.bump, bumpScale: 0.035, roughness: 0.88 }); M.red.userData.brick = true; }   // face brick, wing and chimney
-  M.intWall = s(0xf2efe6);
+  M.intWall = s(0xf3f0e8);                // Dulux Natural White (client 2026-10-21), walls and ceilings
   M.tile = s(0xb85c3c, { roughness: 0.8 });     // terracotta
   M.metal = s(0x8d9196, { roughness: 0.5, metalness: 0.4 });
   M.fibro = s(0x9ea3a0);
@@ -1025,7 +1025,7 @@ function mats() {
   M.railTimber = s(0x8b7b66, { roughness: 0.9 });   // rails and posts, plain treated pine
   M.green = s(0x3f5a3a);
   M.shed = s(0xb9bec2, { metalness: 0.5, roughness: 0.5 });
-  M.ceiling = s(0xf7f5f0, { side: THREE.DoubleSide });   // lit by sky bounce and the downlights, like any other surface white, as in the photos
+  M.ceiling = s(0xf3f0e8, { side: THREE.DoubleSide });   // Dulux Natural White, as the walls (was a cooler 0xf7f5f0)   // lit by sky bounce and the downlights, like any other surface white, as in the photos
   M.gutter = s(0x3a3a3a);
   return M;
 }
@@ -4301,7 +4301,7 @@ export function buildHouse(spec) {
   }
   // --- beds (Reno): upholstered queen or king with bedside drawers either side. Built in a local frame with the
   // headboard's face at x = 0 (the bed running toward -x) and centred on y = 0, then set against its wall.
-  const bedSet = (size, bedside, bsW = 0.45, lamps = true, headH = 1.2) => {
+  const bedSet = (size, bedside, bsW = 0.45, lamps = true, headH = 1.2, bsStyle = 'oak') => {
     const g = new THREE.Group();
     const mw = size === 'king' ? 1.83 : 1.53, ml = 2.03, fw = mw + 0.1, fl = ml + 0.1;          // mattress, and the frame round it
     const wx = -0.015, fx0 = wx - fl, y0 = -fw / 2, y1 = fw / 2;
@@ -4318,19 +4318,36 @@ export function buildHouse(spec) {
     if (bedside) {
       const oak = M.oak || (M.oak = new THREE.MeshStandardMaterial({ color: 0xc9a47a, roughness: 0.55 }));
       const shade = m('lampShade', 0xf1ece0, { emissive: 0x4a4436 });
+      const lawson = bsStyle === 'lawson', bsTop = lawson ? 0.57 : 0.55;
       for (const [b0, b1] of [[y0 - 0.07 - bsW, y0 - 0.07], [y1 + 0.07, y1 + 0.07 + bsW]]) {
-        const bx0 = wx - 0.4;
+        const bx0 = wx - (lawson ? 0.43 : 0.4);
+        if (lawson) {
+          // Astin Sinclair 'Lawson' bedside (client 2026-10-21), walnut, 480 W x 430 D x 570 H: a plain box on a recessed
+          // plinth, two equal drawers whose fronts carry a raised frame border, no handles
+          const wal = M.lawsonWalnut || (M.lawsonWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), color: 0xb89a86, roughness: 0.55 }));
+          const dark = M.lawsonPlinth || (M.lawsonPlinth = new THREE.MeshStandardMaterial({ color: 0x3e2c22, roughness: 0.7 }));
+          box(g, bx0 + 0.04, wx - 0.03, b0 + 0.035, b1 - 0.035, 0, 0.06, dark);                          // recessed plinth
+          box(g, bx0 + 0.02, wx, b0, b1, 0.06, bsTop, wal);                                               // carcass and top
+          const dh = (bsTop - 0.065) / 2;
+          for (let i = 0; i < 2; i++) {
+            const z0 = 0.065 + i * dh + 0.002, z1 = z0 + dh - 0.004, f = 0.022;
+            box(g, bx0 + 0.004, bx0 + 0.02, b0 + 0.004, b1 - 0.004, z0, z1, wal);                          // drawer front
+            for (const [a, c, za, zb] of [[b0 + 0.004, b1 - 0.004, z1 - f, z1], [b0 + 0.004, b1 - 0.004, z0, z0 + f], [b0 + 0.004, b0 + 0.004 + f, z0 + f, z1 - f], [b1 - 0.004 - f, b1 - 0.004, z0 + f, z1 - f]])
+              box(g, bx0, bx0 + 0.004, a, c, za, zb, wal);                                                    // its raised frame border
+          }
+        } else {
         box(g, bx0, wx, b0, b1, 0.06, 0.55, oak);                                                   // carcass on short legs
         for (const x of [bx0 + 0.03, wx - 0.06]) for (const y of [b0 + 0.03, b1 - 0.06]) box(g, x, x + 0.03, y, y + 0.03, 0, 0.06, M.frameA);
         for (const [z0, z1] of [[0.08, 0.3], [0.32, 0.53]]) { box(g, bx0 - 0.012, bx0, b0 + 0.01, b1 - 0.01, z0, z1, oak); box(g, bx0 - 0.024, bx0 - 0.012, (b0 + b1) / 2 - 0.07, (b0 + b1) / 2 + 0.07, (z0 + z1) / 2 - 0.008, (z0 + z1) / 2 + 0.008, M.frameA); }
+        }
         if (spec.renovation.decor === 'styled') {                                                   // a book or two at the front of each bedside
-          const yb = (b0 + b1) / 2; let zz = 0.55;
+          const yb = (b0 + b1) / 2; let zz = bsTop;
           for (const [t, c, k] of [[0.03, 0xd8cdb8, 0], [0.024, 0x8d9aa6, 1]]) { box(g, bx0 + 0.006 + k * 0.006, bx0 + 0.118 - k * 0.006, yb - 0.11 + k * 0.01, yb + 0.06 - k * 0.01, zz, zz + t, decMat('book' + c.toString(16), c, { roughness: 0.8 })); zz += t; }
         }
         if (!lamps) continue;                                                                        // wall lights instead
         const lx = wx - 0.2, ly = (b0 + b1) / 2;                                                    // small lamp
-        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.25, 16), M.frameA); base.position.copy(L(lx, ly, 0.675)); g.add(base);
-        const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.2, 20, 1, true), shade); sh.material.side = THREE.DoubleSide; sh.position.copy(L(lx, ly, 0.9)); g.add(sh);
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.25, 16), M.frameA); base.position.copy(L(lx, ly, bsTop + 0.125)); g.add(base);
+        const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.2, 20, 1, true), shade); sh.material.side = THREE.DoubleSide; sh.position.copy(L(lx, ly, bsTop + 0.35)); g.add(sh);
       }
     }
     return { g, len: fl, width: fw };
@@ -4342,7 +4359,7 @@ export function buildHouse(spec) {
   // space between the bay wall and the built-in
   if (spec.renovation.front_bed) {
     const FB = spec.renovation.front_bed, rm = spec.rooms.find(r => r.name === 'Front bedroom');
-    placeBed(bedSet(FB.size, FB.bedside, 0.45, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
+    placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson'), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
   }
   // bedroom 2: the west wall has the window and the south wall is all robe, so the headboard goes on the north wall,
   // with the foot 690 short of the robe doors. The hall door swings in across the foot corner, so the bed sits 50 west
