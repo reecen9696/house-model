@@ -3216,12 +3216,12 @@ export function buildHouse(spec) {
       const fr = spec.renovation.fridge, tallX = Math.min(K.run[0], fr?.at?.startsWith('runEnd') ? (fr.pantry ? fr.pantry[0] : fr.x0 - 0.02) : Infinity);
       if (tallX - 1.30 > 0.3) cornices.push([1.30, tallX, 15.02, 15.12]);   // not on the 110 mm jamb beside the tall units
     }
-    // decorative plaster cornice as in the kitchen photo: the hall's enriched cove at 85% for the lower ceiling
+    // plaster cornice as in the listing's kitchen photo: a slim plain cove (the kitchen is a later, lower room; no enrichment)
     for (const [x0, x1, y0, y1, lineOv, dirOv] of cornices) {
       const alongX = x1 - x0 > y1 - y0;                                     // wall line on the band's outer edge
       let line = alongX ? (y0 < 15.5 ? y0 : spec.kitchen_south_wall.y0) : (x0 < 1 ? x0 : x1), dir = alongX ? (y0 < 15.5 ? 1 : -1) : (x0 < 1 ? 1 : -1);
       if (lineOv !== undefined) { line = lineOv; dir = dirOv; }                 // explicit wall line (the rear wall over the opening)   // south run on the bath/pantry wall's kitchen face
-      if (alongX) corniceRun(int_, true, line, x0, x1, dir, 2.8, 'ornate', { scale: 0.85 }); else corniceRun(int_, false, line, y0, y1, dir, 2.8, 'ornate', { scale: 0.85 });
+      if (alongX) corniceRun(int_, true, line, x0, x1, dir, 2.8, 'plain'); else corniceRun(int_, false, line, y0, y1, dir, 2.8, 'plain');
     }
     // keep every fitting 400 mm clear of joinery that runs to the ceiling, so none sits in a cupboard top or throws a hard
     // scallop down the doors: the tall run (600, or the fridge and pantry cupboard), the corner cupboard (670 each way),

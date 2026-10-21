@@ -64,7 +64,9 @@ if (savedReno && (savedReno.defaultsV || 0) < 2) {   // v2 (2026-09-27): walnut 
 let spec = applyReno(baseSpec, reno);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// resolution: capped at 1.5x, then stepped down (to 1x) while frames run slow and back up when there's headroom
+const PR_MAX = Math.min(devicePixelRatio, 1.5);
+renderer.setPixelRatio(PR_MAX);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;   // a filmic shoulder: sun-bright surfaces keep their tone instead of clipping
 renderer.shadowMap.enabled = true;
@@ -347,9 +349,6 @@ function skyMaterial(src) {
       { vec4 sp = modelMatrix * vec4( transformed, 1.0 ); vSkyN = normalize( mat3( modelMatrix ) * ${skyNormal} ); vSkyP = sp.xyz + vSkyN * 0.15; }`);
     sh.fragmentShader = 'uniform sampler2D skyField; uniform vec4 skyXf; uniform float skyBounce; uniform float lampOn; uniform vec3 lampCol; varying vec3 vSkyP; varying vec3 vSkyN;\n' +
       'uniform float bedOn; uniform vec4 bedRm[5]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[14]; uniform vec4 bedPtK[14]; uniform vec4 bedLn[10]; uniform vec4 bedLnA[10]; uniform float bedLnM[10]; uniform vec4 bedFill; uniform vec3 bedCol; uniform vec3 bedNightCol; uniform vec4 bedSpill; uniform vec4 bedOccA[4]; uniform vec4 bedOccB[4];\n' +
-      // shadows of the split-system heads (axis-aligned boxes, lot frame): visibility of point L from P, 0..1
-      'float bedSeg( vec3 a, vec3 b, vec3 mn, vec3 mx ) { vec3 d = b - a + 1e-6, t0 = ( mn - a ) / d, t1 = ( mx - a ) / d; float tn = max( max( min( t0.x, t1.x ), min( t0.y, t1.y ) ), min( t0.z, t1.z ) ), tf = min( min( max( t0.x, t1.x ), max( t0.y, t1.y ) ), max( t0.z, t1.z ) ); return tf >= max( tn, 0.0 ) && tn <= 1.0 ? 0.0 : 1.0; }\n' +
-      'float bedVis( vec3 P, vec3 L, int room, float r ) { float v = 0.0; for ( int s = 0; s < 4; s ++ ) { vec3 o = vec3( s == 0 ? r : s == 1 ? -r : 0.0, s == 2 ? r : s == 3 ? -r : 0.0, 0.0 ); float h = 1.0; for ( int j = 0; j < 4; j ++ ) { if ( int( bedOccA[ j ].w + 0.5 ) != room ) continue; h *= bedSeg( P, L + o, bedOccA[ j ].xyz, bedOccB[ j ].xyz ); } v += h; } return v * 0.25; }\n' +
       sh.fragmentShader.replace('#include <aomap_fragment>', `{
         // three.js world (X, Z) is lot (-x, y); surfaces sample 150 mm in front of themselves, in the room they face
         // a double-sided sheet seen from its back (the lounge ceiling, drawn with its normal up) samples on the side
@@ -390,7 +389,6 @@ function skyMaterial(src) {
           float wSpill = 1.0;
           if ( room < 0 && Q.x >= bedSpill.x && Q.x <= bedSpill.z && Q.y >= bedSpill.y && Q.y <= bedSpill.w ) { room = 2; wSpill = 1.0 - ( Q.y - bedSpill.y ) / ( bedSpill.w - bedSpill.y ); }
           if ( room >= 0 ) {
-            vec3 Ps = P + N * 0.01;                                         // shadow rays start just off the surface
             vec3 E = ( room == 0 ? bedFill.x : room == 1 ? bedFill.y : room == 2 ? bedFill.z : bedFill.w ) * ( 0.75 + 0.25 * N.z ) * bedCol;
             for ( int i = 0; i < 14; i ++ ) {
               if ( int( bedPtK[ i ].x + 0.5 ) != room || bedPt[ i ].w <= 0.0 ) continue;
@@ -401,7 +399,7 @@ function skyMaterial(src) {
               else if ( bedPtK[ i ].y > 2.5 ) I *= max( l.z, 0.0 );                 // down only (stone pendant): Lambertian about straight down
               else if ( bedPtK[ i ].y > 1.5 ) I *= smoothstep( 0.848, 0.951, ca );      // wash: 40 degree beam, soft edge to 64
               else if ( bedPtK[ i ].y > 0.5 ) I *= smoothstep( 0.906, 0.978, ca ); // reading spot: 24 degree beam, edge to 50
-              E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol * bedVis( Ps, bedPt[ i ].xyz, room, 0.1 );   // soft shadows: the light sampled over ~200 mm
+              E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol;
             }
             for ( int i = 0; i < 10; i ++ ) {
               vec4 ln = bedLn[ i ], la = bedLnA[ i ];
@@ -419,10 +417,7 @@ function skyMaterial(src) {
               float F0 = ( atan( s1 / r ) - atan( s0 / r ) ) / ( 2.0 * r2 * r ) + ( s1 / ( r2 + s1 * s1 ) - s0 / ( r2 + s0 * s0 ) ) / ( 2.0 * r2 );
               float F1 = 0.5 / ( r2 + s0 * s0 ) - 0.5 / ( r2 + s1 * s1 );
               float eN = max( dot( Nl, l0 ) * r2 * F0 + Nl.x * r * F1, 0.0 );
-              // shadows from the strip: three points along it (its ends and middle), back in the lot frame
-              float sv = 0.0;
-              for ( int k = 0; k < 3; k ++ ) { float f = float( k ) * 0.5; vec3 Sk = vec3( mix( ln.x, ln.y, f ), ln.z, ln.w ); sv += bedVis( Ps, alongY ? Sk.yxz : Sk, room, 0.0 ); }
-              E += la.z * max( dot( ax, -l0 ), 0.0 ) * eN * ( mode == 1 ? bedNightCol : bedCol ) * sv / 3.0;
+              E += la.z * max( dot( ax, -l0 ), 0.0 ) * eN * ( mode == 1 ? bedNightCol : bedCol );
             }
             reflectedLight.directDiffuse += E * wSpill * BRDF_Lambert( material.diffuseColor );
           }
@@ -619,7 +614,7 @@ function setSun(date) {
 // inverse-square falloff, no shadow maps: the reach is capped at 4 m so a fitting can't light the far side of a wall
 // (no shadows means walls don't stop it), and the pool's outermost lights fade out rather than switch off as you walk.
 // The bounce that fills the room (ceiling included) is the lamp field, which walls do stop and every fitting feeds.
-const POOL = touch ? 10 : 16, pool = [];
+const POOL = touch ? 6 : 8, pool = [];                                // every lit pixel pays for each one: 16 cost ~10 ms a frame at retina size
 for (let i = 0; i < POOL; i++) {
   const s = new THREE.SpotLight(0xffecd6, 0, 4, THREE.MathUtils.degToRad(55), 1, 2);
   s.visible = false; scene.add(s, s.target); pool.push(s);
@@ -1344,7 +1339,18 @@ function updateShadows() {
   k += [G.roof.visible, G.furniture.visible, G.ceilings.visible].join();
   if (k !== shadowKey || shadowG !== G) { shadowKey = k; shadowG = G; renderer.shadowMap.needsUpdate = true; }
 }
-renderer.setAnimationLoop(() => { animateDoors(Math.min(doorClock.getDelta(), 0.1)); updateShadows(); updateDoorHint(); followRoom(); placeLights(); adaptExposure(); if (walk.on) stepWalk(); else { walk.clock.getDelta(); controls.update(); } if (!precompiling) renderer.render(scene, camera); });
+const frameClock = new THREE.Clock(); let frameAvg = 16, frameN = 0;
+function adaptResolution() {
+  const dt = Math.min(frameClock.getDelta() * 1000, 200); frameAvg += (dt - frameAvg) * 0.05;
+  if (++frameN < 90 || document.hidden) return;                       // judge every ~1.5 s, on a settled average
+  const pr = renderer.getPixelRatio();
+  let next = pr;
+  if (frameAvg > 24 && pr > 1) next = Math.max(1, pr - 0.25);
+  else if (frameAvg < 13 && pr < PR_MAX) next = Math.min(PR_MAX, pr + 0.25);
+  if (next !== pr) { renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight); }
+  frameN = 0;
+}
+renderer.setAnimationLoop(() => { adaptResolution(); animateDoors(Math.min(doorClock.getDelta(), 0.1)); updateShadows(); updateDoorHint(); followRoom(); placeLights(); adaptExposure(); if (walk.on) stepWalk(); else { walk.clock.getDelta(); controls.update(); } if (!precompiling) renderer.render(scene, camera); });
 // the house is built and the first frame drawn: fade out the loading screen
 renderer.render(scene, camera);
 setTimeout(() => document.getElementById('loading')?.classList.add('done'), 60);
