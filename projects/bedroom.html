@@ -3,307 +3,150 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bedroom project</title>
+<title>Stage 1 project</title>
 <style>
-  :root {
-    --bg: #f3f1ec; --card: #fbfaf7; --ink: #1f2427; --muted: #5d646a; --line: rgba(31,36,39,0.13);
-    --accent: #2f5d50; --accent-ink: #fff; --chip: #ecebe6; --warn: #8a5a12;
-    color-scheme: light;
-  }
+  :root { --bg: #f3f1ec; --card: #fbfaf7; --ink: #1f2427; --muted: #5d646a; --line: rgba(31,36,39,0.13); --accent: #2f5d50; color-scheme: light; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 16px 16px 80px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, sans-serif; -webkit-text-size-adjust: 100%; }
+  main { max-width: 680px; margin: 0 auto; padding: 12px 16px 110px; }
   a { color: var(--accent); }
-  header { display: grid; gap: 6px; padding: 8px 0 14px; }
-  .crumbs { font-size: 13px; display: flex; gap: 12px; flex-wrap: wrap; }
-  h1 { margin: 0; font-size: 26px; line-height: 1.15; }
-  .sub { margin: 0; color: var(--muted); }
-  nav.tabs { position: sticky; top: 0; z-index: 2; display: flex; gap: 6px; padding: 8px 0; background: var(--bg); overflow-x: auto; }
-  nav.tabs a { flex: none; padding: 8px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 550; }
-  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin: 14px 0; }
-  h2 { margin: 0 0 4px; font-size: 18px; }
-  h3 { margin: 16px 0 6px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-  p { margin: 6px 0; }
-  .note { font-size: 13px; color: var(--muted); }
-  .scheme { display: grid; gap: 6px; margin: 8px 0 0; padding-left: 18px; }
-  .m { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
-  .m:first-of-type { border-top: 0; }
-  .m label { font-weight: 550; }
-  .m .why { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
-  .m input[type=number], .m input[type=text], .m select { width: 132px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fff; text-align: right; }
-  .m input[type=text] { text-align: left; }
-  .unit { font-size: 12px; color: var(--muted); margin-left: 4px; }
-  .yn { display: flex; gap: 6px; }
-  .yn button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; cursor: pointer; }
-  .yn button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; vertical-align: top; padding: 9px 6px; border-top: 1px solid var(--line); }
-  th { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; border-top: 0; }
-  td.q { font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  td .spec { font-size: 13px; color: var(--muted); }
-  td.got { width: 34px; }
-  tr.done td { opacity: 0.5; }
-  tr.done td.got { opacity: 1; }
-  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
-  .pill.opt { background: #f2eadb; color: var(--warn); }
-  .choice { display: grid; gap: 8px; margin-top: 8px; }
-  .choice label { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; }
-  .choice input { margin-top: 4px; accent-color: var(--accent); }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .actions button { border: 0; border-radius: 999px; padding: 10px 14px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; cursor: pointer; }
-  .actions button.ghost { background: var(--chip); color: var(--ink); }
-  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
-  .room { border-left: 3px solid var(--accent); padding-left: 10px; }
-  .total { font-weight: 650; }
-  @media (max-width: 520px) { .m { grid-template-columns: 1fr; } .m input[type=number], .m select { width: 100%; text-align: left; } td.spec-col { display: none; } }
+  h1 { margin: 10px 0 2px; font-size: 24px; line-height: 1.2; }
+  .sub { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 12px 0; }
+  h2 { margin: 0 0 6px; font-size: 17px; }
+  h3 { margin: 12px 0 4px; font-size: 15px; }
+  ul { margin: 4px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  .note { color: var(--muted); font-size: 14px; }
+  .row { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 16px; text-align: right; background: #fff; }
+  textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 16px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(243,241,236,0.92); backdrop-filter: blur(8px); border-top: 1px solid var(--line); }
+  .bar button { width: 100%; max-width: 680px; display: block; margin: 0 auto; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .bar button.done { background: #3b7a3b; }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <div class="crumbs"><a href="./">← Projects</a><a href="../renovated/">Open the 3D house</a></div>
-    <h1>Bedroom project</h1>
-    <p class="sub">Front bedroom and bedroom 2. Lighting, the robes and the floor. Fill in the measurements on site; the shopping list works itself out from them.</p>
-  </header>
+  <a href="index.html">← Projects</a>
+  <h1>Stage 1: front bedroom, bedroom 2, hall</h1>
+  <p class="sub">13 Fern Ave. What to buy, what to measure, what to tell the sparky. Tap <b>Copy everything</b> to paste the lot into Claude.</p>
 
-  <nav class="tabs" aria-label="Sections">
-    <a href="#scheme">Scheme</a><a href="#measure">Measure</a><a href="#decide">Decide</a><a href="#buy">Buy</a><a href="#trades">Trades</a><a href="#notes">Notes</a>
-  </nav>
-
-  <section id="scheme">
-    <h2>The scheme</h2>
-    <p class="note">Same in both rooms (see the 3D model, Reno › Bedroom, and BEDROOM-LIGHTING.md for the reasoning).</p>
-    <ul class="scheme">
-      <li><b>Pendant</b> on the existing ceiling rose: Lucci August oval, opal glass, 400 × 240, bottom at ~2.35 m, on a dimmer.</li>
-      <li><b>LED strip on top of the robe</b>: in an angled aluminium channel at the back of the robe top, tilted up into the room, washing the ceiling and cornice. Front room: runs over the robe and the open shelving.</li>
-      <li><b>LED strip under the robe</b>: same tape, in a slim channel tucked under the door bottoms in the plinth recess, a low glow on the floor.</li>
-      <li>Both strips on one 24 V driver per room, on their own dimmer (the second light button in the app).</li>
-      <li><b>Robes painted white</b>, a 20-30 mm lip along the front of the robe top, <b>silver round knobs</b>.</li>
-      <li>2700 K everywhere, CRI 90+ (95+ for the tape), one tape batch for all strips.</li>
-      <li>Reading: bedside lamps. Optional: light inside the robes that comes on with the doors. Cream carpet.</li>
+  <section>
+    <h2>The scheme in one breath</h2>
+    <ul>
+      <li>Warm everywhere: <b>2700 K</b>, <b>CRI 90+</b> (95+ for LED tape), no downlights in the bedrooms or hall.</li>
+      <li>Each bedroom: one opal pendant on the ceiling rose + an LED strip hidden on top of the robe + a faint strip under the robe doors at the floor. Two dimmers per room.</li>
+      <li>Hall: three matching opal pendants down the centre, bottoms at 2.1 m, switched from both ends.</li>
+      <li>White robes with silver knobs, cream carpet, sheers in the bay (front room), sheers + white roller blind (bedroom 2).</li>
     </ul>
   </section>
 
-  <section id="measure">
-    <h2>Measure next visit</h2>
-    <p class="note">Millimetres. Grey numbers are what the model assumes; leave a box empty to keep the assumption. Saved on this device as you type. Take the photos listed at the end.</p>
-    <div id="measures"></div>
-    <h3>Photos to take</h3>
-    <ul class="scheme" id="photos"></ul>
+  <section>
+    <h2>Buy (China sourcing list)</h2>
+    <p class="note">Switches, sockets, drivers and anything hard-wired must carry the AU <b>RCM</b> mark or the electrician can't legally fit it. Pendants and lamps are the easy wins to import; keep the wiring gear AU-compliant.</p>
+
+    <h3>Pendants</h3>
+    <ul>
+      <li><b>2 × bedroom pendant</b>: frosted opal glass oval, ~400 wide × 240 high, white canopy, cord for 3.15 m ceiling, bottom of shade at 2.35 m. E27. (Model: Lucci August oval.)</li>
+      <li><b>3 × hall pendant</b>: frosted opal glass "pebble", ~310 wide × 280 high, small white cap, cord for 3.15 m ceiling, bottom at 2.1 m. E27.</li>
+      <li><b>5 × E27 LED globe</b>: frosted, 2700 K, CRI 90+, dimmable (trailing-edge). Bedrooms 1200–1500 lm (opal glass eats ~30%). Hall ~800 lm.</li>
+      <li><b>2 × small plain plaster ceiling rose</b>, ~300 dia, for the two new hall pendants (the entry rose is original, keep).</li>
+    </ul>
+
+    <h3>LED strips (both bedrooms)</h3>
+    <ul>
+      <li><b>Tape</b>: 24 V, 2700 K, CRI 95+, SDCM ≤ 3, ≥ 120 LEDs/m or COB, 700–1000 lm/m class (run dimmed). Need <b>~3.1 m</b> front robe + shelving, <b>~3.3 m</b> bedroom 2 robe, plus the same again for the floor strips: buy <b>2 × 5 m reels</b> + <b>1 × 5 m spare</b>.</li>
+      <li><b>Channel, top of robe</b>: 45° angled aluminium channel with opal diffuser, 2 × ~3.3 m (tape faces up and back at the wall). The robe stops ~0.55 m below the ceiling so the glow washes the ceiling and cornice.</li>
+      <li><b>Channel, floor</b>: slim recessed/flat aluminium channel with opal diffuser, 2 × ~3.3 m, tucked in the plinth recess under the doors. Run at ~5% as a night light.</li>
+      <li><b>Drivers</b>: 2 × 24 V dimmable constant-voltage driver, 60 W, <b>trailing-edge (Triac) dimmable, RCM</b>, one per room, hidden in the robe top. Alternative: Zigbee/Tuya 24 V dimmer-drivers and smart wall dimmers, which sidesteps dimmer-compatibility trouble.</li>
+      <li>End caps, mounting clips, 2-core 24 V cable, solder/clip connectors.</li>
+    </ul>
+
+    <h3>Switches (AU standard, white, RCM)</h3>
+    <ul>
+      <li><b>Front bedroom</b>, inside north of the door: 1 rotary <b>dimmer</b> (pendant) + 1 rocker (robe strips). The door is rehung to open against the shelving.</li>
+      <li><b>Bedroom 2</b>, inside north of the door: 1 dimmer (pendant) + 1 rocker (robe strips). Door rehung likewise.</li>
+      <li><b>Entry</b>, west wall inside the front door (existing switch position, lowered to 1.05 m): 1 dimmer, 2-way (hall pendants) + 1 rocker (porch).</li>
+      <li><b>Kitchen end of the hall</b>: 1 × 2-way rocker for the hall pendants (the rest of the kitchen plate comes in stage 2).</li>
+      <li>All plates centre <b>1.05 m</b>, latch side, ~100 mm off the architrave. Dimmers trailing-edge, LED-rated. Clipsal Iconic or equal; Chinese "AU standard" plates exist but check the RCM mark.</li>
+    </ul>
+
+    <h3>Power points (double GPO, white, RCM; USB-C on the bedside ones)</h3>
+    <ul>
+      <li><b>Front bedroom</b>: 2 × bedside (one each side of the bed head), 1 × desk/dresser wall, 1 × inside the robe top for the driver (switched). 4 doubles.</li>
+      <li><b>Bedroom 2</b>: 2 × bedside, 1 × desk wall, 1 × robe top for the driver. 4 doubles.</li>
+      <li><b>Hall</b>: 1 × double low on the party wall for the vacuum.</li>
+      <li><b>Split systems</b> (installer supplies the isolators): 3.5 kW front bedroom, 2.5 kW bedroom 2, both on the west wall, tops at 2.65 m.</li>
+    </ul>
+
+    <h3>Other</h3>
+    <ul>
+      <li>Robe knobs: small round silver, ~30 mm, 10 for the front room (4 doors + drawers), 8 for bedroom 2.</li>
+      <li>Bedroom 2 roller blind: white blockout, ~1.47 m wide, face-fit cassette above the architrave. Sheer curtain track, ceiling-fix, ~1.7 m.</li>
+      <li>Front bay: sheer track ~2.8 m ceiling-fix across the bay, sheers gathered to each side.</li>
+    </ul>
   </section>
 
-  <section id="decide">
-    <h2>Decide before buying</h2>
-    <h3>How the LED strips are powered and dimmed</h3>
-    <div class="choice" id="wiring">
-      <label><input type="radio" name="wiring" value="a"><span><b>A. Mostly DIY.</b> Plug-in 24 V driver in a power point near the robe, a 2-channel smart LED controller (top and floor strips set separately), dimmed from a stick-on wireless switch or your phone. Everything after the plug is 24 V and legal to do yourself. Needs a power point within reach (inside the overhead cupboard is neatest).</span></label>
-      <label><input type="radio" name="wiring" value="b"><span><b>B. Electrician.</b> Driver wired in the overhead cupboard, fed from a wall dimmer at the door (driver and dimmer must be a matched pair: trailing-edge, or DALI/Casambi). Cleaner, but one circuit for both strips, so the floor strip runs at the same level as the top unless a second channel is added.</span></label>
-    </div>
-    <h3>Optional extras</h3>
-    <div class="choice" id="extras">
-      <label><input type="checkbox" value="robeLights"><span><b>Lights inside the robes</b>, on when a door opens (battery, rechargeable).</span></label>
-      <label><input type="checkbox" value="lamps"><span><b>Bedside lamps</b> (four, with 2700 K bulbs).</span></label>
-      <label><input type="checkbox" value="carpet"><span><b>Cream carpet</b> for both rooms (quantities from your room measurements).</span></label>
-      <label><input type="checkbox" value="paint"><span><b>Paint the robes</b> yourself (primer, enamel, sanding).</span></label>
-    </div>
+  <section>
+    <h2>Measure on site before ordering</h2>
+    <p class="note">Model numbers are prefilled; overwrite with the tape. These go into the copied text.</p>
+    <div class="row"><label for="m1">Front robe + shelving width (strip length), mm</label><input id="m1" type="number" value="3110"></div>
+    <div class="row"><label for="m2">Bedroom 2 robe width (strip length), mm</label><input id="m2" type="number" value="3280"></div>
+    <div class="row"><label for="m3">Ceiling height, bedrooms, mm</label><input id="m3" type="number" value="3150"></div>
+    <div class="row"><label for="m4">Entry ceiling rose diameter, mm</label><input id="m4" type="number" value="750"></div>
+    <div class="row"><label for="m5">Bedroom 2 window width (blind), mm</label><input id="m5" type="number" value="1270"></div>
+    <div class="row"><label for="m6">Split system wall space above windows, mm</label><input id="m6" type="number" value="400"></div>
+    <h3>Notes</h3>
+    <textarea id="notes" placeholder="Anything else you find on site"></textarea>
   </section>
 
-  <section id="buy">
-    <h2>Shopping list</h2>
-    <p class="note">Quantities update from your measurements and choices. Prices are approximate (only the pendant is quoted). Tick things off as you buy them.</p>
-    <table>
-      <thead><tr><th class="got"></th><th>Qty</th><th>Item</th></tr></thead>
-      <tbody id="list"></tbody>
-    </table>
-    <p class="note" id="tally"></p>
-  </section>
-
-  <section id="trades">
-    <h2>For the electrician / carpenter</h2>
-    <ul class="scheme" id="tradeList"></ul>
-  </section>
-
-  <section id="notes">
-    <h2>Notes</h2>
-    <textarea id="noteBox" placeholder="Anything else from the visit"></textarea>
-    <div class="actions">
-      <button type="button" id="copy">Copy everything as text</button>
-      <button type="button" class="ghost" id="reset">Clear my entries</button>
-    </div>
+  <section>
+    <h2>Tell the electrician</h2>
+    <ul>
+      <li>Pendants hung from a joist through the rose, never from the plaster. New roses on the hall centreline at the two marked points.</li>
+      <li>Two circuits per bedroom: ceiling (dimmer) and strips (rocker, dimmed at the driver or a second dimmer).</li>
+      <li>Hall pendants 2-way: entry and kitchen end, on one trailing-edge dimmer.</li>
+      <li>Drivers in the robe tops on a switched GPO; 24 V runs inside the robe to the floor channel.</li>
+      <li>Remove the ducted-heating floor grille and controller. Patch the old high switch boxes.</li>
+      <li>All lamps and strips 2700 K; nothing cooler anywhere in the house.</li>
+    </ul>
   </section>
 </main>
-<div class="toast" id="toast" hidden></div>
+
+<div class="bar"><button id="copy" type="button">Copy everything</button></div>
 
 <script>
-// ---- what to measure: per room, with the model's assumptions as defaults (mm) ----------------------------------------
-const ROOMS = [
-  { id: 'front', name: 'Front bedroom', robeW: 3110, robeNote: 'Wall to wall across the robe AND the open shelving beside it (model: robe 2660 + shelving 450).', doors: 4, extraKnobs: 1, room: [3110, 4660], bay: true },
-  { id: 'bed2', name: 'Bedroom 2', robeW: 3280, robeNote: 'Wall to wall across the robe (it fills the wall).', doors: 5, extraKnobs: 0, room: [3280, 3440], bay: false },
-];
-const FIELDS = r => [
-  { k: 'robeW', label: 'Robe width, wall to wall', def: r.robeW, why: r.robeNote + ' Sets the strip lengths.' },
-  { k: 'robeTop', label: 'Floor to top of the robe', def: 2550, why: 'Top of the overhead cupboards. The strip sits on top.' },
-  { k: 'ceiling', label: 'Floor to ceiling (beside the robe)', def: 3150, why: 'With the robe top, gives the gap the strip lights up (0.6 m assumed).' },
-  { k: 'cornice', label: 'Robe top to bottom of the cornice', def: 400, why: 'Under ~200 the wash turns into a bright band: lower output or deeper cover.' },
-  { k: 'depth', label: 'Robe depth (door face to wall)', def: 620, why: 'Where the channel and the lip go.' },
-  { k: 'plinthH', label: 'Plinth height (floor to door bottoms)', def: 100, why: 'The floor strip sits under the doors.' },
-  { k: 'plinthSet', label: 'Plinth set back from the door faces', def: '', why: '25 mm or more: the floor channel tucks under the doors with no work. Less: the plinth needs resetting 40-50 back (carpenter).' },
-  { k: 'doors', label: 'Number of tall doors', def: r.doors, unit: '', why: 'Knobs: one per tall door, one per overhead door' + (r.extraKnobs ? ', plus the shelving base door.' : '.') },
-  { k: 'overhead', label: 'Number of overhead doors', def: r.doors, unit: '', why: '' },
-  { k: 'doorT', label: 'Door thickness', def: 18, why: 'Knob screw length (bring an old knob: single centre screw?).' },
-  { k: 'material', label: 'Robe surface: veneer, laminate or painted?', def: 'veneer', type: 'select', opts: ['veneer', 'laminate / melamine', 'already painted'], why: 'Decides the primer (laminate needs a bonding primer).' },
-  { k: 'gpo', label: 'Power point inside or next to the robe?', type: 'yn', why: 'Option A needs one within ~2 m of the robe top (a cupboard power point is neatest).' },
-  { k: 'gpoDist', label: 'Nearest power point to the robe top', def: '', why: 'Distance along the wall/ceiling, for cable length.' },
-  { k: 'rose', label: 'Ceiling rose diameter', def: 300, why: 'Pendant canopy is 120 across: check it sits inside the rose centre.' },
-  { k: 'joist', label: 'Joist found under the rose centre?', type: 'yn', why: 'The pendant must hang from a joist or noggin, not the plaster. Stud finder or look in the roof.' },
-  { k: 'switch', label: 'Light switch: single or double, where?', def: '', type: 'text', why: 'A double plate fits two dimmers (pendant + strips, option B).' },
-  { k: 'roomL', label: 'Room length (for carpet)', def: r.room[1], why: '' },
-  { k: 'roomW', label: 'Room width (for carpet)', def: r.room[0], why: '' },
-  ...(r.bay ? [{ k: 'bayA', label: 'Bay floor: width x depth (or area m²)', def: '', type: 'text', why: 'Adds to the carpet area (model: ~2.4 wide x 0.35).' }] : []),
-];
-const PHOTOS = ['Robe base close-up, side on (is the plinth set back?)', 'Robe top, standing on a ladder (space, any cables)', 'Ceiling rose straight up (centre hole, condition)', 'Light switch and the nearest power points', 'An old knob off the door (screw type)'];
-
-// ---- state, saved on this device ---------------------------------------------------------------------------------------
-const KEY = 'house-bedroom-project';
-let st = {};
-try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
-st.v ||= {}; st.got ||= {}; st.extras ||= ['lamps', 'paint']; st.wiring ||= 'a';
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} };
-const val = (room, f) => { const v = st.v[room + '.' + f.k]; return v === undefined || v === '' ? f.def : v; };
-const num = (room, k) => { const f = FIELDS(ROOMS.find(r => r.id === room)).find(f => f.k === k); return Number(val(room, f)) || 0; };
-
-// ---- measurement form ------------------------------------------------------------------------------------------------
-const $ = id => document.getElementById(id);
-function renderMeasures() {
-  const box = $('measures'); box.innerHTML = '';
-  for (const r of ROOMS) {
-    const h = document.createElement('h3'); h.textContent = r.name; box.appendChild(h);
-    const wrap = document.createElement('div'); wrap.className = 'room'; box.appendChild(wrap);
-    for (const f of FIELDS(r)) {
-      const row = document.createElement('div'); row.className = 'm';
-      const id = r.id + '-' + f.k, key = r.id + '.' + f.k;
-      const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = f.label; row.appendChild(lab);
-      const cell = document.createElement('div');
-      if (f.type === 'yn') {
-        cell.className = 'yn';
-        for (const o of ['yes', 'no']) {
-          const b = document.createElement('button'); b.type = 'button'; b.textContent = o; b.setAttribute('aria-pressed', String(st.v[key] === o));
-          b.onclick = () => { st.v[key] = st.v[key] === o ? '' : o; save(); renderMeasures(); renderList(); };
-          cell.appendChild(b);
-        }
-      } else if (f.type === 'select') {
-        const s = document.createElement('select'); s.id = id;
-        for (const o of f.opts) { const op = document.createElement('option'); op.value = op.textContent = o; s.appendChild(op); }
-        s.value = val(r.id, f); s.onchange = () => { st.v[key] = s.value; save(); renderList(); };
-        cell.appendChild(s);
-      } else {
-        const i = document.createElement('input'); i.id = id; i.type = f.type === 'text' ? 'text' : 'number'; i.inputMode = f.type === 'text' ? 'text' : 'numeric';
-        i.placeholder = f.def === '' ? '?' : String(f.def); i.value = st.v[key] ?? '';
-        i.oninput = () => { st.v[key] = i.value; save(); renderList(); };
-        cell.appendChild(i);
-        if (f.type !== 'text' && (f.unit ?? 'mm')) { const u = document.createElement('span'); u.className = 'unit'; u.textContent = f.unit ?? 'mm'; cell.appendChild(u); }
-      }
-      row.appendChild(cell);
-      if (f.why) { const w = document.createElement('div'); w.className = 'why'; w.textContent = f.why; row.appendChild(w); }
-      wrap.appendChild(row);
+const KEY = 'house-stage1';
+let st = {}; try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+for (const el of document.querySelectorAll('input, textarea')) {
+  if (st[el.id] !== undefined) el.value = st[el.id];
+  el.addEventListener('input', () => { st[el.id] = el.value; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} });
+}
+function text() {
+  const out = [];
+  out.push('13 FERN AVE, STAGE 1 RENO: FRONT BEDROOM, BEDROOM 2, HALL', '');
+  for (const sec of document.querySelectorAll('main section')) {
+    out.push(sec.querySelector('h2').textContent.toUpperCase());
+    for (const el of sec.querySelectorAll('h3, li, p.note, .row, textarea')) {
+      if (el.tagName === 'H3') out.push('', el.textContent + ':');
+      else if (el.tagName === 'LI') out.push('- ' + el.textContent);
+      else if (el.tagName === 'P') out.push(el.textContent);
+      else if (el.classList.contains('row')) out.push('- ' + el.querySelector('label').textContent + ': ' + (el.querySelector('input').value || '?'));
+      else if (el.tagName === 'TEXTAREA' && el.value.trim()) out.push('', 'Notes: ' + el.value.trim());
     }
+    out.push('');
   }
-  $('photos').innerHTML = PHOTOS.map(p => `<li>${p} (both rooms)</li>`).join('');
+  out.push('Model: https://reecen9696.github.io/house-model/renovated/  (lighting detail in BEDROOM-LIGHTING.md, switches in SWITCHES.md)');
+  return out.join('\n');
 }
-
-// ---- shopping list, worked out from the measurements -----------------------------------------------------------------
-const DRIVERS = [30, 40, 60, 75, 100, 150];
-const TAPE_W = 8;          // W/m: a 6-8 W/m COB tape gives ~500-700 lm/m at full; it runs dimmed
-function items() {
-  const L = [], ex = new Set(st.extras), A = st.wiring === 'a';
-  const per = ROOMS.map(r => {
-    const W = num(r.id, 'robeW'), top = Math.max(0, W - 60), bottom = Math.max(0, W - 40);
-    const watts = (top + bottom) / 1000 * TAPE_W, driver = DRIVERS.find(d => d * 0.8 >= watts) || 150;
-    const knobs = num(r.id, 'doors') + num(r.id, 'overhead') + r.extraKnobs;
-    return { r, W, top, bottom, watts, driver, knobs };
-  });
-  const m = x => (x / 1000).toFixed(2) + ' m';
-  const tapeTotal = per.reduce((a, p) => a + p.top + p.bottom, 0);
-  const rolls = Math.ceil(tapeTotal * 1.1 / 5000);
-  L.push({ id: 'pendant', q: '2', name: 'Pendant: Lucci August oval, chalk white + frosted opal glass', spec: 'SKU 011971, 400 x 240, ES lamp, 120 canopy, 2 m suspension. Beacon Lighting $289 (second ~$173 on the VIP offer).', price: 289 + 173.4 });
-  L.push({ id: 'lamp', q: '3', name: 'Pendant lamps: E27 LED, frosted, 2700 K', spec: 'CRI 90+, dimmable (or dim-to-warm), 1,200-1,500 lm (the opal glass passes ~60-75%). Two + a spare. Check it is listed for your dimmer. ~$15-30 each.', price: 60 });
-  L.push({ id: 'tape', q: `${rolls} x 5 m`, name: 'LED tape: COB (dot-free), 24 V, 2700 K', spec: `CRI 95+, R9 90+, 6-8 W/m, colour binning 3 SDCM or tighter, ALL from one batch. Needed: ${per.map(p => `${p.r.name} top ${m(p.top)} + floor ${m(p.bottom)}`).join('; ')} = ${m(tapeTotal)} (+10%). ~$15-30/m.`, price: rolls * 5 * 22 });
-  for (const p of per) {
-    const topLen = Math.ceil(p.top / 2000), botLen = Math.ceil(p.bottom / 2000);
-    L.push({ id: 'chTop-' + p.r.id, q: `${topLen} x 2 m`, name: `${p.r.name}: angled aluminium channel (30-45°) + frosted cover`, spec: `For the top strip, ${m(p.top)} run, cut to length, joined in line. 2 end caps, ${Math.ceil(p.top / 500) + 1} mounting clips, screws. ~$20-35 per 2 m.`, price: topLen * 28 });
-    L.push({ id: 'chBot-' + p.r.id, q: `${botLen} x 2 m`, name: `${p.r.name}: slim surface aluminium channel (10-16 mm) + frosted cover`, spec: `For the floor strip under the doors, ${m(p.bottom)} run. 2 end caps, ${Math.ceil(p.bottom / 500) + 1} clips. ~$15-25 per 2 m.`, price: botLen * 20 });
-    L.push({ id: 'drv-' + p.r.id, q: '1', name: `${p.r.name}: 24 V constant-voltage LED driver, ${p.driver} W`, spec: `Strips draw ~${p.watts.toFixed(0)} W at full; driver loaded to 80% or less. ${A ? 'Plug-in type (option A).' : 'Hard-wired, dimmable and matched to the wall dimmer (option B, electrician supplies).'} ~$30-70.`, price: A ? 45 : 0 });
-    if (A) L.push({ id: 'ctl-' + p.r.id, q: '1', name: `${p.r.name}: 2-channel 24 V smart LED dimmer + wireless wall switch`, spec: 'Zigbee or Wi-Fi; channel 1 the top strip, channel 2 the floor strip (set low). Stick the switch by the door or the bed. ~$40-90 together.', price: 65 });
-    L.push({ id: 'lip-' + p.r.id, q: '1', name: `${p.r.name}: timber lip for the robe top, 30 x 19 DAR, ${m(Math.ceil((p.W + 100) / 300) * 300)} length`, spec: 'Along the front edge of the robe top (hides the channel, stops light streaking across the room). Painted with the robe. ~$10-20.', price: 15 });
-    L.push({ id: 'knobs-' + p.r.id, q: String(p.knobs), name: `${p.r.name}: round knobs, silver (satin nickel / brushed)`, spec: `~25 mm, single centre screw to suit a ${num(p.r.id, 'doorT')} mm door. One per tall door, one per overhead${p.r.extraKnobs ? ', one for the shelving base' : ''}. ~$5-12 each.`, price: p.knobs * 8 });
-  }
-  L.push({ id: 'cable', q: '2 x 5 m', name: 'Twin-core low-voltage cable, 0.75-1.0 mm²', spec: 'Driver to the top strip and on to the floor strip, run inside the robe through small drilled holes. Plus solder and heat-shrink, or COB tape connectors (10-pack).', price: 30 });
-  if (ex.has('paint')) {
-    const area = per.reduce((a, p) => a + p.W / 1000 * num(p.r.id, 'robeTop') / 1000, 0) * 1.15;
-    const mat = per.map(p => val(p.r.id, FIELDS(p.r).find(f => f.k === 'material')));
-    const primer = mat.some(x => x.startsWith('laminate')) ? 'bonding primer for laminate/melamine' : 'stain-blocking primer (oil or shellac based, stops the timber bleeding through)';
-    L.push({ id: 'primer', q: Math.max(1, Math.ceil(area / 12)) + ' L', name: 'Primer: ' + primer, spec: `Robe fronts + ends ~${area.toFixed(1)} m², one coat.`, price: 45 });
-    L.push({ id: 'enamel', q: Math.max(2, Math.ceil(area * 2 / 12)) + ' L', name: 'Waterborne enamel, white, satin or semi-gloss', spec: 'Two coats. Match the woodwork white. Sugar soap, 180/240 sandpaper, mini roller + angled brush.', price: 90 });
-  }
-  if (ex.has('lamps')) L.push({ id: 'blamps', q: '4', name: 'Bedside lamps + 2700 K bulbs (CRI 90+)', spec: 'Shades that hide the bulb from the other pillow. For reading and the hour before sleep.', price: 0 });
-  if (ex.has('robeLights')) {
-    const bays = per.reduce((a, p) => a + Math.ceil(num(p.r.id, 'doors') / 2), 0);
-    L.push({ id: 'inrobe', q: String(bays), name: 'Inside-robe lights: rechargeable LED bars with door/motion sensor', spec: 'One per pair of tall doors, under the top shelf at the front. 3000 K or 2700 K, not 4000 K. ~$20-40 each.', price: bays * 30 });
-  }
-  if (ex.has('carpet')) {
-    const fb = ROOMS[0], b2 = ROOMS[1];
-    const robeFoot = id => num(id, 'robeW') / 1000 * num(id, 'depth') / 1000;
-    let bay = 0.84; const ba = st.v['front.bayA']; if (ba) { const n = String(ba).match(/[\d.]+/g); bay = n && n.length >= 2 ? n[0] * n[1] / (n[0] > 50 ? 1e6 : 1) : Number(n?.[0]) || bay; }
-    const a1 = num('front', 'roomL') * num('front', 'roomW') / 1e6 - robeFoot('front') + bay, a2 = num('bed2', 'roomL') * num('bed2', 'roomW') / 1e6 - robeFoot('bed2');
-    const tot = (a1 + a2) * 1.1;
-    L.push({ id: 'carpet', q: tot.toFixed(1) + ' m²', name: 'Carpet, light cream wool-look + underlay', spec: `Front ${a1.toFixed(1)} m² (incl. bay), bedroom 2 ${a2.toFixed(1)} m², +10% waste. Get it measured and quoted by the carpet shop; plus two door bars.`, price: 0 });
-  }
-  return L;
-}
-function renderList() {
-  const L = items(), body = $('list'); body.innerHTML = '';
-  let est = 0;
-  for (const it of L) {
-    const tr = document.createElement('tr'); if (st.got[it.id]) tr.className = 'done';
-    const c = document.createElement('td'); c.className = 'got';
-    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!st.got[it.id]; cb.setAttribute('aria-label', 'Bought: ' + it.name);
-    cb.onchange = () => { st.got[it.id] = cb.checked; save(); renderList(); };
-    c.appendChild(cb); tr.appendChild(c);
-    tr.insertAdjacentHTML('beforeend', `<td class="q">${it.q}</td><td>${it.name}<div class="spec">${it.spec}</div></td>`);
-    body.appendChild(tr); est += it.price || 0;
-  }
-  $('tally').textContent = `Rough total for the priced items: ~$${Math.round(est / 10) * 10} (carpet, lamps and trades not included).`;
-  renderTrades();
-}
-function renderTrades() {
-  const A = st.wiring === 'a', T = [
-    'Hang each pendant from a joist or noggin through the rose centre (not the plaster); check the rose is sound; replace the old rose cable if it is rubber or cloth.',
-    'Pendant dimmer at each door: trailing-edge, LED-rated, tested with the chosen lamp (no flicker or buzz at low levels).',
-    A ? 'Option A: a power point inside the overhead robe cupboard (or within ~2 m of the robe top) for the plug-in driver, if there is none.'
-      : 'Option B: driver in the overhead cupboard, cabled to a second dimmer at the door (double plate). Driver and dimmer must be a matched pair.',
-    'Carpenter / handyman: fit the 30 x 19 lip along the robe top; reset the plinth 40-50 mm back if it is flush with the doors.',
-    'Optional: wireless switches by the bed (brick walls: no chasing).',
-  ];
-  $('tradeList').innerHTML = T.map(t => `<li>${t}</li>`).join('');
-}
-
-// ---- choices, notes, copy -------------------------------------------------------------------------------------------
-document.querySelectorAll('#wiring input').forEach(i => { i.checked = i.value === st.wiring; i.onchange = () => { st.wiring = i.value; save(); renderList(); }; });
-document.querySelectorAll('#extras input').forEach(i => { i.checked = st.extras.includes(i.value); i.onchange = () => { st.extras = [...document.querySelectorAll('#extras input:checked')].map(x => x.value); save(); renderList(); }; });
-$('noteBox').value = st.notes || ''; $('noteBox').oninput = () => { st.notes = $('noteBox').value; save(); };
-const toast = msg => { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 2200); };
-$('copy').onclick = async () => {
-  const lines = ['BEDROOM PROJECT (front bedroom + bedroom 2)', '', 'MEASUREMENTS'];
-  for (const r of ROOMS) { lines.push(r.name + ':'); for (const f of FIELDS(r)) { const v = st.v[r.id + '.' + f.k]; lines.push(`  ${f.label}: ${v === undefined || v === '' ? (f.def === '' || f.def === undefined ? '?' : f.def + ' (assumed)') : v}${f.type || v === '' || f.unit === '' ? '' : ' mm'}`); } }
-  lines.push('', 'SHOPPING LIST'); for (const it of items()) lines.push(`[${st.got[it.id] ? 'x' : ' '}] ${it.q}  ${it.name}\n      ${it.spec}`);
-  lines.push('', 'TRADES'); for (const li of $('tradeList').children) lines.push('- ' + li.textContent);
-  if (st.notes) lines.push('', 'NOTES', st.notes);
-  const text = lines.join('\n');
-  try { await navigator.clipboard.writeText(text); toast('Copied'); } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied'); }
-};
-$('reset').onclick = () => { if (!confirm('Clear all measurements, ticks and notes on this device?')) return; st = { v: {}, got: {}, extras: ['lamps', 'paint'], wiring: 'a' }; save(); location.reload(); };
-renderMeasures(); renderList();
+const btn = document.getElementById('copy');
+btn.addEventListener('click', async () => {
+  const t = text();
+  try { await navigator.clipboard.writeText(t); } catch { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  btn.textContent = 'Copied'; btn.classList.add('done'); setTimeout(() => { btn.textContent = 'Copy everything'; btn.classList.remove('done'); }, 1800);
+});
 </script>
 </body>
 </html>
