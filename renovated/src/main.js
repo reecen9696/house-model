@@ -663,7 +663,7 @@ async function precompileLights() {
   for (const s of pool) s.visible = want;
   precompiling = false;
 }
-let lightsManual = true;                                                 // on by default; null = auto (on after civil dusk)
+let lightsManual = null;                                                 // auto by default: off in daylight, on after civil dusk (client 2026-10-21); true / false = switched by hand
 const lightsOn = () => lightsManual ?? daylight < 0.55;
 const DL_I = 1.7;                                                        // a fitting's brightness (candela, three.js units)
 let hemiBase = 1;                                                        // sky level before the lit-room bounce is added
@@ -837,7 +837,9 @@ const refreshSun = () => {
   $('dayVal').textContent = ds; $('timeVal').textContent = ts;
   setSun(d);
 };
-bind('day', refreshSun); bind('time', refreshSun);
+bind('day', refreshSun);
+// moving the time hands the lights back to auto (off by day, on at night); bedroom scenes set the time with a synthetic event and keep theirs
+bind('time', e => { if (e?.isTrusted) lightsManual = null; refreshSun(); if (e) applyLightMode(); });
 $('lights').addEventListener('change', () => { lightsManual = $('lights').checked; applyLightMode(); });
 bind('sunOnly', () => { applyLightMode(); if (!$('sunOnly').checked) refreshSun(); });
 document.querySelectorAll('[data-cut]').forEach(b => b.addEventListener('click', () => { $('cut').value = b.dataset.cut; $('cut').dispatchEvent(new Event('input')); }));
@@ -1282,7 +1284,7 @@ document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click
   const p = L(v.x, v.y, walk.eye); camera.position.x = p.x; camera.position.z = p.z;
   walk.yaw = walk.tYaw = Math.atan2(v.tx - v.x, -(v.ty - v.y)); walk.pitch = walk.tPitch = v.pitch ?? 0.12; walk.vel.set(0, 0, 0);
 }));
-document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => setTime(b.dataset.time)));
+document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { lightsManual = null; setTime(b.dataset.time); }));
 // Secondary lights: a round button beside the bulb (and the K key), shown while a bedroom scheme with them is picked
 const secButton = document.createElement('button');
 secButton.id = 'secButton'; secButton.setAttribute('aria-label', 'Secondary lights (robe-top strip, downlights)'); secButton.title = 'Secondary lights: robe-top strip and the downlights or reading spots (K)';
