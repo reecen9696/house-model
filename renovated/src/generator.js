@@ -2866,13 +2866,7 @@ export function buildHouse(spec) {
     // and snakePlant() stay available)
     // study: a pothos at the south-front corner of the hall-wall desk, trailing over its front edge
     if (spec.renovation.study) { const b3 = rm('Bedroom 3'), yc = (spec.renovation.bedroom3.door_y1 + 0.1 + 14.29) / 2; plantModel(fu, 'rhyzome', b3.x0 + 0.5, yc + 0.52, b3.floor + 0.73, 0.4, 0.6, null, 0.3); }   // a small leafy houseplant on the desk corner
-    // courtyard: the olive in a 600 terracotta pot beside the outdoor sofa's east end (an indoor olive doesn't last)
-    {
-      const rz = spec.site_items.rear_slab.z, ox = 2.65, oy = 28.2, ph = 0.55;
-      vessel(G.site, ox, oy, rz, potProfile(0.3, ph, 0.02), decMat('terracotta', 0xb86b47, { roughness: 0.85 }));
-      const t = rz + ph - 0.03;
-      leafyTree(G.site, ox, oy, t, 0.8, [[ox, oy, t + 1.25, 0.36], [ox - 0.24, oy + 0.12, t + 1.05, 0.28], [ox + 0.22, oy - 0.12, t + 1.1, 0.28], [ox + 0.04, oy + 0.18, t + 1.5, 0.26]], decMat('oliveCanopy', 0x7d8b6a, { roughness: 0.9 }), 11);
-    }
+    // (the potted olive in the courtyard came out, client 2026-10-21)
     // kitchen (walnut L): bench ~90% clear. A stoneware crock of wooden spoons and an oak board leaned in the corner west
     // of the cooktop; a bowl of lemons from the courtyard tree on the west return, clear of the sink
     const K = spec.renovation.kitchen;
@@ -3512,10 +3506,11 @@ export function buildHouse(spec) {
           box(int_, bx0 + i * w + 0.003, bx0 + (i + 1) * w - 0.003, wy0 + ud, wy0 + ud + 0.02, z0 + 0.003, z1 - 0.003, wallFace); }
       box(int_, Math.max(cx0 - 0.05, bx0 + 0.01), cx1 + 0.05, wy0 + 0.04, wy0 + ud - 0.02, uz0 - 0.04, uz0, st);   // extractor panel
       box(int_, cx0, cx1, wy0 + 0.08, wy0 + ud - 0.06, uz0 - 0.042, uz0 - 0.04, M.frameA);          // its mesh filter
-      box(int_, bx0 + 0.02, wcx1 - 0.02, wy0 + ud - 0.03, wy0 + ud - 0.01, uz0 - 0.006, uz0, led);   // LED strip under the cabinets
+      box(int_, bx0 + 0.02, K.run[1] - ud - 0.02, wy0 + ud - 0.03, wy0 + ud - 0.01, uz0 - 0.006, uz0, led);   // LED strip under the cabinets, on under the corner cabinet
       // ...and the light it gives the bench: tape at the front of the underside in a diffused channel, aimed down and a
-      // little back at the splashback; 750 lm/m, CRI 90+, 2700 K (Mint: joinery tape, 120 LEDs/m), ~250-300 lux on the bench
-      if (spec.renovation.kl_lights !== 'grid') BL.lines.push({ room: 'Kitchen / dining', layer: 'kTask', mode: 2, x0: bx0 + 0.02, x1: wcx1 - 0.02, y: wy0 + ud - 0.02, z: uz0 - 0.008, ay: -0.34, az: -0.94, lmPerM: 750 });
+      // little back at the splashback; high-output 1,000 lm/m, CRI 90+, 2700 K (Mint: joinery tape, 120 LEDs/m), ~300+ lux on
+      // the bench. It runs on under the diagonal corner cabinet (it stopped where that started: 0.5 m of a 1.5 m bench lit)
+      if (spec.renovation.kl_lights !== 'grid') BL.lines.push({ room: 'Kitchen / dining', layer: 'kTask', mode: 2, x0: bx0 + 0.02, x1: K.run[1] - ud - 0.02, y: wy0 + ud - 0.02, z: uz0 - 0.008, ay: -0.34, az: -0.94, lmPerM: 1000 });
       // ---- diagonal corner wall cabinet: the north and west runs meet in a 45-degree door face (last reference photo) ----
       {
         const wx = K.run[1];
@@ -3564,8 +3559,8 @@ export function buildHouse(spec) {
           const n = Math.max(1, Math.round((wcEnd - t0) / 0.6)), w = (wcEnd - t0) / n;
           for (let i = 0; i < n; i++) for (const [z0, z1] of [[uz0, zRow], [zRow, uz1]])
             box(int_, xi - ud - 0.02, xi - ud, t0 + i * w + 0.003, t0 + (i + 1) * w - 0.003, z0 + 0.003, z1 - 0.003, wallFace);
-          box(int_, H.x_west_inner - ud + 0.01, H.x_west_inner - ud + 0.03, t0 + 0.02, wcEnd - 0.02, uz0 - 0.006, uz0, led);
-          if (spec.renovation.kl_lights !== 'grid') BL.lines.push({ room: 'Kitchen / dining', layer: 'kTask', mode: 2, along: 'y', x0: t0 + 0.02, x1: wcEnd - 0.02, y: H.x_west_inner - ud + 0.02, z: uz0 - 0.008, ay: 0.34, az: -0.94, lmPerM: 750 });
+          box(int_, H.x_west_inner - ud + 0.01, H.x_west_inner - ud + 0.03, wy0 + ud + 0.02, wcEnd - 0.02, uz0 - 0.006, uz0, led);
+          if (spec.renovation.kl_lights !== 'grid') BL.lines.push({ room: 'Kitchen / dining', layer: 'kTask', mode: 2, along: 'y', x0: wy0 + ud + 0.02, x1: wcEnd - 0.02, y: H.x_west_inner - ud + 0.02, z: uz0 - 0.008, ay: 0.34, az: -0.94, lmPerM: 1000 });   // from under the corner cabinet
         }
       }
       // walnut veneer laid world-aligned (grain up every vertical face, at a real scale) rather than one texture stretched
@@ -3730,15 +3725,15 @@ export function buildHouse(spec) {
       const taskDL = (x, y, ax, ay, lm, kind = 'wash', layer = 'kTask') => { const dl = dlFitting(); dl.position.copy(L(x, y, kzc - 0.012)); int_.add(dl); BL.points.push({ room: KR, layer, kind, x, y, z: kzc - 0.03, ax, ay, lm }); };
       if (K.return && !K.west_uppers) {
         // over the bench's front edge (690 off the wall), clear of the split system over the window, whose face they lit
-        // 24 degree, 300 lm: ~450 lux at the sink, and the narrower beam stays off the corner cupboard
-        for (const y of KG.rows.slice(0, 2)) taskDL(KG.cols[2], y, 0, 0, 300, 'spot');
+        // 24 degree, 400 lm: the sink bench's task light, and the narrower beam stays off the corner cupboard
+        for (const y of KG.rows.slice(0, 2)) taskDL(KG.cols[2], y, 0, 0, 400, 'spot');
       }
       const Dn = spec.renovation.dining;
       // the table: no pendant (the room is too small for one, client 2026-10-21); two low-glare 40 degree downlights on
       // its centreline, 800 apart, ~300 lm each: ~250 lux on the top (Mint: dining ~150-250), dimmable
       // set out as one plan: the table pair on the table's centreline, the tall-run light in line with the table's east
       // one, and the sink pair centred on the same line (client: the scattered holes didn't look symmetrical)
-      if (Dn) for (const y of KG.rows.slice(0, 2)) taskDL(KG.cols[1], y, 0, 0, 200, 'wash', 'kTable');   // the middle column, over the table (40 degree pools cover it)   // 40 degree, 300 lm: ~250 lux on the top (24 degree / 450 lm put ~600 lux on the white top, glaring)
+      if (Dn) for (const y of KG.rows.slice(0, 2)) taskDL(KG.cols[1], y, 0, 0, 250, 'wash', 'kTable');   // the middle column, over the table (40 degree pools cover it)   // 40 degree, 300 lm: ~250 lux on the top (24 degree / 450 lm put ~600 lux on the white top, glaring)
       // the lamp stands on the sideboard's south end, in the corner (the plant moves to the north end, client 2026-10-21)
       // ...but not with the art layout 'v2': its hero beside the sideboard has its own light, which does the corner's job,
       // and the lamp stood in front of the piece leaned on the sideboard (one light per corner, not two; client 2026-10-21)
@@ -5139,12 +5134,7 @@ export function buildHouse(spec) {
       clippedHedge(G.site, 2.7, 5.6, rb2.y1 - 0.4, rb2.y1 - 0.06, bz, 0.9, Pr.buxus);           // stops short of the lemon
       [2.95, 3.6, 4.25, 4.9, 5.5].forEach((x, i) => hydrangea(G.site, x, rb2.y0 + 0.28, bz, 1, Pr, 60 + i));
       for (const x of [3.3, 5.2]) upLight(G.site, x, rb2.y0 + 0.08, bz, Pr);                // uplights washing the hedge
-      // art v2: a 1200 x 700 aluminium (dibond) print on the palings over the outdoor sofa, on the axis from the kitchen
-      // through the sliders; north-facing fence, full sun, so outdoor materials only, on marine-grade standoffs
-      if (spec.renovation.art === 'v2') {
-        const fy = S.rear_fence.y - 0.03, ax = S.outdoor_lounge.sofa.x, zt = gz + S.rear_fence.lattice_from - 0.05;
-        box(G.site, ax - 0.6, ax + 0.6, fy - 0.024, fy - 0.02, zt - 0.7, zt, new THREE.MeshStandardMaterial({ map: artTex(20, 'outdoor', 1.2 / 0.7), roughness: 0.7 }));
-      }
+      // (the outdoor print on the rear fence came out, client 2026-10-21)
     }
     function bed(b, zBase, zTop, fill) {
       // modern raised bed: slim charcoal steel edge, dark bark mulch
