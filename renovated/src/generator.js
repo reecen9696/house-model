@@ -2037,9 +2037,10 @@ function glowTexture(kind) {                                               // in
     const u = (i + 0.5) / W, v = 1 - (j + 0.5) / H;                        // v = 0 at the bottom
     let a;
     if (kind === 'up') {                                                   // an uplight's beam on the wall: a cone from the fitting,
-      const hw = 0.02 + 0.46 * v, d = Math.abs(u - 0.5);                   // straight sides widening upward, softly edged, fading with height
-      const edge = 1 - sm(Math.max(0, Math.min(1, (d - hw * 0.72) / (hw * 0.28 + 0.01))));
-      a = edge * (0.35 + 0.65 * Math.exp(-v * 3.2)) * sm(Math.min(1, v / 0.03)) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
+      const hw = 0.03 + 0.3 * v, d = Math.abs(u - 0.5);                    // a soft cone widening upward, blended into a broad low halo
+      const cone = 1 - sm(Math.max(0, Math.min(1, (d - hw * 0.35) / (hw * 0.9 + 0.02))));   // that spreads the light along the fence
+      const halo = Math.exp(-((u - 0.5) / 0.3) ** 2 * 2) * Math.exp(-v * 2.2);
+      a = (0.55 * cone * (0.3 + 0.7 * Math.exp(-v * 2.6)) + 0.4 * halo) * sm(Math.min(1, v / 0.04)) * (1 - sm(Math.max(0, (v - 0.6) / 0.4)));
     } else if (kind === 'strip') {                                         // a linear wash from the base, fading up, soft at both ends
       const ends = sm(Math.min(1, u / 0.08)) * sm(Math.min(1, (1 - u) / 0.08));
       a = ends * sm(Math.min(1, v / 0.05)) * Math.exp(-v * 2.6) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
@@ -2064,7 +2065,7 @@ function glowMat(kind, k) {
 }
 // a spike (or deck-recessed) uplight at the base of a fence face: the fitting, and its scallop up the palings.
 // axis/face/dir as wallFace (the fence face, looking into the yard); c along the fence; z the ground
-function fenceUplight(g, axis, face, dir, c, z, { h = 1.9, w = 1.2, recessed = false } = {}) {
+function fenceUplight(g, axis, face, dir, c, z, { h = 1.9, w = 1.7, recessed = false } = {}) {
   const off = face + dir * 0.12, lens = bedGlow('lGarden');
   const fx = axis === 'x' ? off : c, fy = axis === 'x' ? c : off;
   if (recessed) {
@@ -2075,7 +2076,7 @@ function fenceUplight(g, axis, face, dir, c, z, { h = 1.9, w = 1.2, recessed = f
     body.position.copy(L(fx, fy, z + 0.07)); body.rotation.set(axis === 'y' ? dir * 0.25 : 0, 0, axis === 'x' ? dir * 0.25 : 0); g.add(body);
     const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.004, 14), lens); ln.position.copy(L(fx, fy, z + 0.127)); g.add(ln);
   }
-  wallFace(g, axis, face + dir * 0.1, dir, c, z + h / 2, w, h, glowMat('up', 1.1));   // in front of the rails and posts, so they catch it too
+  wallFace(g, axis, face + dir * 0.1, dir, c, z + h / 2, w, h, glowMat('up', 0.9));   // in front of the rails and posts, so they catch it too
 }
 // a horizontal glow pool on a surface at height z, centred (x, y), w x d
 function glowPool(g, x, y, z, w, d, k = 0.5) {
@@ -5534,16 +5535,7 @@ export function buildHouse(spec) {
         for (const y of [12.6, 13.9, 15.2]) fenceUplight(G.site, 'x', wf, -1, y, wp.z); }
       const ef = S.east_fence.x + 0.03;
       for (const y of [25.7, 27.05, 28.4]) fenceUplight(G.site, 'x', ef, 1, y, rz);
-      // deck steps: a low-glare louvred brick light in each riser (~50 lm, light thrown down onto the tread below only)
-      if (deck) {
-        const zs = spec.renovation.deck_zones, east = zs[2], nw = zs[3];
-        const riser = (x0, x1, y0, y1, zc, px, py, pw, pd, pz) => { box(G.site, x0, x1, y0, y1, zc - 0.015, zc + 0.015, decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 })); glowPool(G.site, px, py, pz, pw, pd); };
-        for (const y of [25.6, 26.9, 28.2]) {
-          riser(east.x1 - 0.003, east.x1 + 0.002, y - 0.06, y + 0.06, dz - 0.09, east.x1 - 0.15, y, 0.3, 1.0, east.z);      // deck riser, onto the tread
-          riser(east.x0 - 0.003, east.x0 + 0.002, y - 0.06, y + 0.06, east.z - 0.09, east.x0 - 0.4, y, 0.9, 1.1, rz);     // tread riser, onto the lawn
-        }
-        riser((nw.x0 + nw.x1) / 2 - 0.06, (nw.x0 + nw.x1) / 2 + 0.06, nw.y1 - 0.002, nw.y1 + 0.003, dz - 0.09, (nw.x0 + nw.x1) / 2, nw.y1 - 0.3, 0.55, 0.8, nw.z);
-      }
+      // (the deck step lights and their pools came out, client 2026-10-21)
     }
     box(G.site, S.side_pier.x0, S.side_pier.x1, S.side_pier.y0, S.side_pier.y1, gz, gz + S.side_pier.h, M.white);
     box(G.site, S.side_gate.x0, S.side_gate.x1, S.side_gate.y - 0.02, S.side_gate.y + 0.02, gz, gz + S.side_gate.h, M.creamMetal).userData.door = true;
