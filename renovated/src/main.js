@@ -11,7 +11,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'simple', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'simple', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'rail' };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -41,6 +41,12 @@ if (savedReno && (savedReno.loungeV || 0) < 3) {
 // choices over once
 if (savedReno && (savedReno.furnitureV || 0) < 1) {
   Object.assign(reno, { diningTable: 'matched', sideboard: 'matched', coffeeTable: 'matched', furnitureV: 1 });
+  try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
+}
+// bedrooms: the August oval pendant with the robe-top and robe-floor strips became the default (2026-10-21): move
+// saved choices over once
+if (savedReno && (savedReno.bedLightsV || 0) < 3) {
+  Object.assign(reno, { bedLights: 'pendant', pendant: 'augustOval', bedLightsV: 3 });
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // the whole agreed setup became the default (simple archway, white woodwork, no pavers ...): move everyone over once
@@ -142,6 +148,33 @@ const SKY_SHARE = { 'Lounge / living': 0.22, 'Kitchen / dining': 0.28, 'Front be
 const SKYF = { field: { value: null }, xf: { value: new THREE.Vector4() }, bounce: { value: 0 },
   lamp: { value: 0 }, lampCol: { value: new THREE.Color(0xfff0e2) } };   // lamp: 0/1 with the Lights switch; warm white (3000-3500 K as the eye sees it)
 let skyGrid = null;                                                       // { x0, y0, nx, ny, v } for the exposure lookup
+// Proposed bedroom lighting (front bedroom and bedroom 2): pendant, wall lights, robe-top strip, night light. three.js
+// lights pass through walls, so these are lit in the shader instead, each only on surfaces inside its own room's
+// outline (the front bedroom's includes the bay). Direct light from points and line sources, no shadows, plus a flat
+// bounce fill per room from the lumens that are on. Units match the downlights: DL_I (1.7) is a 700 lm fitting's
+// 261 cd, so 1 cd = 1.7 / 261, and a lumen of bounce is the lamp field's 0.00358 per lm.
+const V4 = n => Array.from({ length: n }, () => new THREE.Vector4());
+const BEDU = { bedOn: { value: 0 }, bedRm: { value: V4(4) }, bedBay: { value: new THREE.Vector4() }, bedBayY: { value: new THREE.Vector2() },
+  bedPt: { value: V4(8) }, bedPtK: { value: V4(8) }, bedLn: { value: V4(10) }, bedLnA: { value: V4(10) }, bedLnM: { value: new Array(10).fill(0) }, bedFill: { value: new THREE.Vector3() },
+  bedCol: { value: new THREE.Color() }, bedNightCol: { value: new THREE.Color(0xffa860) } };
+// Bounce fill: Sumpner's inter-reflection formula, average indirect irradiance = flux x rho / (A x (1 - rho)), with
+// rho the area-weighted reflectance. These rooms: white ceiling ~0.85, off-white walls ~0.75, light cream carpet ~0.5
+// -> rho ~0.72, rho / (1 - rho) ~2.6. (The first version used a single 55% bounce, 0.00358 per lm: several times too
+// dark for white rooms, which made lit bedrooms read far darker than they will be.)
+// zones lit in the shader: the two bedrooms, and the hall (entry + hall + hall extension, open to each other)
+const BED_ROOMS = ['Front bedroom', 'Bedroom 2', 'Hall'], CD = 1.7 / 261, FILL_LM = CD * 2.6;
+const zoneRects = () => { const R = n => spec.rooms.find(r => r.name === n), ha = R('Hall'), ext = R('Hall extension');
+  return [R('Front bedroom'), R('Bedroom 2'), R('Entry'), { x0: ha.x0, x1: ha.x1, y0: ha.y0, y1: ext.y1, ceil: ha.ceil }]; };
+const ZONE_OF_RECT = [0, 1, 2, 2];
+// every page load starts with the pendant, reading spots and robe-top strip on at full (scenes and switches are for
+// the visit only, not remembered)
+const bedState = { pendant: true, angled: true, reading: true, corner: true, cove: true, wallwash: true, sheer: true, night: true, dim: 100, dimSec: 100 };   // dim: ceiling circuit, dimSec: secondary
+// two circuits, as at the door: the bulb button (the house's Lights) works the ceiling lights, the four angled
+// downlights or the pendant; the second button works the secondary lights: robe-top strip, and the corner downlights
+// or reading spots in those versions. The night light is on its own motion sensor
+const SECONDARY = ['cove', 'night', 'wallwash', 'sheer', 'corner', 'reading'];   // the robe's floor strip goes on and off with the top one
+let secondaryOn = true;
+let bedMats = null;                                                       // glowing parts of the fittings, by layer
 let skyWalls = null;                                                      // wall cells, cached until the house is rebuilt
 const CELL = 0.1;
 // Bounced downlight, per cell. Each fitting is a ~700 lm LED (DL_I candela over a 110 degree beam); what lands on
@@ -301,10 +334,11 @@ function skyMaterial(src) {
   const mat = src.clone(), skyNormal = src.userData.skyRoomSide ? 'vec3( 0.0, 0.0, 1.0 )' : 'objectNormal';
   mat.dithering = true;                                                   // dim indoor gradients band in 8-bit output; dither breaks them up
   mat.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, { skyField: SKYF.field, skyXf: SKYF.xf, skyBounce: SKYF.bounce, lampOn: SKYF.lamp, lampCol: SKYF.lampCol });
+    Object.assign(sh.uniforms, { skyField: SKYF.field, skyXf: SKYF.xf, skyBounce: SKYF.bounce, lampOn: SKYF.lamp, lampCol: SKYF.lampCol }, BEDU);
     sh.vertexShader = 'varying vec3 vSkyP; varying vec3 vSkyN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
       { vec4 sp = modelMatrix * vec4( transformed, 1.0 ); vSkyN = normalize( mat3( modelMatrix ) * ${skyNormal} ); vSkyP = sp.xyz + vSkyN * 0.15; }`);
     sh.fragmentShader = 'uniform sampler2D skyField; uniform vec4 skyXf; uniform float skyBounce; uniform float lampOn; uniform vec3 lampCol; varying vec3 vSkyP; varying vec3 vSkyN;\n' +
+      'uniform float bedOn; uniform vec4 bedRm[4]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[8]; uniform vec4 bedPtK[8]; uniform vec4 bedLn[10]; uniform vec4 bedLnA[10]; uniform float bedLnM[10]; uniform vec3 bedFill; uniform vec3 bedCol; uniform vec3 bedNightCol;\n' +
       sh.fragmentShader.replace('#include <aomap_fragment>', `{
         // three.js world (X, Z) is lot (-x, y); surfaces sample 150 mm in front of themselves, in the room they face
         // a double-sided sheet seen from its back (the lounge ceiling, drawn with its normal up) samples on the side
@@ -325,6 +359,49 @@ function skyMaterial(src) {
         // bounced downlight: floors see the lit walls and ceiling, walls a bit less, the ceiling only what the floor
         // and walls send back up (about half)
         if ( !outside && lampOn > 0.0 ) reflectedLight.indirectDiffuse += lampOn * sf.b * ( 0.75 + 0.25 * normalize( skyN ).y ) * lampCol * BRDF_Lambert( material.diffuseColor );
+        // proposed bedroom fittings, in the lot frame (x = -X, y = Z, z = Y), only inside their own room
+        if ( !outside && bedOn > 0.0 ) {
+          vec3 bw = vSkyP - vSkyN * 0.15, bn = normalize( skyN );
+          vec3 P = vec3( -bw.x, bw.z, bw.y ), N = vec3( -bn.x, bn.z, bn.y );
+          int room = -1;
+          for ( int r = 0; r < 4; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.02 && P.x <= b.z + 0.02 && P.y >= b.y - 0.02 && P.y <= b.w + 0.02 ) room = r == 3 ? 2 : r; }   // rect 3 (hall) is zone 2 with the entry
+          if ( room < 0 && P.y >= bedBayY.x - 0.02 && P.y < bedRm[ 0 ].y ) {        // the front bedroom's bay
+            float t = clamp( ( bedBayY.y - P.y ) / ( bedBayY.y - bedBayY.x ), 0.0, 1.0 );
+            if ( P.x >= mix( bedBay.x, bedBay.z, t ) - 0.02 && P.x <= mix( bedBay.y, bedBay.w, t ) + 0.02 ) room = 0;
+          }
+          if ( room >= 0 ) {
+            vec3 E = ( room == 0 ? bedFill.x : room == 1 ? bedFill.y : bedFill.z ) * ( 0.75 + 0.25 * N.z ) * bedCol;
+            for ( int i = 0; i < 8; i ++ ) {
+              if ( int( bedPtK[ i ].x + 0.5 ) != room || bedPt[ i ].w <= 0.0 ) continue;
+              vec3 d = bedPt[ i ].xyz - P; float d2 = max( dot( d, d ), 0.0025 ); vec3 l = d * inversesqrt( d2 );
+              float I = bedPt[ i ].w;
+              float ca = dot( -l, normalize( vec3( bedPtK[ i ].zw, -1.0 ) ) );
+              if ( bedPtK[ i ].y > 2.5 ) I *= max( l.z, 0.0 );                      // down only (stone pendant): Lambertian about straight down
+              else if ( bedPtK[ i ].y > 1.5 ) I *= smoothstep( 0.848, 0.951, ca );      // wash: 40 degree beam, soft edge to 64
+              else if ( bedPtK[ i ].y > 0.5 ) I *= smoothstep( 0.906, 0.978, ca ); // reading spot: 24 degree beam, edge to 50
+              E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol;
+            }
+            for ( int i = 0; i < 10; i ++ ) {
+              vec4 ln = bedLn[ i ], la = bedLnA[ i ];
+              if ( int( la.w + 0.5 ) != room || la.z <= 0.0 ) continue;
+              // mode 0 uplight: nothing below its edge; 1 floor strip: the floor only; +10: the strip runs along lot y (the
+              // hall rails), so swap x and y and the same along-x maths applies
+              float mm = bedLnM[ i ]; bool alongY = mm > 9.5; int mode = int( mod( mm, 10.0 ) + 0.5 );
+              vec3 Pl = alongY ? P.yxz : P, Nl = alongY ? N.yxz : N;
+              if ( mode == 0 && Pl.z < ln.w - 0.03 || mode == 1 && Pl.z > 0.15 ) continue;
+              // continuous strip along lot x, Lambertian about its axis (no x part): integrated in closed form along
+              // the strip, so it reads as an even line of light, not a row of hot spots
+              vec3 ax = vec3( 0.0, la.x, la.y ), v = vec3( 0.0, ln.z - Pl.y, ln.w - Pl.z );
+              float r = max( length( v ), 0.03 ); vec3 l0 = v / r;
+              float s0 = ln.x - Pl.x, s1 = ln.y - Pl.x, r2 = r * r;
+              float F0 = ( atan( s1 / r ) - atan( s0 / r ) ) / ( 2.0 * r2 * r ) + ( s1 / ( r2 + s1 * s1 ) - s0 / ( r2 + s0 * s0 ) ) / ( 2.0 * r2 );
+              float F1 = 0.5 / ( r2 + s0 * s0 ) - 0.5 / ( r2 + s1 * s1 );
+              float eN = max( dot( Nl, l0 ) * r2 * F0 + Nl.x * r * F1, 0.0 );
+              E += la.z * max( dot( ax, -l0 ), 0.0 ) * eN * ( mode == 1 ? bedNightCol : bedCol );
+            }
+            reflectedLight.directDiffuse += E * BRDF_Lambert( material.diffuseColor );
+          }
+        }
         #if defined( USE_ENVMAP ) && defined( STANDARD )
           float dotNV = saturate( dot( geometryNormal, geometryViewDir ) );
           reflectedLight.indirectSpecular *= computeSpecularOcclusion( dotNV, min( ambientOcclusion, 1.0 ), material.roughness );
@@ -511,6 +588,56 @@ function applyLightMode() {
   for (const m of lampMats) m.emissiveIntensity = on ? 3 : 0;
   const lb = $('lights'); if (lb) lb.checked = lightsOn();
   if (typeof syncLightButton === 'function') syncLightButton();
+  updateBedLights();
+}
+// level of a bedroom layer, 0..1: the Lights switch, the layer's own switch, and the room dimmer, which works the
+// pendant and the robe-top strip (the reading spots and the night light are on their own switches, at full)
+const bedLevel = layer => {
+  if (layer.startsWith('hall')) return !document.getElementById('sunOnly')?.checked && lightsOn() ? 1 : 0;   // hall: on the house Lights
+  if (document.getElementById('sunOnly')?.checked || !bedState[layer]) return 0;
+  if (layer === 'pendant' || layer === 'angled' ? !lightsOn() : SECONDARY.includes(layer) && !secondaryOn) return 0;
+  // each circuit on its own dimmer (trailing-edge, LED-rated): ceiling = downlights or pendant; secondary = robe strip,
+  // the robe's floor strip, the wall downlight, the sheer uplight, corner downlights, reading spots
+  return (SECONDARY.includes(layer) ? bedState.dimSec : bedState.dim) / 100;
+};
+// lumens on in a bedroom, the night light left out (it is too dim to count): for the fill and the eye's adaptation
+const bedLumens = room => {
+  const BL = G.ceilings.userData.bedLamps; if (!BL) return 0;
+  return BL.points.filter(p => p.room === room).reduce((s, p) => s + p.lm * bedLevel(p.layer), 0) +
+    BL.lines.filter(l => l.room === room && l.layer !== 'night').reduce((s, l) => s + l.lmPerM * (l.x1 - l.x0) * bedLevel(l.layer), 0);
+};
+// warm-dim: 2700 K at full, toward 2200 K dimmed, as an adapted eye sees it (the eye white-balances to the room, so white
+// paint under 2700 K reads warm white, not tan; a little warmer than the downlights' 3000 K)
+const WARM = { full: new THREE.Color(0xffecd6), dim: new THREE.Color(0xffcf9e) };
+function updateBedLights() {
+  const BLs = G.ceilings.userData.bedLamps;
+  const on = !!BLs && !document.getElementById('sunOnly')?.checked;
+  BEDU.bedOn.value = on ? 1 : 0;
+  if (!bedMats) { bedMats = []; for (const g of Object.values(G)) g.traverse?.(o => { for (const m of [o.material].flat()) if (m?.userData?.bedLamp && !bedMats.includes(m)) bedMats.push(m); }); }
+  for (const m of bedMats) m.emissiveIntensity = (m.userData.bedLamp === 'night' ? 1 : 3) * bedLevel(m.userData.bedLamp);
+  if (!on) return;
+  const rects = zoneRects(), b = spec.house.bay;
+  rects.forEach((r, i) => BEDU.bedRm.value[i].set(r.x0, r.y0, r.x1, r.y1));
+  BEDU.bedBay.value.set(b.x0, b.x1, b.front_x0, b.front_x1); BEDU.bedBayY.value.set(spec.house.y_front_outer - b.projection, spec.house.y_front_outer);
+  BEDU.bedPt.value.forEach((v, i) => {
+    const p = BLs.points[i], k = BEDU.bedPtK.value[i];
+    if (!p) { v.set(0, 0, 0, 0); k.set(-1, 0, 0, 0); return; }
+    // omni pendant: lumens over 4 pi; reading spot: about 80% of its lumens in a 24 degree beam (~0.14 sr), the rest
+    // in the soft edge; wash: the same in 40 degrees (~0.38 sr). Aim held as its tilt per metre of drop
+    const I = p.kind === 'spot' ? 0.8 * p.lm / 0.14 : p.kind === 'wash' ? 0.8 * p.lm / 0.38 : p.kind === 'down' ? p.lm / Math.PI : p.lm / (4 * Math.PI);   // down: Lambertian, I0 = lm / pi
+    v.set(p.x, p.y, p.z, I * CD * bedLevel(p.layer)); k.set(BED_ROOMS.indexOf(p.room), { spot: 1, wash: 2, down: 3 }[p.kind] || 0, p.ax || 0, p.ay || 0);
+  });
+  BEDU.bedLn.value.forEach((v, i) => {
+    const l = BLs.lines[i], a = BEDU.bedLnA.value[i];
+    if (!l) { v.set(0, 0, 0, 0); a.set(0, 0, 0, -1); return; }
+    v.set(l.x0, l.x1, l.y, l.z); a.set(l.ay, l.az, l.lmPerM / Math.PI * CD * bedLevel(l.layer), BED_ROOMS.indexOf(l.room));   // peak cd per metre
+    BEDU.bedLnM.value[i] = (l.mode || 0) + (l.along === 'y' ? 10 : 0);
+  });
+  const area = r => { const w = r.x1 - r.x0, d = r.y1 - r.y0, h = r.ceil; return 2 * (w * d + w * h + d * h); };
+  const fill = z => bedLumens(BED_ROOMS[z]) * FILL_LM / rects.reduce((a, r, i) => a + (ZONE_OF_RECT[i] === z ? area(r) : 0), 0);
+  BEDU.bedFill.value.set(fill(0), fill(1), fill(2));
+  BEDU.bedCol.value.copy(WARM.dim).lerp(WARM.full, Math.sqrt(Math.max(0, (bedState.dim - 5) / 95)));
+  BEDU.bedNightCol.value.copy(WARM.full).lerp(WARM.dim, 1 - bedState.dimSec / 100);   // the floor strip is the top strip's 2700 K tape
 }
 // Eye adaptation: step inside by day and the exposure opens up over a second or two, as your eyes would.
 let exposure = 1;
@@ -551,7 +678,12 @@ function adaptExposure() {
   const dayIn = Math.min(4.5, 0.85 * (1 / Math.max(here, 0.06)) ** 0.6);
   // an orbit camera inside a room (under a ceiling) takes the indoor night level too: it took the garden's 3 and
   // washed lit rooms out from dusk on
-  const nightT = under && lightsOn() ? 1.3 : 3;
+  let nightT = under && lightsOn() ? 1.3 : 3;
+  // in a bedroom with the proposed lighting the eye adapts to what is on there: a dimmed evening scene opens up a
+  // little, the night light alone about as far as the garden at night
+  const zi = under ? zoneRects().findIndex((r, i) => lx >= r.x0 && lx <= r.x1 && ly >= r.y0 - (i === 0 ? 0.6 : 0) && ly <= r.y1) : -1;
+  const zone = zi >= 0 ? BED_ROOMS[ZONE_OF_RECT[zi]] : null;
+  if (zone && (lightsOn() || bedLumens(zone) > 0)) nightT = THREE.MathUtils.clamp(1.3 * Math.sqrt(4500 / Math.max(bedLumens(zone), 1)), 1.3, 3.2);
   const dayT = inside ? dayIn : 0.85;
   const target = nightT + (dayT - nightT) * daylight;
   // settle in about a second whatever the frame rate: quick enough to follow you, slow enough not to flick
@@ -683,7 +815,7 @@ function rebuild() {
   for (const k of Object.keys(G)) house.add(G[k]);
   G.roof.visible = $('roof').checked; G.ceilings.visible = $('ceil').checked; G.labels.visible = $('labels').checked;
   G.furniture.visible = $('furn').checked;
-  occludeInteriors(); applyLightMode();
+  bedMats = null; occludeInteriors(); applyLightMode();
   collectSolids();
 }
 const BODY_R = 0.18, tmp = new THREE.Vector3();
@@ -954,10 +1086,13 @@ const PICKS = {
   bd: [() => reno.backDoors || 'current', v => { reno.backDoors = v; }],
   laundry: [() => reno.laundry, v => { reno.laundry = v; }],
   fbed: [() => reno.frontBed, v => { reno.frontBed = v; }],
+  blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
+  pend: [() => reno.pendant || 'augustOval', v => { reno.pendant = v; }],
+  hlight: [() => reno.hallLights || 'rail', v => { reno.hallLights = v; }],
   hall: [() => hallKey(reno.hallDoorway), v => { reno.hallDoorway = { open: false, classic: true, simple: 'simple' }[v]; }],
 };
 document.querySelectorAll('select[data-pick]').forEach(s => s.addEventListener('change', () => {
-  PICKS[s.dataset.pick][1](s.value); saveReno(); renoSummary(); rebuild();
+  PICKS[s.dataset.pick][1](s.value); saveReno(); renoSummary(); rebuild(); if (s.dataset.pick === 'blight') syncBedUI();
 }));
 const saveReno = () => { try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {} };
 // keep every control showing the saved choice; product notes read store · price · size
@@ -966,9 +1101,9 @@ function renoSummary() {
   const pick = k => document.querySelector(`select[data-pick="${k}"]`);
   for (const [k, [get]] of Object.entries(PICKS)) pick(k).value = get();
   // the IKEA kitchen has its own integrated fridge and full-height units; the pantry spot goes with the pantry wall
-  const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss', 'glossL'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
+  const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
   pick('fridge').disabled = ikea; $('renoTall').disabled = ikea;
-  pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss', 'glossL'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
+  pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
   pick('fridge').querySelector('[value=pantry]').disabled = reno.noPantry;
   pick('laundry').querySelector('[value=pantry]').disabled = reno.fridge === 'pantry' || reno.noPantry;
   $('renoDtNote').textContent = note(cat.dining_tables?.[(reno.diningTable || 'oak').replace('Ext', '')]);
@@ -989,16 +1124,77 @@ if (!['single', 'none'].includes(reno.kitchenDoor)) reno.kitchenDoor = 'double';
 $('renoIsland').addEventListener('change', () => { reno.island = $('renoIsland').checked; saveReno(); renoSummary(); rebuild(); });
 $('renoReset').addEventListener('click', () => {
   for (const [key] of RENO) setReno(key, RENO_DEFAULT[key] * 100, null, false);
-  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current' });
+  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current', bedLights: RENO_DEFAULT.bedLights, pendant: RENO_DEFAULT.pendant, hallLights: RENO_DEFAULT.hallLights });
   $('renoSkylight').checked = reno.skylight; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise; reno.glassWall = RENO_DEFAULT.glassWall; $('renoGlassWall').checked = reno.glassWall;
   $('renoIsland').checked = reno.island;
   saveReno(); renoSummary(); rebuild();
 });
 renoSummary();
 
+// Bedroom lighting (proposed scheme): a switch per layer and a dimmer, applied at once (no rebuild); scenes set the
+// time and the switches together; the two stand-in-the-room buttons drop you into Walk there
+const BED_SW = { angled: 'blAngled', pendant: 'blPendant', reading: 'blReading', corner: 'blCorner', cove: 'blCove', wallwash: 'blWallwash', sheer: 'blSheer', night: 'blNight' };
+function syncBedUI() {
+  for (const [k, id] of Object.entries(BED_SW)) $(id).checked = !!bedState[k];
+  $('blDim').value = bedState.dim; $('blDimVal').textContent = bedState.dim + '%';
+  $('blDimSec').value = bedState.dimSec; $('blDimSecVal').textContent = bedState.dimSec + '%';
+  // only the switches for fittings this version has
+  const v = reno.bedLights || 'pendant', has = { angled: v === 'angled', pendant: ['pendant', 'pendantWall', 'pendantSheer', 'proposed', 'corners'].includes(v), reading: v === 'proposed', corner: v === 'corners', wallwash: v === 'pendantWall', sheer: v === 'pendantSheer', cove: true, night: true };
+  for (const [k, id] of Object.entries(BED_SW)) $(id).closest('label').hidden = !has[k];
+  if (typeof syncSecButton === 'function') syncSecButton();
+}
+const saveBed = () => { syncBedUI(); applyLightMode(); };
+// the scene whose switches and dimmer match what is set now, lit up in the panel (none once you change one by hand)
+const markScene = () => document.querySelectorAll('[data-bscene]').forEach(b => {
+  const { time, ...st } = BED_SCENES[b.dataset.bscene];
+  b.setAttribute('aria-pressed', String(lightsOn() && secondaryOn && Object.entries(st).every(([k, v]) => bedState[k] === v)));
+});
+for (const [k, id] of Object.entries(BED_SW)) $(id).addEventListener('change', () => { bedState[k] = $(id).checked; saveBed(); markScene(); });
+$('blDim').addEventListener('input', () => { bedState.dim = Number($('blDim').value); saveBed(); markScene(); });
+$('blDimSec').addEventListener('input', () => { bedState.dimSec = Number($('blDimSec').value); saveBed(); markScene(); });
+const setTime = h => { $('time').value = h; $('time').dispatchEvent(new Event('input')); };
+const BED_SCENES = {
+  all: { time: 21.5, angled: true, pendant: true, reading: true, corner: true, cove: true, wallwash: true, sheer: true, night: true, dim: 100, dimSec: 100 },
+  evening: { time: 21.5, angled: true, pendant: true, reading: false, corner: true, cove: true, wallwash: true, sheer: true, night: true, dim: 25, dimSec: 50 },   // the hours before bed: low and warm
+  sleep: { time: 23.5, angled: false, pendant: false, reading: false, corner: false, cove: false, wallwash: false, sheer: false, night: true, dim: 25, dimSec: 50 },  // lights out, the motion night light
+};
+document.querySelectorAll('[data-bscene]').forEach(b => b.addEventListener('click', () => {
+  const { time, ...st } = BED_SCENES[b.dataset.bscene];
+  Object.assign(bedState, st);
+  lightsManual = true; secondaryOn = true;
+  setTime(time); saveBed(); markScene();
+}));
+// stand in a bedroom (Walk): front bedroom from the bay corner by the hall wall, facing the bed and the robe; bedroom 2
+// in the window corner beside the bed, facing the robe across the room (the view from the bed, standing); frontBed: beside the front bed's head, facing the wall the bed faces
+const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 } };
+document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click', () => {
+  const v = BED_VIEWS[b.dataset.bview];
+  if (!walk.on) setWalk(true); else window.closeSheets?.();
+  walk.eye = v.eye ?? 1.5;                                           // the pillow view sits up in bed
+  const p = L(v.x, v.y, walk.eye); camera.position.x = p.x; camera.position.z = p.z;
+  walk.yaw = walk.tYaw = Math.atan2(v.tx - v.x, -(v.ty - v.y)); walk.pitch = walk.tPitch = v.pitch ?? 0.12; walk.vel.set(0, 0, 0);
+}));
+document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => setTime(b.dataset.time)));
+// Secondary lights: a round button beside the bulb (and the K key), shown while a bedroom scheme with them is picked
+const secButton = document.createElement('button');
+secButton.id = 'secButton'; secButton.setAttribute('aria-label', 'Secondary lights (robe-top strip, downlights)'); secButton.title = 'Secondary lights: robe-top strip and the downlights or reading spots (K)';
+secButton.style.cssText = 'position:fixed;right:76px;bottom:172px;width:48px;height:48px;padding:0;border:0;border-radius:50%;z-index:12;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation;box-shadow:0 1px 4px rgba(0,0,0,0.25)';
+secButton.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect class="strip" x="3" y="15" width="18" height="4" rx="1"/><path d="M6 12l-1-3M12 11V7M18 12l1-3"/></svg>';
+document.body.appendChild(secButton);
+function syncSecButton() {
+  secButton.style.background = secondaryOn ? '#f6c96a' : '#f8f7f3'; secButton.style.color = secondaryOn ? '#3a2a06' : '#1f2427';
+  secButton.querySelector('.strip').setAttribute('fill', secondaryOn ? '#fff3cf' : 'none');
+  secButton.setAttribute('aria-pressed', String(secondaryOn));
+}
+const toggleSecondary = () => { secondaryOn = !secondaryOn; applyLightMode(); syncSecButton(); markScene(); showToast(secondaryOn ? 'Secondary lights on' : 'Secondary lights off'); };
+secButton.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleSecondary(); });
+secButton.addEventListener('click', e => { if (e.detail === 0) toggleSecondary(); });
+addEventListener('keydown', e => { if (e.key.toLowerCase() === 'k' && !e.repeat && !e.metaKey && !e.ctrlKey && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) toggleSecondary(); });
+syncBedUI(); markScene(); syncSecButton();
+
 // Reno sheet shows one room at a time. Tapping a room tab picks it; in Walk the sheet follows you, switching to the
 // room you walk into (a pink dot marks where you are). Rooms with nothing to change keep the last tab and say so.
-const ROOM_TAB = { 'Kitchen / dining': 'kitchen', 'Lounge / living': 'lounge', 'Bathroom 2': 'laundry', 'Front bedroom': 'bedroom', Porch: 'hall', Entry: 'hall', Hall: 'hall', 'Hall extension': 'hall' };
+const ROOM_TAB = { 'Kitchen / dining': 'kitchen', 'Lounge / living': 'lounge', 'Bathroom 2': 'laundry', 'Front bedroom': 'bedroom', 'Bedroom 2': 'bedroom', Porch: 'hall', Entry: 'hall', Hall: 'hall', 'Hall extension': 'hall' };
 const ROOM_KEY = 'fern-reno-room';
 function showRoom(key, remember = true) {
   document.querySelectorAll('[data-room]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.room === key)));

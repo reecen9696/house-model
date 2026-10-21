@@ -17,8 +17,8 @@ function linoTexture() {
 // Soft grey cut-pile carpet: a mid grey with fine flecks of lighter and darker yarn. One texture tile = 1 m.
 function carpetTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
-  g.fillStyle = '#7c7a76'; g.fillRect(0, 0, 256, 256);
-  const cols = ['#8f8d89', '#6b6965', '#85837f', '#73716d', '#9a9894'];
+  g.fillStyle = '#d8cfbf'; g.fillRect(0, 0, 256, 256);                          // light cream wool-look (2026-10-21; was mid grey)
+  const cols = ['#e3dbcc', '#cbc0ad', '#ddd4c4', '#c4b8a4', '#eae3d6'];
   for (let i = 0; i < 26000; i++) { g.fillStyle = cols[i % cols.length]; g.fillRect(Math.random() * 256, Math.random() * 256, 1, 1); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
@@ -654,7 +654,7 @@ function ashTexture() {
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 const MARBLE_TILE = [1.6, 1.6];
-function marbleTexture(bold = false) {                                // bold: Calacatta-style, veins wide and grey enough to read across a room
+function marbleTexture(bold = false, gold = true) {   // gold false: a Carrara-type white, soft grey veins only                                // bold: Calacatta-style, veins wide and grey enough to read across a room
   const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
   const rnd = (a, b) => a + Math.random() * (b - a);
   g.fillStyle = '#f3f1ec'; g.fillRect(0, 0, 1024, 1024);
@@ -668,7 +668,8 @@ function marbleTexture(bold = false) {                                // bold: C
   };
   const bw = bold ? 2.6 : 1;
   for (let k = 0; k < 7; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(500, 1300), rnd(1.5, 4) * bw, bold ? `rgba(118,112,104,${rnd(0.55, 0.8)})` : `rgba(150,140,128,${rnd(0.35, 0.6)})`);
-  for (let k = 0; k < 5; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(300, 900), rnd(0.8, 1.8), `rgba(184,150,96,${rnd(0.3, 0.5)})`);   // the warm gold veins
+  if (gold) for (let k = 0; k < 5; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(300, 900), rnd(0.8, 1.8), `rgba(184,150,96,${rnd(0.3, 0.5)})`);   // the warm gold veins
+  else for (let k = 0; k < 6; k++) vein(rnd(-100, 1100), rnd(-100, 1100), rnd(0, Math.PI), rnd(300, 900), rnd(0.8, 1.8), `rgba(160,160,158,${rnd(0.3, 0.5)})`);
   for (let k = 0; k < 14; k++) vein(rnd(0, 1024), rnd(0, 1024), rnd(0, Math.PI), rnd(100, 400), rnd(0.5, 1), 'rgba(170,165,155,0.3)');
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
@@ -708,6 +709,30 @@ function walnutTexture() {
   for (let k = 0; k < 60; k++) {                                         // short pores / flecks along the grain
     const x = rnd(0, W), y = rnd(0, H);
     g.fillStyle = `rgba(55,35,22,${rnd(0.15, 0.3)})`; g.fillRect(x, y, 1.2, rnd(8, 30));
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const OAK_TILE = [0.8, 1.6];                                             // one texture = 800 wide x 1600 tall of veneer
+function oakTexture() {
+  // crown-free quarter-cut light oak, as in the reference photo: pale honey-blond, fine straight grain up the doors,
+  // soft leaf-to-leaf tone changes, matt lacquer
+  const W = 1024, H = 2048, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  g.fillStyle = '#f0e2cc'; g.fillRect(0, 0, W, H);
+  const stripes = Array.from({ length: 16 }, () => ({ x: rnd(0, W), w: rnd(40, 180), dark: Math.random() < 0.5, o: rnd(0.08, 0.2) }));
+  softLayer(g, W, H, 12, l => { for (const q of stripes) {
+    l.fillStyle = q.dark ? `rgba(205,180,150,${q.o})` : `rgba(248,240,228,${q.o})`; l.fillRect(q.x, -20, q.w, H + 40);
+  } });
+  for (let k = 0; k < 480; k++) {                                        // fine grain lines, straight with a slight drift
+    let x = rnd(0, W); const dark = Math.random() < 0.6;
+    g.strokeStyle = dark ? `rgba(175,145,112,${rnd(0.05, 0.16)})` : `rgba(250,244,234,${rnd(0.05, 0.14)})`;
+    g.lineWidth = rnd(0.7, 2); g.beginPath(); g.moveTo(x, -10);
+    for (let y = 0; y < H + 20; y += 128) { x += rnd(-1.5, 1.5); g.lineTo(x, y); }
+    g.stroke();
+  }
+  for (let k = 0; k < 140; k++) {                                        // oak's short ray flecks across the grain
+    const x = rnd(0, W), y = rnd(0, H);
+    g.fillStyle = `rgba(236,218,192,${rnd(0.15, 0.3)})`; g.fillRect(x, y, rnd(6, 20), 1.2);
   }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
@@ -1486,6 +1511,55 @@ function limestoneTexture() {
 // a flush LED downlight: 100 mm white trim ring with a 70 mm frosted lens set just inside it. The group sits where the
 // old flat disc did (its top against the ceiling).
 const DL_GEO = { trim: new THREE.CylinderGeometry(0.05, 0.05, 0.006, 24), lens: new THREE.CylinderGeometry(0.036, 0.036, 0.004, 24) };
+// the two bedrooms that take the proposed lighting scheme (Reno > Bedroom > Lighting)
+const BED_LIT = ['Front bedroom', 'Bedroom 2'];
+// glowing part of a proposed bedroom fitting: dark until main.js switches its layer on (userData.bedLamp)
+function bedGlow(layer) {
+  const k = 'bedGlow_' + layer;
+  if (!M[k]) { M[k] = new THREE.MeshStandardMaterial({ color: 0xfbf7ef, roughness: 0.6, emissive: 0xffd8a8, emissiveIntensity: 0 }); M[k].userData.bedLamp = layer; }
+  return M[k];
+}
+// Pendant on a bedroom rose, bottom at 2.35, hung from a joist through the rose (never from the plaster). Styles
+// (Reno > Bedroom > Pendant), Lucci from Beacon Lighting, sizes from the listings:
+//   augustOval   August oval, chalk white + frosted opal glass, 400 wide x 240 high, ES lamp, 120 canopy ($289)
+//   augustRound  August round, same, 300 wide x 290 high ($199)
+//   pipete       Pipete, solid natural travertine, 200 wide, GX53 lamp facing down: light only out of the bottom ($349)
+//   globe        generic 400 opal globe
+// Lamps assumed: ~1,000 lm 2700 K dimmable E27 in the opal ones (glass light all round); ~900 lm GX53 in the Pipete.
+function bedPendant(int_, BL, room, x, y, zc, style = 'augustOval', zb = 2.35, layer = 'pendant') {
+  const chalk = M.chalk || (M.chalk = new THREE.MeshStandardMaterial({ color: 0xece8df, roughness: 0.7 }));
+  const canopy = (d) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(d / 2, d / 2, 0.035, 32), chalk); c.position.copy(L(x, y, zc - 0.0175)); int_.add(c); };
+  const cord = (z0) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, zc - z0, 8), chalk); c.position.copy(L(x, y, (zc + z0) / 2)); c.castShadow = false; int_.add(c); };
+  if (style === 'pipete') {
+    const trav = M.travPend || (M.travPend = new THREE.MeshStandardMaterial({ color: 0xd8c7a3, roughness: 0.85 }));
+    const h = 0.075, top = zb + h;
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.1, 32, 16), trav); body.scale.set(1, h / 0.2, 1); body.position.copy(L(x, y, zb + h / 2)); int_.add(body);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.045, 24), bedGlow(layer)); lens.rotation.x = Math.PI / 2; lens.position.copy(L(x, y, zb - 0.001)); int_.add(lens);
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 12), chalk); sleeve.position.copy(L(x, y, top + 0.06)); int_.add(sleeve);
+    canopy(0.08); cord(top + 0.12);
+    BL.points.push({ room, layer, kind: 'down', x, y, z: zb + 0.02, lm: 900 });
+    return;
+  }
+  const [w, h] = style === 'augustRound' ? [0.3, 0.29] : style === 'globe' ? [0.4, 0.4] : [0.4, 0.24];
+  const zcen = zb + h / 2, glass = new THREE.Mesh(new THREE.SphereGeometry(0.5, 40, 24), bedGlow(layer));
+  glass.scale.set(w, h, w); glass.position.copy(L(x, y, zcen)); glass.castShadow = false; int_.add(glass);
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.02, 24), chalk); collar.position.copy(L(x, y, zb + h - 0.005)); int_.add(collar);
+  canopy(0.12); cord(zb + h + 0.005);
+  BL.points.push({ room, layer, kind: 'omni', x, y, z: zcen, lm: 1000 });
+}
+// painted robe joinery (white), door with a raised moulded panel inset 70, small round silver knob
+const ROBE_KICK = 0.1;
+const robePaint = () => M.robeWhite || (M.robeWhite = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.45 }));
+function robeDoor(int_, x0, x1, yf, z0, z1) {
+  const p = robePaint(), t = 0.018, m = Math.min(0.07, (x1 - x0) / 5), b = 0.016, d = 0.006, yo = yf - t;
+  box(int_, x0, x1, yo, yf, z0, z1, p);                                                       // slab
+  box(int_, x0 + m, x1 - m, yo - d, yo, z1 - m - b, z1 - m, p); box(int_, x0 + m, x1 - m, yo - d, yo, z0 + m, z0 + m + b, p);
+  box(int_, x0 + m, x0 + m + b, yo - d, yo, z0 + m, z1 - m, p); box(int_, x1 - m - b, x1 - m, yo - d, yo, z0 + m, z1 - m, p);
+}
+function robeKnob(int_, x, yf, z) {
+  const k = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0125, 0.024, 16), M.knobSilver || (M.knobSilver = new THREE.MeshStandardMaterial({ color: 0xe4e6e8, roughness: 0.35, metalness: 0.35 })));
+  k.rotation.x = Math.PI / 2; k.position.copy(L(x, yf - 0.018 - 0.012, z)); k.castShadow = false; int_.add(k);
+}
 function dlFitting() {
   const g = new THREE.Group();
   const trim = new THREE.Mesh(DL_GEO.trim, M.dlTrim); trim.position.y = 0.002;
@@ -1533,9 +1607,9 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current' } = {}) {
-  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL') fridge = 'none';                          // the fridge is built into the tall run
-  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'rail' } = {}) {
+  if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
   // wall's face to the kitchen's west wall, flush on the kitchen side. Options that live in the pantry fall back to none.
   if (noPantry) { if (fridge === 'pantry') fridge = 'none'; if (laundry === 'pantry' || laundry === true) laundry = 'none'; }
@@ -1659,13 +1733,16 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // Standard L: the walnut kitchen's L (tall units at the hall end, cooktop on the north wall, sink under the window on
   // the west return) rebuilt from stock carcass widths only, with fillers for the leftover (see K.std in the build).
   // 'stdWhite' is the same kitchen in white handleless fronts with a marble-look stone top
-  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'glossL') {
-    Object.assign(K, { std: true, white: kitchenStyle !== 'std', sh: kitchenStyle === 'secondhand' || kitchenStyle === 'glossL', gl: kitchenStyle === 'glossL', ikea: false, walnut: false, cream: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.438], uppers_z: [1.503, 2.403], uppers_depth: 0.33, cooktop_x: [3.012, 3.612], sink_x: null, sink_y: [17.02, 17.82], dishwasher_x: null });
+  if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') {
+    const gl = kitchenStyle === 'glossL' || kitchenStyle === 'glossOak';
+    Object.assign(K, { std: true, white: kitchenStyle !== 'std', sh: kitchenStyle === 'secondhand' || gl, gl, oak: kitchenStyle === 'glossOak', ikea: false, walnut: false, cream: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.438], uppers_z: [1.503, 2.403], uppers_depth: 0.33, cooktop_x: [3.012, 3.612], sink_x: null, sink_y: [17.02, 17.82], dishwasher_x: null });
     if (spec.renovation.island) Object.assign(spec.renovation.island, { x0: 2.06, x1: 3.16, y0: 16.75, y1: 17.6, stools: [[2.33, 17.56], [2.89, 17.56]] });
     // second-hand kitchen: its 927 wall cupboards and tall units top out at 2550 as in the listing photos
     if (K.sh) K.uppers_z = [1.623, 2.55];
     // the gloss U's cupboards re-planned into the same L: its 700 wall cupboards and tall units top at 2230
     if (K.gl) K.uppers_z = [1.53, 2.23];
+    // glossOak: the same reworked L with custom light-oak wall cupboards (and the one over the fridge) to the 2.8 ceiling
+    if (K.oak) K.uppers_z = [1.53, 2.8];
   }
   // Second-hand gloss U (Marketplace, Oct 2026, ~2015, gloss white handleless, grey-veined quartz, Fisher & Paykel 900 oven
   // and 900 gas cooktop), placed as it stands, no recutting: the cooktop leg on the north wall with its 750 tall unit at the
@@ -1723,6 +1800,28 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.front_bed = frontBed === 'queen' || frontBed === 'king' ? { size: frontBed, bedside: !!bedside } : null;
   spec.renovation.bed2 = bed2 ? { size: 'queen', bedside: true } : null;      // queen and bedside drawers in bedroom 2
   spec.renovation.study = !!study;                                          // desk, monitor and office chair in bedroom 3
+  // bedroom lighting (front bedroom and bedroom 2): 'downlights' = a flush grid like the other rooms; 'proposed' = a
+  // pendant on the rose, a reading spot in the ceiling each side of the bed, an LED strip on top of the robe and a night
+  // light under it. The robe-top strip needs a gap to the ceiling: the front robe stops well short of the cornice in the photo
+  // (Downloads/33.jpeg), so both robes are taken down to 2.80 (to be measured)
+  // 'corners' = the same pendant and robe strip, with two adjustable downlights near the corners washing the robe
+  // fronts in place of the reading spots
+  // 'pendant' (default) = the pendant on the rose and the robe-top strips; 'angled' = three tilted downlights per room
+  // instead of the pendant
+  // 'pendantWall' = the default plus one downlight washing the wall opposite the bed; 'pendantSheer' = the default plus a
+  // sheer across the front bay hung from a pelmet ledge with an LED strip on top of it facing up
+  spec.renovation.bed_lights = ['downlights', 'corners', 'proposed', 'angled', 'pendantWall', 'pendantSheer'].includes(bedLights) ? bedLights : 'pendant';
+  // the robes stop well short of the ceiling in every version, with the LED strip in the gap on top. Front robe photo
+  // (Downloads/33.jpeg): against the side wall's cornice the top is about 0.4-0.5 m below the cornice, so about 2.55
+  // (0.6 under the ceiling); bedroom 2's robe assumed the same. To be measured
+  // hall: 'rail' = a pendant back on the entry rose + an LED uplight on a picture rail down both walls; 'downlights' = the
+  // earlier flush row down the centre
+  spec.renovation.hall_lights = hallLights === 'downlights' ? 'downlights' : 'rail';
+  spec.renovation.pendant_style = ['augustOval', 'augustRound', 'pipete', 'globe'].includes(pendant) ? pendant : 'augustOval';
+  for (const k of ['robe_front', 'robe_bed2']) spec.fixtures[k].z1 = 2.55;
+  // front bedroom: the open shelving beside the robe narrows from 1.02 to 450 and the robe takes the rest (more
+  // cupboard): robe 2.66 wide, four doors
+  { const F = spec.fixtures; F.shelves_front.x1 = F.shelves_front.x0 + 0.45; F.robe_front.x0 = F.shelves_front.x1; }
   if (noPantry) spec.doors.back.x0 = spec.renovation.pantry.x0;
   spec.renovation.white_woodwork = !!whiteWoodwork;
   if (K.u) { spec.renovation.dining = null; spec.renovation.sideboard = null; spec.renovation.island = null; }   // the peninsula takes the dining space; the fridge wall the sideboard's
@@ -1791,6 +1890,9 @@ export function buildHouse(spec) {
     furniture: new THREE.Group(),   // loose furniture, inside and out: toggled from Layers
   };
   const DL = G.ceilings.userData.downlights = [];   // every ceiling downlight: { x, y, z, room } in the lot frame; main.js lights them
+  // the proposed bedroom fittings, lot frame: points (pendant, wall lights) and line sources (robe-top strip, night
+  // light). main.js lights them in the shader, each only inside its own room's outline (no light through walls)
+  const BL = G.ceilings.userData.bedLamps = { points: [], lines: [] };
   const H = spec.house, W = spec.walls, R = spec.roof, D = spec.doors, Win = spec.windows, Lv = spec.levels;
   const gz = spec.site.ground_z;
   // finished lounge floor: the slab plus any Reno build-up. Its doors sit on this, so they lift with the floor.
@@ -1993,13 +2095,140 @@ export function buildHouse(spec) {
 
   // fixtures
   const F = spec.fixtures;
-  box(int_, F.robe_front.x0, F.robe_front.x1, F.robe_front.y0, F.robe_front.y1, 0, F.robe_front.z1, M.robe);
-  box(int_, F.robe_bed2.x0, F.robe_bed2.x1, F.robe_bed2.y0, F.robe_bed2.y1, 0, F.robe_bed2.z1, M.robe);
-  // robe fronts: door panels so the full-height robes read as joinery
+  // Robes as in the photos (Downloads/wadrobe.jpeg, 33.jpeg), to be painted white: tall doors over a recessed plinth,
+  // a row of overhead cupboard doors above a slim shadow gap, every door with a raised moulded panel, small round
+  // silver knobs: tall doors in pairs with the knobs at the meeting stiles about 1.1 m up, overheads near the bottom
   for (const r of [F.robe_front, F.robe_bed2]) {
-    const n = Math.round((r.x1 - r.x0) / 0.6), w = (r.x1 - r.x0) / n;
-    for (let i = 0; i < n; i++) { box(int_, r.x0 + i * w + 0.015, r.x0 + (i + 1) * w - 0.015, r.y0 - 0.012, r.y0, 0.05, 2.08, M.robePanel); box(int_, r.x0 + i * w + 0.015, r.x0 + (i + 1) * w - 0.015, r.y0 - 0.012, r.y0, 2.14, r.z1 - 0.05, M.robePanel); box(int_, r.x0 + (i + 0.85) * w, r.x0 + (i + 0.85) * w + 0.02, r.y0 - 0.03, r.y0 - 0.012, 1.0, 1.02, M.brass); }
-    box(int_, r.x0, r.x1, r.y0 - 0.014, r.y0, 2.08, 2.14, M.robe);   // rail between doors and overhead cupboards
+    box(int_, r.x0, r.x1, r.y0, r.y1, ROBE_KICK, r.z1, robePaint());                        // carcass
+    box(int_, r.x0, r.x1, r.y0 + 0.04, r.y1, 0, ROBE_KICK, robePaint());                    // plinth, set back 40
+    const n = Math.round((r.x1 - r.x0) / 0.6), w = (r.x1 - r.x0) / n, rail = Math.min(2.08, r.z1 - 0.62);   // overhead doors ~0.4 x the long ones (photo)
+    for (let i = 0; i < n; i++) {
+      const x0 = r.x0 + i * w + 0.0015, x1 = r.x0 + (i + 1) * w - 0.0015;
+      robeDoor(int_, x0, x1, r.y0, ROBE_KICK, rail);                                          // tall door
+      robeDoor(int_, x0, x1, r.y0, rail + 0.012, r.z1);                                       // overhead door
+      const single = n % 2 === 1 && i === n - 1, kx = single ? x0 + 0.05 : i % 2 === 0 ? x1 - 0.05 : x0 + 0.05;
+      robeKnob(int_, kx, r.y0, 1.1); robeKnob(int_, kx, r.y0, rail + 0.1);
+    }
+  }
+  // --- bedroom lighting (spec.renovation.bed_lights): robe-top strip and night light always; angled downlights,
+  // corner downlights or reading spots by version ---
+  {
+    // over-bed reading spots in the ceiling (the walls are brick, so no wall lights): one each side, 450 out from the
+    // headboard wall and 600 either side of the bed's centre line (just outside the shoulders), 24 degree beam, 350 lm,
+    // deep-set and tilted toward the reader's lap, so lying on your back you look past the lamp, not into it
+    const spot = (x, y, ax, ay, room, layer = 'reading', lm = 350, kind = 'spot') => {
+      const zc = 3.15, big = kind === 'wash';
+      const trim = new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.05 : 0.045, big ? 0.05 : 0.045, 0.006, 24), M.dlTrim); trim.position.copy(L(x, y, zc - 0.003)); int_.add(trim);
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(big ? 0.03 : 0.02, big ? 0.03 : 0.02, 0.004, 16), bedGlow(layer)); lens.position.copy(L(x, y, zc - 0.007)); int_.add(lens);
+      BL.points.push({ room, layer, kind, x, y, z: zc - 0.03, ax, ay, lm });
+    };
+    const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2');
+    if (spec.renovation.bed_lights === 'angled') {
+      // Three high-tilt adjustable downlights per room, every one tilted 35 degrees onto a wall, none pointing down:
+      // with a 40 degree beam the near edge (15 degrees off vertical) still reaches the wall from 0.8 m out, so the
+      // pool sits on the wall (about 0.2-2.6 m up) instead of a disc on the floor. Needs fittings that tilt to 35-40
+      // (a standard gimbal stops at about 30). Designer's rule: never a downlight over the head of the bed, so none
+      // within 1.0 m of the headboard wall across the mattress plus 0.2 m each side. All on one dimmed circuit.
+      // Three, not four: each room lights the walls you see from the bed and the door; the head end stays dimmer.
+      const T = Math.tan(35 * Math.PI / 180);                              // aim: per metre of drop, toward the wall
+      const wash = (x, y, nx, ny, room, lm) => spot(x, y, nx * T, ny * T, room, 'angled', lm, 'wash');
+      // Front bedroom (bed on the west wall, facing the hall wall): two on the robe at its quarter points, 0.8 m out
+      // from the doors; one 0.8 m off the hall wall on the bed's centre line, a single pool on the blank wall the bed
+      // faces (between the bay and the hall door, the spot for a picture). The bay is left to the room's spill: at
+      // night it is shutters or black glass, and lighting it mostly lights the street.
+      { const r = F.robe_front, y = r.y0 - 0.8, w = r.x1 - r.x0;
+        for (const x of [r.x0 + w / 4, r.x1 - w / 4]) wash(x, y, 0, 1, 'Front bedroom', 600);
+        wash(fr.x0 + 0.8, (fr.y0 + r.y0) / 2, -1, 0, 'Front bedroom', 600); }
+      // Bedroom 2 (bed on the north wall, facing the robe): the wall the bed faces is the robe, so all three wash it,
+      // at its sixth points (1.09 apart, about the 0.8 setback x 1.3, so the pools meet), 0.8 m out over the foot
+      // of the bed. The window and hall walls get the robe's bounce
+      { const r = F.robe_bed2, y = r.y0 - 0.8, w = r.x1 - r.x0;
+        for (const f of [1, 3, 5]) wash(r.x0 + w * f / 6, y, 0, 1, 'Bedroom 2', 500); }
+    }
+    if (spec.renovation.bed_lights === 'pendantWall') {
+      // one high-tilt downlight per room on the wall opposite the bed, tilted 35 degrees so the pool sits on the wall:
+      // front bedroom on the hall wall, 0.8 m off it on the bed's centre line (past the foot of the bed); bedroom 2's
+      // bed faces the robe, so its one goes on the robe's centre, 0.8 m out from the doors (over the foot of the bed)
+      const T = Math.tan(35 * Math.PI / 180);
+      spot(fr.x0 + 0.8, (fr.y0 + F.robe_front.y0) / 2, -T, 0, 'Front bedroom', 'wallwash', 600, 'wash');
+      spot((F.robe_bed2.x0 + F.robe_bed2.x1) / 2, F.robe_bed2.y0 - 0.8, 0, T, 'Bedroom 2', 'wallwash', 500, 'wash');
+    }
+    if (spec.renovation.bed_lights === 'pendantSheer') {
+      // Front bedroom bay: a slim plaster pelmet ledge wall to wall across the bay end, 250 deep, its top 0.45 below the
+      // ceiling (clear of the 200 cornice); the sheer hangs from a track under it, drawn; an LED strip on top of the
+      // ledge near its front edge, facing up and a little into the room, washes the ceiling and cornice over the
+      // curtain (the same uplight as the robe tops). 2700 K, 450 lm/m, secondary circuit
+      const zc = fr.ceil, zl = zc - 0.45, yl0 = fr.y0, yl1 = fr.y0 + 0.25, x0 = fr.x0, x1 = fr.x1;
+      box(int_, x0, x1, yl0, yl1, zl - 0.04, zl, M.ceiling);                                         // the ledge
+      box(int_, x0, x1, yl1 - 0.02, yl1, zl, zl + 0.05, M.ceiling);                                  // upstand hiding the strip
+      box(int_, x0 + 0.05, x1 - 0.05, yl1 - 0.06, yl1 - 0.03, zl, zl + 0.012, bedGlow('sheer'));     // strip
+      BL.lines.push({ room: 'Front bedroom', layer: 'sheer', mode: 0, x0: x0 + 0.05, x1: x1 - 0.05, y: yl1 - 0.045, z: zl + 0.02, ay: 0.26, az: 0.966, lmPerM: 450 });
+      const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
+      const sheerMat = M.sheer || (M.sheer = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false }));
+      const yt = yl0 + 0.13, cx0 = x0 + 0.05, cx1 = x1 - 0.05;
+      box(int_, cx0, cx1, yt - 0.016, yt + 0.016, zl - 0.062, zl - 0.04, track);                     // track under the ledge
+      // one continuous S-fold sheer, 100 pitch, 50 deep, from 12 above the floor to the track
+      const n = Math.ceil((cx1 - cx0) / 0.005), rows = 14, zB = 0.012, zT = zl - 0.065, pos = [], idx = [];
+      for (let i = 0; i <= n; i++) {
+        const u = cx0 + (cx1 - cx0) * i / n, w = Math.sin(2 * Math.PI * (u - cx0) / 0.1), sw = Math.sign(w) * Math.pow(Math.abs(w), 0.6);
+        for (let r = 0; r <= rows; r++) {
+          const z = zB + (zT - zB) * r / rows, v = L(u, yt + 0.04 * sw * (1 + 0.3 * (1 - r / rows)), z);
+          pos.push(v.x, v.y, v.z);
+          if (i && r) { const k = i * (rows + 1) + r, kp = k - (rows + 1); idx.push(kp - 1, k - 1, kp, k - 1, k, kp); }
+        }
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+      const sh = new THREE.Mesh(geo, sheerMat); sh.renderOrder = 2; sh.castShadow = false; int_.add(sh);
+    }
+    if (spec.renovation.bed_lights === 'corners') {
+      // two adjustable downlights toward the corners, each washing the robe front: about a third of the ceiling height
+      // (1.0 m) out from the doors, the usual wall-wash setback, tilted onto the doors at about 1.3 m; 36 degree
+      // beam, 500 lm. Front robe (2.09 wide): 0.5 in from each end, 1.1 apart, about the setback. Bedroom 2's robe
+      // is 3.28 wide: 0.8 in from each end, 1.7 apart, so the middle of the run is a little softer
+      for (const [r, room, inset] of [[F.robe_front, 'Front bedroom', 0.5], [F.robe_bed2, 'Bedroom 2', 0.8]]) {
+        const y = r.y0 - 1.0, t = (r.y0 - y) / (3.15 - 1.3);
+        for (const x of [r.x0 + inset, r.x1 - inset]) spot(x, y, 0, t, room, 'corner', 500, 'wash');
+      }
+    }
+    // aim: from the spot to a book about 0.7 m out from the wall at 0.8 m, 0.35 m off the bed's centre line
+    if (spec.renovation.bed_lights === 'proposed') { const yc = (fr.y0 + F.robe_front.y0) / 2, x = fr.x1 - 0.45; for (const sg of [-1, 1]) spot(x, yc + sg * 0.6, (fr.x1 - 0.7 - x) / 2.35, -sg * 0.25 / 2.35, 'Front bedroom'); }
+    if (spec.renovation.bed_lights === 'proposed') { const xc = (b2.x0 + b2.x1) / 2 + 0.05, y = b2.y0 + 0.45; for (const sg of [-1, 1]) spot(xc + sg * 0.6, y, -sg * 0.25 / 2.35, (b2.y0 + 0.7 - y) / 2.35, 'Bedroom 2'); }
+    // robe top: aluminium channel at the back, tilted 45 degrees up and out into the room (washes the ceiling and
+    // cornice, can't be seen from the floor); and a strip under the doors aimed down at the floor for getting up at night
+    for (const [r, room] of [[F.robe_front, 'Front bedroom'], [F.robe_bed2, 'Bedroom 2']]) {
+      // floor strip under the doors (and under the front room's open shelving), aimed at the floor: a low glow, part
+      // of the default. Kept dim, 25 lm/m (about 50-70 lm per room), the same 2700 K tape as the top (one colour
+      // temperature in a view), on the same dimmer
+      const nx0 = (room === 'Front bedroom' ? Math.min(r.x0, F.shelves_front.x0) : r.x0) + 0.02, nx1 = r.x1 - 0.02;
+      // tucked in the plinth recess, under the door bottoms, so the tape itself isn't seen
+      box(int_, nx0, nx1, r.y0 + 0.006, r.y0 + 0.018, ROBE_KICK - 0.012, ROBE_KICK - 0.002, bedGlow('night'));
+      BL.lines.push({ room, layer: 'night', mode: 1, x0: nx0, x1: nx1, y: r.y0 + 0.012, z: ROBE_KICK - 0.015, ay: -0.5, az: -0.866, lmPerM: 25 });
+      // front: one continuous strip over the robe and the open shelving beside it (same height the whole way)
+      const sx0 = (room === 'Front bedroom' ? Math.min(r.x0, F.shelves_front.x0) : r.x0) + 0.03, sx1 = r.x1 - 0.03;
+      box(int_, sx0, sx1, r.y1 - 0.07, r.y1 - 0.04, r.z1, r.z1 + 0.025, steelMat());
+      box(int_, sx0, sx1, r.y1 - 0.075, r.y1 - 0.07, r.z1 + 0.005, r.z1 + 0.025, bedGlow('cove'));
+      BL.lines.push({ room, layer: 'cove', mode: 0, x0: sx0, x1: sx1, y: r.y1 - 0.08, z: r.z1 + 0.02, ay: -0.707, az: 0.707, lmPerM: 450 });
+      // 25 mm upstand along the front edge of the top: a 120-degree tape tilted 45 degrees throws its lower edge ~15
+      // degrees below horizontal, and without a lip a thin streak can reach the opposite wall
+      box(int_, sx0 - 0.03, r.x1, r.y0, r.y0 + 0.018, r.z1, r.z1 + 0.025, robePaint());
+    }
+    // Hall (spec.renovation.hall_lights 'rail'): a white timber picture rail at 2.70 down both long walls, broken at the
+    // archway, 90 deep with a 40 upstand, and an LED strip on it tilted 30 degrees up into the hall, washing the walls'
+    // top band, the cornice and the ceiling from both sides: an even, glare-free glow and no holes in the hall ceiling.
+    // 120 lm/m, 2700 K, on the hall's own (ceiling) circuit; night mode = the same strip at 5-10% on a motion sensor.
+    if (spec.renovation.hall_lights === 'rail') {
+      const en = spec.rooms.find(r => r.name === 'Entry'), ha = spec.rooms.find(r => r.name === 'Hall'), ext = spec.rooms.find(r => r.name === 'Hall extension');
+      const zr = 2.7, dep = 0.09;
+      const rail = (wx, dir, y0, y1) => {                                    // wall face x, dir = +1 if the hall is +x of it
+        const xa = Math.min(wx, wx + dir * dep), xb = Math.max(wx, wx + dir * dep), xu = wx + dir * (dep - 0.009), xs = wx + dir * 0.045;
+        box(int_, xa, xb, y0, y1, zr - 0.03, zr, M.ceiling);                                         // ledge
+        box(int_, xu - 0.009, xu + 0.009, y0, y1, zr, zr + 0.04, M.ceiling);                         // upstand hiding the tape
+        box(int_, xs - 0.008, xs + 0.008, y0 + 0.03, y1 - 0.03, zr, zr + 0.01, bedGlow('hallRail'));  // tape
+        BL.lines.push({ room: 'Hall', layer: 'hallRail', mode: 0, along: 'y', x0: y0 + 0.03, x1: y1 - 0.03, y: xs, z: zr + 0.015, ay: dir * 0.5, az: 0.866, lmPerM: 120 });
+      };
+      rail(W.party_half, 1, en.y0, ha.y1); rail(W.party_half, 1, ext.y0, ext.y1);                     // party wall, either side of the arch
+      rail(en.x1, -1, en.y0, en.y1); rail(ha.x1, -1, ha.y0, ha.y1); rail(ext.x1, -1, ext.y0, ext.y1);  // bedroom side
+    }
   }
   // --- renovated kitchen: white flat-panel joinery, stone top, tall units on the party wall (spec.renovation.kitchen) ---
   {
@@ -2109,14 +2338,18 @@ export function buildHouse(spec) {
       // Every door and drawer opens (E / the door button in Walk): hollow white carcasses with things in them; doors swing
       // from the hinge side that keeps them clear of their neighbours, drawers slide out 450, the oven and dishwasher drop.
       const wy0 = K.run[2], wx = K.run[1], cd = 0.56, dt = 0.018, kz = 0.15, cz = 0.87, bz = 0.903, [uz0, uz1] = K.uppers_z, ud = K.uppers_depth;
-      const WH = K.white, tz1 = K.gl ? 2.23 : K.sh ? 2.55 : 2.4, ct = 0.016;                                                      // tall units' top, carcass board
+      const WH = K.white, tz1 = K.oak ? 2.8 : K.gl ? 2.23 : K.sh ? 2.55 : 2.4, ct = 0.016;                                                      // tall units' top, carcass board
       // 'walnut' is the front finish: walnut veneer, or white matt for the white kitchen
       const walnut = K.gl ? (M.ghGloss || (M.ghGloss = new THREE.MeshStandardMaterial({ color: 0xf7f7f4, roughness: 0.1, metalness: 0.05 })))   // gloss white
         : WH ? (M.stdWhite || (M.stdWhite = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))
         : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: 0xffffff })));
-      const channel = WH ? (M.stdWhiteCh || (M.stdWhiteCh = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))   // the finger channel, white like the fronts
+      const channel = K.oak ? (M.oakCh || (M.oakCh = new THREE.MeshStandardMaterial({ color: 0xb9b6b0, roughness: 0.5, metalness: 0.2 })))   // the channel's satin aluminium lining, in shadow
+        : WH ? (M.stdWhiteCh || (M.stdWhiteCh = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))   // the finger channel, white like the fronts
         : (M.wnChannel || (M.wnChannel = new THREE.MeshStandardMaterial({ color: 0x21150d, roughness: 0.85 })));
-      const laminate = K.gl ? (M.ghQuartz || (M.ghQuartz = new THREE.MeshStandardMaterial({ map: marbleTexture(), roughness: 0.25, color: 0xe2e0dc })))   // its grey quartz
+      const oak = M.oakVeneer || (M.oakVeneer = new THREE.MeshStandardMaterial({ map: oakTexture(), roughness: 0.6, color: 0xffffff }));
+      const upper = K.oak ? oak : walnut;                                                              // wall cupboard fronts and fillers
+      const laminate = K.oak ? (M.carrara || (M.carrara = new THREE.MeshStandardMaterial({ map: marbleTexture(false, false), roughness: 0.18, color: 0xffffff })))   // Carrara-type white marble
+        : K.gl ? (M.ghQuartz || (M.ghQuartz = new THREE.MeshStandardMaterial({ map: marbleTexture(), roughness: 0.25, color: 0xe2e0dc })))   // its grey quartz
         : K.sh ? (M.qStone || (M.qStone = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.22 })))   // Quantum Stone, plain white
         : WH ? (M.stdMarble || (M.stdMarble = new THREE.MeshStandardMaterial({ map: marbleTexture(true), roughness: 0.2, color: 0xffffff })))
         : (M.stdLaminate || (M.stdLaminate = new THREE.MeshStandardMaterial({ map: limestoneTexture(), roughness: 0.55 })));
@@ -2148,16 +2381,16 @@ export function buildHouse(spec) {
       };
       // a front: the flat face with the finger channel along its top (or plain), into the static kitchen or onto a pivot
       const SB = (r, a0, a1, d0, d1, z0, z1, m) => B(r, a0, a1, d0, d1, z0, z1, m);
-      const face = (T, r, a0, a1, z0, z1, d = cd, chan = true) => {
-        if (K.sh) chan = false;                                                                        // second-hand: handles off, push-to-open, plain fronts
+      const face = (T, r, a0, a1, z0, z1, d = cd, chan = true, m = walnut) => {
+        if (K.sh && !K.oak) chan = false;                                                              // second-hand: handles off, push-to-open, plain fronts (the oak version keeps the base units' finger channel)
         const ch = chan ? 0.035 : g;
-        T(r, a0 + g, a1 - g, d, d + dt, z0 + g, z1 - ch, walnut);
+        T(r, a0 + g, a1 - g, d, d + dt, z0 + g, z1 - ch, m);
         if (chan) T(r, a0 + g, a1 - g, d, d + 0.004, z1 - ch, z1 - g, channel);
       };
       // hinged door, hinge on its a0 or a1 edge at the face, opening out just past square
-      const door = (r, a0, a1, z0, z1, hinge, { d = cd, chan = true, asm = asmNew(), lining } = {}) => {
+      const door = (r, a0, a1, z0, z1, hinge, { d = cd, chan = true, asm = asmNew(), lining, m = walnut } = {}) => {
         const p = part(asm, r, hinge === 'a0' ? a0 : a1, d + dt, z0), dir = hinge === 'a0' ? 1 : -1, u = U[r], n = OUT[r];
-        face(p.AB, r, a0, a1, z0, z1, d, chan);
+        face(p.AB, r, a0, a1, z0, z1, d, chan, m);
         if (lining) lining(p);
         p.set({ swing: Math.sign(-u[1] * dir * n[0] + u[0] * dir * n[1]) * 0.55 * Math.PI });   // the free edge moves out into the room
         return asm;
@@ -2220,12 +2453,13 @@ export function buildHouse(spec) {
       // the burners clear of the tall side) | a standard 600 oven under a gas cooktop (not their Smeg) | 59 filler to the return's
       // fronts, so the oven door drops clear of them; the corner dead behind. West: filler 22 | its 998 drawers | the peninsula's
       // 390 drawers, 790 double-sink cupboard and 600 dishwasher | end panel 18. Bench assumed lowered from its 995 to 903.
-      // K.gl, the second-hand gloss U (Oct 2026) re-planned into this L. North: end panel 18 | its fridge recess cut to 900
-      // with a 450 overhead | its 470 drawers | its 900 oven under its 900 gas cooktop | 414 corner front (its 322 corner
-      // door + 92 filler) | dead corner. West: filler 22 | two of the peninsula's drawer stacks, trimmed to 569 | its 290 door |
+      // K.gl, the second-hand gloss U (Oct 2026) re-planned into this L. North: end panel 18 | its fridge recess cut to 977
+      // with a 450 overhead | its 470 drawers | its 900 oven under its 900 gas cooktop | 337 corner front (its 322 corner
+      // door + 15 filler) | dead corner. The recess is sized so its cooktop leg (2270-2285 tall side to wall, tape) drops in
+      // whole: its top and cooktop cutout reused uncut. West: filler 22 | two of the peninsula's drawer stacks, trimmed to 569 | its 290 door |
       // its 750 sink pair (bowls 55 off the window's centre) | its 600 dishwasher | end panel 18. Its 750 and 1100 tall units
       // and the peninsula's six cupboards are left over. Wall cupboards 700, tops at 2230 with its tall units.
-      const N = K.gl ? lay(K.run[0], [['panel', 18], ['fridge', 900], ['drawers', 470], ['oven', 900], ['fill', 414], ['void', 578]], 3280)
+      const N = K.gl ? lay(K.run[0], [['panel', 18], ['fridge', 977], ['drawers', 470], ['oven', 900], ['fill', 337], ['void', 578]], 3280)
         : K.sh ? lay(K.run[0], [['panel', 18], ['fridge', 905], ['tall', 670], ['drawers', 450], ['oven', 600], ['fill', 59], ['void', 578]], 3280)
         : lay(K.run[0], [['panel', 18], ['fridge', 600], ['pantry', 450], ['fill', 84], ['drawers', 450], ['oven', 600], ['corner', 900], ['void', 178]], 3280);
       const R = K.gl ? lay(K.return[2], [['fill', 22], ['d569a', 569], ['d569b', 569], ['door', 290], ['sink', 750], ['dw', 600], ['panel', 18]], 2818)
@@ -2254,9 +2488,9 @@ export function buildHouse(spec) {
       if (K.sh) {
         // ---- end panel, fridge cavity (fridge not included: a stainless French-door stands in) and its two-door overhead ----
         B('N', ...N.panel, 0, cd + dt, 0, tz1, walnut);
-        { const [a0, a1] = N.fridge, oz = tz1 - (K.gl ? 0.45 : 0.73), fh = Math.min(1.79, oz - 0.01), f0 = a0 + 0.015, f1 = a1 - 0.015, fm = (f0 + f1) / 2, fd = 0.68;
-          carc('N', a0, a1, oz, tz1, { d1: cd, zs: K.gl ? [] : [oz + 0.36] });
-          const pair = asmNew(); door('N', a0, (a0 + a1) / 2, oz, tz1, 'a0', { asm: pair }); door('N', (a0 + a1) / 2, a1, oz, tz1, 'a1', { asm: pair });
+        { const [a0, a1] = N.fridge, oz = K.oak ? 1.78 : tz1 - (K.gl ? 0.45 : 0.73), fh = Math.min(1.79, oz - 0.01), f0 = a0 + 0.015, f1 = a1 - 0.015, fm = (f0 + f1) / 2, fd = 0.68;
+          carc('N', a0, a1, oz, tz1, { d1: cd, zs: K.oak ? [oz + 0.5] : K.gl ? [] : [oz + 0.36] });
+          const pair = asmNew(); door('N', a0, (a0 + a1) / 2, oz, tz1, 'a0', { asm: pair, m: upper, chan: !K.oak }); door('N', (a0 + a1) / 2, a1, oz, tz1, 'a1', { asm: pair, m: upper, chan: !K.oak });
           B('N', f0, f1, 0.04, fd - 0.02, 0.02, fh, st);                                                     // cabinet
           B('N', f0, fm - 0.002, fd - 0.02, fd, 0.78, fh, st); B('N', fm + 0.002, f1, fd - 0.02, fd, 0.78, fh, st);   // French doors
           B('N', f0, f1, fd - 0.02, fd, 0.04, 0.765, st);                                                      // freezer drawer
@@ -2363,10 +2597,11 @@ export function buildHouse(spec) {
           if (b - a > 0.005 && z1 - z0 > 0.005) surfUV(B('W', a, b, 0, 0.012, z0, z1, laminate), TT); }
       // ---- wall cabinets, 900 x 330, two shelves of plates and glasses ----
       const wall = (r, a0, a1, hinges, { z0 = uz0, fill = true } = {}) => {
-        carc(r, a0, a1, z0, uz1, { d1: ud, zs: [z0 + 0.3, z0 + 0.6].filter(z => z < uz1 - 0.15) });
+        const zs = []; for (let z = z0 + 0.3; z < uz1 - 0.15; z += 0.3) zs.push(z);                   // a shelf every 300
+        carc(r, a0, a1, z0, uz1, { d1: ud, zs });
         if (fill) { plates(r, a0 + ct, a1 - ct, z0 + ct); glasses(r, a0 + ct, a1 - ct, z0 + 0.3 + ct); }
         const asm = asmNew(), n = hinges.length, w = (a1 - a0) / n;
-        hinges.forEach((h, i) => door(r, a0 + i * w, a0 + (i + 1) * w, z0, uz1, h, { d: ud, chan: false, asm }));
+        hinges.forEach((h, i) => door(r, a0 + i * w, a0 + (i + 1) * w, z0, uz1, h, { d: ud, chan: false, asm, m: upper }));
       };
       const ledUnder = (r, a0, a1) => B(r, a0 + 0.02, a1 - 0.02, ud - 0.03, ud - 0.01, uz0 - 0.006, uz0, led);
       if (!K.sh) { face(SB, 'N', ...N.fill, uz0, uz1, ud, false); B('N', ...N.fill, 0, ud, uz0, uz1, walnut); }   // 84 filler over the base filler
@@ -2374,27 +2609,27 @@ export function buildHouse(spec) {
       { const [a0, a1] = N.oven, hz = K.gl ? uz0 : K.sh ? bz + 0.78 : uz1 - 0.72, vz = hz + 0.04;   // second-hand: its cupboards top at 2550, so a taller one                                       // 600 rangehood space: a 720 cupboard with the
         carc('N', a0, a1, hz, uz1, { d1: ud });                                                          // slide-out hood in its base, 780 over the bench;
         scyl(0.075, uz1 - hz - 0.04, tint(0xb8bcbf), P('N', (a0 + a1) / 2, 0.15), hz + 0.02);              // its duct up through the cupboard
-        if (K.gl) { const pr = asmNew(); door('N', a0, (a0 + a1) / 2, vz, uz1, 'a0', { d: ud, chan: false, asm: pr }); door('N', (a0 + a1) / 2, a1, vz, uz1, 'a1', { d: ud, chan: false, asm: pr }); }   // its pair of 445s, hood under
+        if (K.gl) { const pr = asmNew(); door('N', a0, (a0 + a1) / 2, vz, uz1, 'a0', { d: ud, chan: false, asm: pr, m: upper }); door('N', (a0 + a1) / 2, a1, vz, uz1, 'a1', { d: ud, chan: false, asm: pr, m: upper }); }   // its pair of 445s, hood under
         else door('N', a0, a1, vz, uz1, 'a0', { d: ud, chan: false });
         if (hz > uz0) surfUV(B('N', a0, a1, 0, 0.012, uz0, hz, laminate), TT);                                       // splashback on up behind the hood
         B('N', a0 + 0.004, a1 - 0.004, ud - 0.01, ud + dt + 0.01, hz, vz, st);                         // visor
         B('N', a0 + 0.04, a1 - 0.04, 0.03, ud - 0.04, hz - 0.002, hz, M.frameA); }                     // filter
-      if (K.gl) { const c1 = N.oven[1] + 0.445; wall('N', N.oven[1], c1, ['a1']); B('N', c1, wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false); }   // a 445, filler to the west cupboards
+      if (K.gl) { const c1 = N.oven[1] + 0.445; wall('N', N.oven[1], c1, ['a1']); B('N', c1, wx - ud, 0, ud, uz0, uz1, upper); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false, upper); }   // a 445, filler to the west cupboards
       else if (K.sh) { B('N', N.oven[1], wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', N.oven[1], wx - ud, uz0, uz1, ud, false); }   // filler on to the west cupboards
       else { const c0 = N.corner[0], c1 = c0 + 0.6;                                                           // 600 hinged on the corner side, then a 148
         wall('N', c0, c1, ['a1']); ledUnder('N', c0, c1);                                                // filler to the west run's face
         B('N', c1, wx - ud, 0, ud, uz0, uz1, walnut); face(SB, 'N', c1, wx - ud, uz0, uz1, ud, false); }
       { const w0 = wy0 + ud + dt, f1 = w0 + 0.072, t1 = f1 + 0.9;                                       // west: 72 filler, then a 900 (a pair of
-        B('W', w0, f1, 0, ud + dt, uz0, uz1, walnut);                                                     // doors), stopping 150 short of the window
+        B('W', w0, f1, 0, ud + dt, uz0, uz1, upper);                                                     // doors), stopping 150 short of the window
         wall('W', f1, t1, ['a0', 'a1']); ledUnder('W', f1, t1);
-        B('W', wy0, w0, 0, ud, uz0 - dt, uz0, walnut);                                                    // the dead corner's underside, closed
+        B('W', wy0, w0, 0, ud, uz0 - dt, uz0, upper);                                                    // the dead corner's underside, closed
         // plasterboard bulkhead from the cupboard tops to the ceiling, flush with the fronts: deeper over the tall units
         const ceil = 2.8, bh_ = M.ceiling;
         const tallEnd = K.sh ? (N.tall || N.fridge)[1] : N.fill[0];
-        B('N', N.panel[0], tallEnd, 0, cd + dt, tz1, ceil, bh_);
-        B('N', tallEnd, wx, 0, ud + dt, uz1, ceil, bh_);
-        B('W', wy0 + ud + dt, t1, 0, ud + dt, uz1, ceil, bh_); }
+        if (tz1 < ceil) B('N', N.panel[0], tallEnd, 0, cd + dt, tz1, ceil, bh_);
+        if (uz1 < ceil) { B('N', tallEnd, wx, 0, ud + dt, uz1, ceil, bh_); B('W', wy0 + ud + dt, t1, 0, ud + dt, uz1, ceil, bh_); } }
       if (!WH) { int_.updateMatrixWorld(true); int_.traverse(o => { if (o.isMesh && o.material === walnut) surfUV(o, WALNUT_TILE); }); }
+      if (K.oak) { int_.updateMatrixWorld(true); int_.traverse(o => { if (o.isMesh && o.material === oak) surfUV(o, OAK_TILE); }); }
     } else
     if (K.ikea) {
       // ---- IKEA-style kitchen ----
@@ -2768,7 +3003,7 @@ export function buildHouse(spec) {
       if (x >= rx0 - 0.1 && x <= rx1) {
         let d = K.uppers_depth;
         if (K.ikea) { if (x < rx0 + 1.85) d = 0.6; if (x > rx1 - 0.72) d = 0.67; }
-        if (K.std && x < rx0 + (K.gl ? 0.92 : K.sh ? 1.6 : 1.1)) d = K.sh ? 0.7 : 0.6;                                     // the fridge and pantry
+        if (K.std && x < rx0 + (K.gl ? 0.995 : K.sh ? 1.6 : 1.1)) d = K.sh ? 0.7 : 0.6;                                     // the fridge and pantry
         const fr = spec.renovation.fridge;
         if (fr && ((x >= fr.x0 - 0.05 && x <= fr.x1 + 0.05) || (fr.pantry && x >= fr.pantry[0] - 0.05 && x <= fr.pantry[1] + 0.05))) d = Math.max(d, fr.y1 - ry0);
         y = Math.max(y, ry0 + d + 0.4);
@@ -3067,7 +3302,7 @@ export function buildHouse(spec) {
   }
   // --- beds (Reno): upholstered queen or king with bedside drawers either side. Built in a local frame with the
   // headboard's face at x = 0 (the bed running toward -x) and centred on y = 0, then set against its wall.
-  const bedSet = (size, bedside, bsW = 0.45) => {
+  const bedSet = (size, bedside, bsW = 0.45, lamps = true) => {
     const g = new THREE.Group();
     const mw = size === 'king' ? 1.83 : 1.53, ml = 2.03, fw = mw + 0.1, fl = ml + 0.1;          // mattress, and the frame round it
     const wx = -0.015, fx0 = wx - fl, y0 = -fw / 2, y1 = fw / 2;
@@ -3089,6 +3324,7 @@ export function buildHouse(spec) {
         box(g, bx0, wx, b0, b1, 0.06, 0.55, oak);                                                   // carcass on short legs
         for (const x of [bx0 + 0.03, wx - 0.06]) for (const y of [b0 + 0.03, b1 - 0.06]) box(g, x, x + 0.03, y, y + 0.03, 0, 0.06, M.frameA);
         for (const [z0, z1] of [[0.08, 0.3], [0.32, 0.53]]) { box(g, bx0 - 0.012, bx0, b0 + 0.01, b1 - 0.01, z0, z1, oak); box(g, bx0 - 0.024, bx0 - 0.012, (b0 + b1) / 2 - 0.07, (b0 + b1) / 2 + 0.07, (z0 + z1) / 2 - 0.008, (z0 + z1) / 2 + 0.008, M.frameA); }
+        if (!lamps) continue;                                                                        // wall lights instead
         const lx = wx - 0.2, ly = (b0 + b1) / 2;                                                    // small lamp
         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.25, 16), M.frameA); base.position.copy(L(lx, ly, 0.675)); g.add(base);
         const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.2, 20, 1, true), shade); sh.material.side = THREE.DoubleSide; sh.position.copy(L(lx, ly, 0.9)); g.add(sh);
@@ -3097,19 +3333,20 @@ export function buildHouse(spec) {
     return { g, len: fl, width: fw };
   };
   // headboard wall 'west' (lot +x) or 'north' (lot -y): the local -x direction (toward the foot) turns to face into the room
+  const bedProposed = ['proposed', 'corners'].includes(spec.renovation.bed_lights);   // their own bedside lights: no table lamps
   const placeBed = (bed, wall, wx, wy) => { bed.g.position.copy(L(wx, wy, 0)); bed.g.rotation.y = wall === 'north' ? -Math.PI / 2 : 0; G.furniture.add(bed.g); };
   // front bedroom: headboard on the west wall so it faces you from the hall door, centred north-south in the clear
   // space between the bay wall and the built-in
   if (spec.renovation.front_bed) {
     const FB = spec.renovation.front_bed, rm = spec.rooms.find(r => r.name === 'Front bedroom');
-    placeBed(bedSet(FB.size, FB.bedside), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
+    placeBed(bedSet(FB.size, FB.bedside, 0.45, !bedProposed), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
   }
   // bedroom 2: the west wall has the window and the south wall is all robe, so the headboard goes on the north wall,
   // with the foot 690 short of the robe doors. The hall door swings in across the foot corner, so the bed sits 50 west
   // of centre to clear the open leaf; the window's shutters then open to 60 degrees to miss the window-side bedside.
   if (spec.renovation.bed2) {
     const B2 = spec.renovation.bed2, rm = spec.rooms.find(r => r.name === 'Bedroom 2');
-    placeBed(bedSet(B2.size, B2.bedside, 0.42), 'north', (rm.x0 + rm.x1) / 2 + 0.05, rm.y0);
+    placeBed(bedSet(B2.size, B2.bedside, 0.42, !bedProposed), 'north', (rm.x0 + rm.x1) / 2 + 0.05, rm.y0);
   }
   // bedroom 3 study: a 1400 x 700 desk against the hall wall, between the door (north end of that wall) and the robe
   // across the south wall, so the window is at your side (no glare on the screen, no squinting into daylight).
@@ -3685,10 +3922,22 @@ export function buildHouse(spec) {
   }
   // front bedroom: open shelving niche beside the robe
   const SH = F.shelves_front;
-  box(int_, SH.x0, SH.x0 + 0.02, SH.y0, SH.y1, 0, 3.14, M.robe); box(int_, SH.x1 - 0.02, SH.x1, SH.y0, SH.y1, 0, 3.14, M.robe);   // cheeks
-  box(int_, SH.x0, SH.x1, SH.y1 - 0.02, SH.y1, 0, 3.14, M.robe);                                                              // back, at the wall
-  box(int_, SH.x0, SH.x1, SH.y0, SH.y1, 2.6, 2.62, M.robe); box(int_, SH.x0, SH.x1, SH.y0, SH.y0 + 0.04, 2.62, 3.14, M.robe); // head with a cupboard face above
-  for (const z of SH.levels) box(int_, SH.x0 + 0.02, SH.x1 - 0.02, SH.y0 + 0.05, SH.y1 - 0.02, z, z + 0.025, M.glass);        // glass shelves
+  // the niche tops out level with the robe beside it (one height the whole way across), with a top over it
+  const shTop = F.robe_front.z1;
+  // cheeks: full depth above the plinth, set back 40 below it like the robe's plinth (a full-height cheek stood proud of
+  // the recessed plinth as a post at the floor)
+  for (const [c0, c1] of [[SH.x0, SH.x0 + 0.02], [SH.x1 - 0.02, SH.x1]]) { box(int_, c0, c1, SH.y0, SH.y1, ROBE_KICK, shTop, robePaint()); box(int_, c0, c1, SH.y0 + 0.04, SH.y1, 0, ROBE_KICK, robePaint()); }
+  box(int_, SH.x0, SH.x1, SH.y1 - 0.02, SH.y1, 0, shTop, robePaint());                                                              // back, at the wall
+  const shHead = Math.min(2.6, shTop - 0.4);
+  box(int_, SH.x0, SH.x1, SH.y0, SH.y1, shHead, shHead + 0.02, robePaint()); box(int_, SH.x0, SH.x1, SH.y0, SH.y0 + 0.04, shHead + 0.02, shTop, robePaint()); // head with a cupboard face above
+  box(int_, SH.x0, SH.x1, SH.y0, SH.y1, shTop - 0.02, shTop, robePaint());                                                          // top
+  // solid base like the robe beside it: a closed cupboard from the floor to the first shelf, its door flush with the
+  // robe doors (same panel, same 50 above the floor), so the run reads as one piece of joinery
+  const shBase = 0.42;
+  box(int_, SH.x0 + 0.02, SH.x1 - 0.02, SH.y0, SH.y1 - 0.02, ROBE_KICK, shBase, robePaint());
+  box(int_, SH.x0 + 0.02, SH.x1 - 0.02, SH.y0 + 0.04, SH.y1 - 0.02, 0, ROBE_KICK, robePaint());          // plinth, set back like the robe
+  robeDoor(int_, SH.x0 + 0.0015, SH.x1 - 0.0015, SH.y0, ROBE_KICK, shBase); robeKnob(int_, SH.x0 + 0.05, SH.y0, shBase - 0.08);
+  for (const z of SH.levels.filter(z => z < shHead - 0.1 && z > shBase + 0.1)) box(int_, SH.x0 + 0.02, SH.x1 - 0.02, SH.y0 + 0.05, SH.y1 - 0.02, z, z + 0.025, M.glass);        // glass shelves
   // living room console gas heater
   // ceiling roses and light fittings
   for (const cr of F.ceiling_roses) {
@@ -3698,6 +3947,14 @@ export function buildHouse(spec) {
     for (const [f, h] of [[0.78, 0.045], [0.55, 0.06], [0.3, 0.075]]) { const ring = new THREE.Mesh(new THREE.CylinderGeometry(cr.dia / 2 * f, cr.dia / 2 * f * 1.04, h, 32), M.ceiling); ring.position.copy(L(cr.x, cr.y, zc - h / 2)); int_.add(ring); }
     // Reno: the hanging fittings (chandeliers and pendants) come down; the plaster rose stays and the room gets flush
     // downlights like the kitchen's, one per 1.7 m or so each way, evenly spread
+    // hall: the entry rose gets its pendant back (the hall's feature, as in the reference Page project): an August oval to
+    // match the bedrooms, bottom at 2.1, level with the door heads (Mint's hall rule)
+    if (rm.name === 'Entry' && spec.renovation.hall_lights === 'rail') { bedPendant(int_, BL, 'Hall', cr.x, cr.y, zc, 'augustOval', 2.1, 'hallPendant'); continue; }
+    if (BED_LIT.includes(rm.name) && spec.renovation.bed_lights === 'angled') continue;   // the rose stays, no fitting on it
+    if (BED_LIT.includes(rm.name) && spec.renovation.bed_lights !== 'downlights') {
+      bedPendant(int_, BL, rm.name, cr.x, cr.y, zc, spec.renovation.pendant_style);
+      continue;
+    }
     const nx = Math.max(1, Math.round((rm.x1 - rm.x0) / 1.7)), ny = Math.max(1, Math.round((rm.y1 - rm.y0) / 1.7));
     for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
       let dx = rm.x0 + (rm.x1 - rm.x0) * (i + 0.5) / nx, dy = rm.y0 + (rm.y1 - rm.y0) * (j + 0.5) / ny;
@@ -3709,7 +3966,7 @@ export function buildHouse(spec) {
     }
   }
   // hall and wet rooms had no fittings: halls one row at 1.6 m, bathrooms and the WC at 1.3 m (90 mm cut-out fittings)
-  for (const [name, sp] of [['Hall', 1.6], ['Hall extension', 1.6], ['Bath', 1.3], ['WC', 1.3], ['Bathroom 2', 1.3]]) {
+  for (const [name, sp] of [['Hall', 1.6], ['Hall extension', 1.6], ['Bath', 1.3], ['WC', 1.3], ['Bathroom 2', 1.3]].filter(([n]) => !(spec.renovation.hall_lights === 'rail' && n.startsWith('Hall')))) {
     const rm = spec.rooms.find(r => r.name === name), zc = rm.floor + rm.ceil;
     for (const [dx, dy] of dlGrid(rm, sp)) { const dl = dlFitting(); dl.position.copy(L(dx, dy, zc - 0.004)); int_.add(dl); DL.push({ x: dx, y: dy, z: zc - 0.004, room: name }); }
   }

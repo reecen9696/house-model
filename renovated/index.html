@@ -47,6 +47,7 @@
   .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .grid3 .btn, .grid4 .btn { padding: 12px 4px; border-radius: 12px; text-align: center; }
+  [data-bscene][aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
   .field { display: grid; gap: 6px; }
   .field .lab { display: flex; justify-content: space-between; font-size: 14px; }
   .field .val { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -138,6 +139,7 @@ body.clean > *:not(canvas) { display: none !important; }
 <nav class="model-switch" aria-label="House version">
   <a href="../?original">Original</a>
   <a href="./" aria-current="page">Renovated</a>
+  <a href="../projects/">Projects</a>
 </nav>
 <div id="loading" role="status" aria-live="polite"><div class="spin" aria-hidden="true"></div><div class="lt">Loading renovation</div></div>
 
@@ -160,7 +162,8 @@ body.clean > *:not(canvas) { display: none !important; }
 <section class="sheet" id="sheet-sun" hidden>
   <h2>Sun</h2>
   <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1zm13 8H4v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9z"/></svg>Date</span><span class="val" id="dayVal"></span></div><input type="range" id="day" min="1" max="365" step="1" value="172"></div>
-  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>Time</span><span class="val" id="timeVal"></span></div><input type="range" id="time" min="5" max="21" step="0.25" value="12"></div>
+  <div class="field"><div class="lab"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>Time</span><span class="val" id="timeVal"></span></div><input type="range" id="time" min="5" max="23.75" step="0.25" value="12"></div>
+  <div class="grid3"><button class="btn" type="button" data-time="12">Midday</button><button class="btn" type="button" data-time="18">6 pm</button><button class="btn" type="button" data-time="21.5">Night</button></div>
   <p class="note" id="sunInfo"></p>
 </section>
 
@@ -197,6 +200,7 @@ body.clean > *:not(canvas) { display: none !important; }
         <option value="secondhand">Second-hand white (Seaford)</option>
         <option value="gloss">Second-hand gloss U (as-is)</option>
         <option value="glossL">Second-hand gloss, reworked to our L</option>
+        <option value="glossOak">Gloss L, oak uppers to ceiling + marble</option>
       </select>
     </div>
     <div class="q">
@@ -256,6 +260,7 @@ body.clean > *:not(canvas) { display: none !important; }
         <option value="cas">CAS Comet stacker, 2565 x 2070 (quote)</option>
         <option value="monument">Monument stacker + security screens, 2430 x 2220</option>
         <option value="timber">Timber slider, 3490 x 2100</option>
+        <option value="rylock">Rylock black slider + fly screen, 2690 x 1930</option>
       </select>
       <p class="note" id="renoBdNote"></p>
       <a class="listing" id="renoBdLink" target="_blank" rel="noopener" hidden>Open listing ↗</a>
@@ -333,6 +338,45 @@ body.clean > *:not(canvas) { display: none !important; }
       <label class="sw"><span>Bedside drawers</span><input type="checkbox" id="renoBedside" checked><span class="tk"></span></label>
       <label class="sw"><span>Plantation shutters (bedroom windows)</span><input type="checkbox" id="renoShutters" checked><span class="tk"></span></label>
     </div>
+    <div class="q">
+      <span class="lab" id="renoBLLab">Lighting, front bedroom and bedroom 2</span>
+      <select data-pick="blight" aria-labelledby="renoBLLab">
+        <option value="pendant">Pendant, robe LED</option>
+        <option value="pendantWall">Pendant, robe LED, downlight on the wall opposite the bed</option>
+        <option value="pendantSheer">Pendant, robe LED, front sheer with an uplight on top</option>
+        <option value="angled">3 angled downlights, robe LED</option>
+        <option value="proposed">Pendant, reading spots, robe LED</option>
+        <option value="corners">Pendant, corner downlights onto the robe, robe LED</option>
+        <option value="downlights">Downlight grid, robe LED</option>
+      </select>
+    </div>
+    <div class="q">
+      <span class="lab" id="renoPendLab">Pendant (on the rose, bottom at 2.35)</span>
+      <select data-pick="pend" aria-labelledby="renoPendLab">
+        <option value="augustOval">1. Lucci August oval, opal, 400 x 240 ($289), recommended</option>
+        <option value="augustRound">2. Lucci August round, opal, 300 ($199)</option>
+        <option value="pipete">3. Lucci Pipete, travertine, 200, light down only ($349)</option>
+        <option value="globe">Generic 400 opal globe</option>
+      </select>
+      <p class="note">Lamp: frosted E27 LED, 2700 K, CRI 90+, dimmable or dim-to-warm, 1,200-1,500 lm (the opal glass passes ~60-75%, so ~1,000 lm comes out). Hang from the joist through the rose, bottom at ~2.35 m.</p>
+    </div>
+    <p class="note"><b>Still to do:</b> two dimmers at the door (pendant / both robe strips) plus wireless switches at the bed; reading light (bedside lamps or a pair of low bedside pendants); door-switched light inside the robes; robe strip spec (24 V, CRI 95+, R9 90+, one batch); measure the gap above both robes. Full notes: BEDROOM-LIGHTING.md.</p>
+    <div class="sws">
+      <label class="sw"><span>3 angled downlights, tilted 35° onto the robe and the wall the bed faces (ceiling circuit)</span><input type="checkbox" id="blAngled"><span class="tk"></span></label>
+      <label class="sw"><span>Pendant on the rose (400 opal globe, 1500 lm, dimmed)</span><input type="checkbox" id="blPendant"><span class="tk"></span></label>
+      <label class="sw"><span>Reading spots in the ceiling over the bed (24°, 350 lm each)</span><input type="checkbox" id="blReading"><span class="tk"></span></label>
+      <label class="sw"><span>Corner downlights washing the robe (36°, 500 lm each, dimmed)</span><input type="checkbox" id="blCorner"><span class="tk"></span></label>
+      <label class="sw"><span>Downlight on the wall opposite the bed (tilted 35°, secondary circuit)</span><input type="checkbox" id="blWallwash"><span class="tk"></span></label>
+      <label class="sw"><span>Front sheer: LED strip on the pelmet, facing up (450 lm/m)</span><input type="checkbox" id="blSheer"><span class="tk"></span></label>
+      <label class="sw"><span>LED strip on top of the robes (450 lm/m)</span><input type="checkbox" id="blCove"><span class="tk"></span></label>
+      <label class="sw"><span>LED strip under the robe at the floor (25 lm/m, same tape and dimmer as the top)</span><input type="checkbox" id="blNight"><span class="tk"></span></label>
+    </div>
+    <div class="field"><div class="lab"><span>Dimmer, ceiling circuit: pendant or downlights (2700 K, warm-dim)</span><span class="val" id="blDimVal"></span></div><input type="range" id="blDim" min="5" max="100" step="5" value="100"></div>
+    <div class="field"><div class="lab"><span>Dimmer, secondary circuit: LED strips and accent downlight</span><span class="val" id="blDimSecVal"></span></div><input type="range" id="blDimSec" min="5" max="100" step="5" value="100"></div>
+    <div class="grid3"><button class="btn" type="button" data-bscene="all">All on</button><button class="btn" type="button" data-bscene="evening">Evening</button><button class="btn" type="button" data-bscene="sleep">Sleep</button></div>
+    <div class="grid3"><button class="btn" type="button" data-bview="front">Front bedroom, robe</button><button class="btn" type="button" data-bview="frontBed">Front bedroom, from the bed</button><button class="btn" type="button" data-bview="bed2">Bedroom 2</button></div>
+    <div class="grid3"><button class="btn" type="button" data-bview="frontSheer">Front bedroom, bay</button><button class="btn" type="button" data-bview="frontPillow">Front bedroom, from the pillow</button></div>
+    <p class="note">Scenes set the time and the switches: All on (everything, full) and Evening (downlights 25%, robe strip 50%) at 9:30 pm; Sleep (night light only, the ceiling dark) at 11:30 pm. Midday is on the Sun sheet. Two round buttons at the side work the two circuits: the bulb is the ceiling lights (the downlights or pendant, and the rest of the house), the strip beside it the secondary lights (robe LED, plus corner downlights or reading spots in those versions; K key).</p>
   </div>
 
   <div class="rpanel" id="rp-hall" role="tabpanel" data-panel="hall" hidden>
@@ -344,6 +388,15 @@ body.clean > *:not(canvas) { display: none !important; }
         <option value="simple">Simple arch</option>
       </select>
     </div>
+    <div class="q">
+      <span class="lab" id="renoHallLightLab">Lighting</span>
+      <select data-pick="hlight" aria-labelledby="renoHallLightLab">
+        <option value="rail">Entry pendant + picture-rail uplight (recommended)</option>
+        <option value="downlights">Downlights down the centre</option>
+      </select>
+      <p class="note">August oval on the entry rose, bottom at 2.1 (door-head height). White picture rail at 2.7 m down both walls with a 2700 K LED strip on top (120 lm/m) washing the cornice and ceiling: no holes in the hall ceiling. Night: the same strip at 5-10% on a motion sensor. Switch two-way at the front door and the kitchen end, on a dimmer. Works with the bulb button.</p>
+    </div>
+    <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="hallFront">Hall from the front door</button><button class="btn" type="button" data-bview="hallBack">Hall from the kitchen end</button></div>
   </div>
 
   <div class="rpanel" id="rp-outside" role="tabpanel" data-panel="outside" hidden>
