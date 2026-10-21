@@ -5456,7 +5456,7 @@ export function buildHouse(spec) {
           for (const [xa, xb, ya, yb] of [[pf - pD, pf - pD + t, a, b], [pf - t, pf, a, b], [pf - pD, pf, a, a + t], [pf - pD, pf, b - t, b]]) box(G.site, xa, xb, ya, yb, z0, z0 + pH, steel);
           box(G.site, pf - pD - 0.006, pf - pD + 0.012, a, b, z0 + pH - 0.004, z0 + pH, steel);  // folded top lip on the path side
           box(G.site, pf - pD, pf, a + 0.02, b - 0.02, z0, z0 + 0.03, M.planterFoot || (M.planterFoot = new THREE.MeshStandardMaterial({ color: 0x1e1f21, roughness: 0.8 })));   // shadow gap at the foot
-          starJasmine(G.site, pf, (a + b) / 2, z0 + pH - 0.03, [3, 8, 13][i], { pocket: false });
+          starJasmine(G.site, pf, (a + b) / 2, z0 + pH - 0.03, [3, 8, 13][i], { pocket: false, height: S.west_fence.h - pH - 0.06 });   // kept below the screen's top
         }
       }
     }
