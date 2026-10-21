@@ -1764,6 +1764,116 @@ function archMirror(group, face, dir, yc, zc, w, h, band = 0.015) {
   const glass = new Reflector(new THREE.ShapeGeometry(inner, 32), { color: 0xb9bdbb, textureWidth: 512, textureHeight: 768, clipBias: 0.003 });
   glass.position.z = 0.016; glass.userData.reflector = true; gr.add(glass);
 }
+// --- decor (spec.renovation.decor 'styled'; DECOR-STYLING.md Part D, 2026-10-21) ---------------------------------------
+// Procedural plants and objects, all closed or double-sided so they read from any side. Plants are built in a group at
+// the pot's base (three axes inside: y up), so they can be turned for variety.
+const decMat = (k, c, o = {}) => M[k] || (M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, ...o }));
+const seeded = seed => { let r = seed * 9301 + 49297; return () => (r = (r * 9301 + 49297) % 233280) / 233280; };
+// a closed lathe vessel (profile [radius, height] from the axis round to the axis), standing at (x, y, z)
+function vessel(g, x, y, z, pts, mat) {
+  const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 32), mat);
+  m.position.copy(L(x, y, z)); m.castShadow = true; g.add(m); return m;
+}
+const potProfile = (r, h, lip = 0.012) => [[0, 0], [r * 0.82, 0], [r, h * 0.85], [r, h], [r - lip, h], [r - lip, h - 0.03], [0, h - 0.03]];
+// pot with soil, returns a group at the soil line
+function plantPot(g, x, y, z, r, h, mat) {
+  vessel(g, x, y, z, potProfile(r, h), mat);
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(r - 0.015, r - 0.015, 0.01, 24), decMat('soil', 0x3b2f25, { roughness: 1 }));
+  soil.position.copy(L(x, y, z + h - 0.035)); g.add(soil);
+  const gr = new THREE.Group(); gr.position.copy(L(x, y, z + h - 0.03)); g.add(gr); return gr;
+}
+// woven seagrass basket texture
+function seagrassTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#c4a97e'; g.fillRect(0, 0, 128, 128);
+  for (let y = 0; y < 128; y += 8) for (let x = 0; x < 128; x += 16) { g.fillStyle = (x / 16 + y / 8) % 2 ? '#b3976b' : '#d2b98f'; g.fillRect(x + ((y / 8) % 2) * 8, y, 14, 6); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 3); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+// Kentia palm (Howea forsteriana), ~1.85 m, in a seagrass basket: arching fronds of drooping leaflets
+function kentia(g, x, y, z, h = 1.85, seed = 3) {
+  const rnd = seeded(seed), br = 0.25, bh = 0.42;
+  const basket = new THREE.Mesh(new THREE.CylinderGeometry(br, br * 0.86, bh, 32), M.seagrass || (M.seagrass = new THREE.MeshStandardMaterial({ map: seagrassTexture(), roughness: 0.95 })));
+  basket.position.copy(L(x, y, z + bh / 2)); basket.castShadow = true; g.add(basket);
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(br - 0.02, br - 0.02, 0.01, 24), decMat('soil', 0x3b2f25, { roughness: 1 })); soil.position.copy(L(x, y, z + bh - 0.03)); g.add(soil);
+  const leafM = decMat('kentiaLeaf', 0x46703f, { side: THREE.DoubleSide }), stemM = decMat('kentiaStem', 0x5f7a45);
+  const gr = new THREE.Group(); gr.position.copy(L(x, y, z + bh - 0.03)); g.add(gr);
+  const nF = 8, T = new THREE.Vector3(), X = new THREE.Vector3(), Y = new THREE.Vector3(), Z = new THREE.Vector3(), mx = new THREE.Matrix4();
+  for (let i = 0; i < nF; i++) {
+    const a = i / nF * Math.PI * 2 + rnd() * 0.6, H = (h - bh) * (0.7 + rnd() * 0.3) / 0.81, R = 0.3 + rnd() * 0.35;
+    const fr = new THREE.Group(); fr.rotation.y = a; gr.add(fr);
+    const P = t => new THREE.Vector3(R * Math.pow(t, 1.5) + 0.03, H * (1.8 * t - t * t) * 0.5 * (i % 3 ? 1 : 0.8), 0);
+    const curve = new THREE.CatmullRomCurve3(Array.from({ length: 9 }, (_, k) => P(k / 8)));
+    fr.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.006, 5), stemM));
+    for (let t = 0.32; t < 0.99; t += 0.035) {
+      const p = P(t); T.copy(P(Math.min(1, t + 0.01))).sub(p).normalize();
+      const Lf = 0.3 * (1 - (t - 0.32) * 0.75), droop = 0.55 + t * 0.5;
+      for (const sd of [1, -1]) {
+        Z.set(0, -Math.sin(droop), sd * Math.cos(droop)).addScaledVector(T, 0.45).normalize();
+        X.copy(T).addScaledVector(Z, -T.dot(Z)).normalize(); Y.crossVectors(Z, X);
+        const geo = new THREE.BoxGeometry(0.02, 0.0015, Lf); geo.translate(0, 0, Lf / 2);
+        const lf = new THREE.Mesh(geo, leafM); lf.position.copy(p); lf.quaternion.setFromRotationMatrix(mx.makeBasis(X, Y, Z)); lf.castShadow = true; fr.add(lf);
+      }
+    }
+  }
+}
+// Bird of paradise (Strelitzia nicolai), ~1.9 m: long stalks with big paddle leaves, in a sand fibrestone pot
+function strelitzia(g, x, y, z, h = 1.9, seed = 5) {
+  const rnd = seeded(seed), ph = 0.48, gr = plantPot(g, x, y, z, 0.24, ph, decMat('fibrestone', 0xd6c9b3, { roughness: 0.9 }));
+  const leafM = decMat('strelLeaf', 0x3d6b3d, { roughness: 0.5 }), stalkM = decMat('strelStalk', 0x7a8a55);
+  for (let i = 0; i < 7; i++) {
+    const lg = new THREE.Group(); lg.rotation.set(0, i / 7 * Math.PI * 2 + rnd() * 0.5, 0.12 + rnd() * 0.22); gr.add(lg);
+    const s = (h - ph - 0.7) * (0.6 + rnd() * 0.4) + 0.15;
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, s, 6), stalkM); st.position.y = s / 2; lg.add(st);
+    const bl = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), leafM); bl.scale.set(0.11, 0.32 + rnd() * 0.06, 0.006);
+    bl.position.y = s + 0.3; bl.rotation.set(rnd() * 0.3 - 0.15, rnd() * Math.PI, 0); bl.castShadow = true; lg.add(bl);
+  }
+}
+// Snake plant (Dracaena trifasciata), ~0.9 m: upright pointed blades in a matte cream stoneware pot
+function snakePlant(g, x, y, z, h = 0.9, seed = 7) {
+  const rnd = seeded(seed), ph = 0.3, gr = plantPot(g, x, y, z, 0.15, ph, decMat('stoneCream', 0xe6dccb, { roughness: 0.85 }));
+  const leafM = decMat('snakeLeaf', 0x3e5a36, { roughness: 0.55, side: THREE.DoubleSide });
+  for (let i = 0; i < 10; i++) {
+    const w = 0.055 + rnd() * 0.025, hl = (h - ph) * (0.55 + rnd() * 0.45), sh = new THREE.Shape();
+    sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.quadraticCurveTo(w * 0.6, hl * 0.7, 0, hl); sh.quadraticCurveTo(-w * 0.6, hl * 0.7, -w / 2, 0);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), leafM);
+    m.position.set((rnd() - 0.5) * 0.12, 0, (rnd() - 0.5) * 0.12); m.rotation.set((rnd() - 0.5) * 0.18, rnd() * Math.PI, (rnd() - 0.5) * 0.18); m.castShadow = true; gr.add(m);
+  }
+}
+// Pothos in a small terracotta pot: a mound of heart leaves and vines trailing toward lot direction (dx, dy), dropping 'drop'
+function pothos(g, x, y, z, dx, dy, reach = 0.3, drop = 0.4, seed = 9) {
+  const rnd = seeded(seed), ph = 0.12, gr = plantPot(g, x, y, z, 0.075, ph, decMat('terracotta', 0xb86b47, { roughness: 0.85 }));
+  const leafM = decMat('pothosLeaf', 0x4f7a3a, { roughness: 0.55 });
+  const leaf = (p, s = 1) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.03 * s, 10, 6), leafM); l.scale.set(1, 0.18, 1.15); l.position.copy(p); l.rotation.set(rnd() - 0.5, rnd() * 6, rnd() - 0.5); gr.add(l); };
+  for (let i = 0; i < 12; i++) leaf(new THREE.Vector3((rnd() - 0.5) * 0.16, 0.03 + rnd() * 0.09, (rnd() - 0.5) * 0.16), 0.8 + rnd() * 0.4);
+  const d = new THREE.Vector3(-dx, 0, dy).normalize();
+  for (let v = 0; v < 3; v++) {
+    const side = new THREE.Vector3(-d.z, 0, d.x).multiplyScalar((v - 1) * 0.06), r0 = reach * (0.8 + rnd() * 0.4), dr = drop * (0.6 + v * 0.25);
+    for (let k = 0; k < 12; k++) { const t = k / 11; const p = d.clone().multiplyScalar(0.06 + r0 * Math.min(1, t * 1.6)).add(side); p.y = 0.06 - (t > 0.55 ? (t - 0.55) / 0.45 * (dr + ph) : 0); leaf(p, 0.75); }
+  }
+}
+// branch spray from a vase mouth at (x, y, z): stems as [spin, tilt, len]; leaves 'olive' (narrow, silvery) or 'euc' (round)
+function sprays(g, x, y, z, stems, kind = 'olive') {
+  const stemM = decMat('sprayStem', 0x6f6a55), leafM = kind === 'olive' ? decMat('oliveLeaf', 0x8a9775, { roughness: 0.8 }) : decMat('euLeaf', 0x8fa08f, { roughness: 0.8 });
+  stems.forEach(([spin, tilt, len], i) => {
+    const st = new THREE.Group(); st.position.copy(L(x, y, z)); st.rotation.set(0, spin, tilt); g.add(st);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.003, len, 5), stemM); stem.position.y = len / 2; st.add(stem);
+    const n = Math.round(len / 0.035);
+    for (let k = 0; k < n; k++) {
+      const lf = new THREE.Mesh(new THREE.SphereGeometry(kind === 'olive' ? 0.012 : 0.013 - k * 0.0006, 8, 5), leafM);
+      if (kind === 'olive') lf.scale.set(2.4, 0.15, 0.55); else lf.scale.set(1, 0.18, 1);
+      const sd = k % 2 ? 1 : -1; lf.position.set(sd * (kind === 'olive' ? 0.026 : 0.012), 0.08 + k * (len - 0.09) / n, 0); lf.rotation.set(0, (k % 3) * 0.6, sd * 0.5); st.add(lf);
+    }
+  });
+}
+// a stack of books lying flat (lot box), each [thickness, colour], with a little offset and turn
+function bookStack(g, x, y, z, w, d, books, rot = 0) {
+  let zz = z;
+  books.forEach(([t, c], i) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w - i * 0.012, t, d - i * 0.01), decMat('book' + c.toString(16), c, { roughness: 0.8 }));
+    b.position.copy(L(x + i * 0.004, y - i * 0.006, zz + t / 2)); b.rotation.y = rot + (i % 2 ? 0.05 : -0.03); b.castShadow = true; g.add(b); zz += t;
+  });
+  return zz;
+}
 // --- plaster cornices and roses (site photos: Downloads/circle.jpeg, the hall photos of Sep 25) -----------------------
 // Profiles are [o, t] pairs: o out from the wall into the room, t down from the ceiling, listed from the wall end to the
 // ceiling end. 'ornate' (entry, hall, bedrooms 2 and 3): a lip on the wall, a deep cove, then a raised band on the
@@ -1892,7 +2002,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2108,6 +2218,8 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // artwork (Reno > Hall > Artwork): 'v2' the proposed layout (ART-PLACEMENT.md Part D), 'hall' the earlier two hall
   // paintings only, 'none'
   spec.renovation.art = ['v2', 'hall', 'none'].includes(art) ? art : 'v2';
+  // styling: plants, branches and surface objects (Reno > Hall > Styling): 'styled' (DECOR-STYLING.md Part D) or 'earlier'
+  spec.renovation.decor = decor === 'earlier' ? 'earlier' : 'styled';
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
   spec.renovation.hall_pendant = ['pebble', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'pebble';
@@ -2745,6 +2857,81 @@ export function buildHouse(spec) {
     //     the cistern), centre 1.45
     { const wc = rm('WC'); hangArt(int_, 'x', wc.x1, -1, (wc.y0 + wc.y1) / 2, wc.floor + 1.45, 0.4, 0.5, artTex(18, 'print', 0.25 / 0.3), { depth: 0.025, frame: 0.02, mat: 0.055 }); }
   }
+  // --- styling: plants, branches and surface objects (spec.renovation.decor 'styled'; DECOR-STYLING.md Part D) ---
+  // One hero plant per room where the light allows it (none in the windowless hall), groups of three heights on a base,
+  // about a third of each surface clear, the art's ochre / terracotta / olive thread as the accent, bronze as the second metal.
+  if (spec.renovation.decor === 'styled') {
+    const fu = G.furniture, rm = n => spec.rooms.find(r => r.name === n);
+    // (the lounge kentia and the two front bedrooms' floor plants came out, client 2026-10-21; kentia(), strelitzia()
+    // and snakePlant() stay available)
+    // study: a pothos at the south-front corner of the hall-wall desk, trailing over its front edge
+    if (spec.renovation.study) { const b3 = rm('Bedroom 3'), yc = (spec.renovation.bedroom3.door_y1 + 0.1 + 14.29) / 2; plantModel(fu, 'rhyzome', b3.x0 + 0.5, yc + 0.52, b3.floor + 0.73, 0.4, 0.6, null, 0.3); }   // a small leafy houseplant on the desk corner
+    // courtyard: the olive in a 600 terracotta pot beside the outdoor sofa's east end (an indoor olive doesn't last)
+    {
+      const rz = spec.site_items.rear_slab.z, ox = 2.65, oy = 28.2, ph = 0.55;
+      vessel(G.site, ox, oy, rz, potProfile(0.3, ph, 0.02), decMat('terracotta', 0xb86b47, { roughness: 0.85 }));
+      const t = rz + ph - 0.03;
+      leafyTree(G.site, ox, oy, t, 0.8, [[ox, oy, t + 1.25, 0.36], [ox - 0.24, oy + 0.12, t + 1.05, 0.28], [ox + 0.22, oy - 0.12, t + 1.1, 0.28], [ox + 0.04, oy + 0.18, t + 1.5, 0.26]], decMat('oliveCanopy', 0x7d8b6a, { roughness: 0.9 }), 11);
+    }
+    // kitchen (walnut L): bench ~90% clear. A stoneware crock of wooden spoons and an oak board leaned in the corner west
+    // of the cooktop; a bowl of lemons from the courtyard tree on the west return, clear of the sink
+    const K = spec.renovation.kitchen;
+    if (K && K.walnut && !K.u) {
+      const bz = 0.9, oak = artOak();
+      vessel(fu, 4.2, 15.3, bz, [[0, 0], [0.06, 0], [0.066, 0.15], [0.058, 0.155], [0.056, 0.02], [0, 0.02]], decMat('crock', 0xd9cbb4, { roughness: 0.85 }));
+      [[0.15, 0.1], [-0.12, 0.6], [0.05, 2.2]].forEach(([tilt, spin]) => {
+        const sp = new THREE.Group(); sp.position.copy(L(4.2, 15.3, bz + 0.02)); sp.rotation.set(0, spin, tilt); fu.add(sp);
+        const h = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.3, 6), oak); h.position.y = 0.15; sp.add(h);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 6), oak); head.scale.set(1, 1.4, 0.35); head.position.y = 0.31; sp.add(head);
+      });
+      const bd = new THREE.Group(); bd.position.copy(L(4.45, 15.06, bz)); bd.rotation.x = -0.12; fu.add(bd);
+      const bg = new THREE.BoxGeometry(0.3, 0.42, 0.02); bg.translate(0, 0.21, 0.01); const board = new THREE.Mesh(bg, decMat('boardOak', 0xb58e62, { roughness: 0.65 })); board.castShadow = true; bd.add(board);
+      vessel(fu, 4.39, 16.5, bz, [[0, 0], [0.06, 0], [0.13, 0.06], [0.14, 0.075], [0.132, 0.077], [0.12, 0.06], [0.05, 0.012], [0, 0.012]], decMat('bowlOat', 0xe3d8c5, { roughness: 0.6 }));
+      const lemon = decMat('lemon', 0xf2d23a, { roughness: 0.6 });
+      [[0, 0, 0], [0.06, 0.03, 0], [-0.05, 0.04, 0], [0.01, -0.06, 0], [0.02, 0.01, 0.05]].forEach(([dx, dy, dz]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), lemon); l.scale.set(1, 0.85, 1.2); l.position.copy(L(4.39 + dx, 16.5 + dy, bz + 0.045 + dz)); l.castShadow = true; fu.add(l); });
+    }
+    // buffet (sideboard, 1600 x 435, top 860): one group just north of centre (an oak-framed photo leaning on the wall,
+    // a small leafy houseplant set back against the wall beside it, two books in front of the plant), the middle-south
+    // clear under the hero's corner, and keys in the olive bowl at the south end (client 2026-10-21: no empty gap)
+    if (spec.renovation.sideboard) {
+      const sy0 = spec.kitchen_south_wall.y0 - 0.005 - 1.6, top = 0.86, wx = rm('Kitchen / dining').x0 + 0.005;
+      const ph = new THREE.Group(); ph.position.copy(L(wx + 0.06, sy0 + 0.55, top)); ph.rotation.z = -0.12; fu.add(ph);
+      box(ph, -0.02, 0, -0.1, 0.1, 0, 0.25, artOak());
+      wallFace(ph, 'x', 0.001, 1, 0, 0.125, 0.16, 0.21, new THREE.MeshStandardMaterial({ map: artTex(21, 'calm', 0.16 / 0.21), roughness: 0.8 }));
+      plantModel(fu, 'rhyzome', wx + 0.17, sy0 + 0.86, top, 0.45, 1.1, null, 0.32);
+      bookStack(fu, wx + 0.36, sy0 + 0.94, top, 0.16, 0.22, [[0.03, 0xd6b98f], [0.025, 0x2c3a52]], 0.25);
+      if (spec.renovation.art === 'v2') {                                                      // keys in the olive bowl (centre wx + 0.27, ks - 0.2; floor 20 up)
+        const kx = wx + 0.27, ky = spec.kitchen_south_wall.y0 - 0.2, kz = top + 0.024;
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0018, 6, 20), artBrass()); ring.rotation.x = Math.PI / 2; ring.position.copy(L(kx, ky, kz)); fu.add(ring);
+        for (const [a, mat] of [[0.4, decMat('keySteel', 0xb9b6ae, { roughness: 0.35, metalness: 0.6 })], [-0.5, artBrass()]]) {
+          const key = new THREE.Group(); key.position.copy(L(kx, ky, kz - 0.0005)); key.rotation.y = a; fu.add(key);
+          const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.003, 16), mat); bow.position.set(0.022, 0, 0); key.add(bow);
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.003, 0.007), mat); blade.position.set(0.048, 0, 0); key.add(blade);
+        }
+      }
+    }
+    // dining table: one low ochre-glazed bowl, under 30 cm, so you see across the table
+    const Dn = spec.renovation.dining;
+    if (Dn) vessel(fu, (Dn.x0 + Dn.x1) / 2, (Dn.y0 + Dn.y1) / 2, Dn.h, [[0, 0], [0.07, 0], [0.16, 0.055], [0.17, 0.07], [0.162, 0.072], [0.15, 0.055], [0.06, 0.012], [0, 0.012]], decMat('ochreGlaze', 0xc8923a, { roughness: 0.3 }));
+    if (Dn) {                                                                                     // fruit in it: lemons, green pears, a couple of mandarins
+      const cx = (Dn.x0 + Dn.x1) / 2, cy = (Dn.y0 + Dn.y1) / 2, z = Dn.h + 0.012;
+      const fruit = (dx, dy, dz, r, mat, sx = 1, sy = 1, sz = 1) => { const f = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat); f.scale.set(sx, sy, sz); f.position.copy(L(cx + dx, cy + dy, z + dz + r * sy)); f.castShadow = true; fu.add(f); return f; };
+      const lemon = decMat('lemon', 0xf2d23a, { roughness: 0.6 }), pear = decMat('pear', 0x9fb04a, { roughness: 0.6 }), mand = decMat('mandarin', 0xe8862e, { roughness: 0.6 });
+      fruit(0, 0, 0, 0.038, lemon, 1, 0.85, 1.25); fruit(0.075, 0.035, 0.008, 0.036, lemon, 1.2, 0.85, 1); fruit(-0.07, 0.04, 0.008, 0.034, mand, 1, 0.82, 1);
+      fruit(0.02, -0.075, 0.008, 0.033, mand, 1, 0.82, 1); fruit(-0.05, -0.05, 0.01, 0.04, pear, 1, 1.25, 1); fruit(0.035, 0.0, 0.055, 0.036, lemon, 1.25, 0.85, 1);
+      const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.02, 5), decMat('sprayStem', 0x6f6a55)); stalk.position.copy(L(cx - 0.05, cy - 0.05, z + 0.01 + 0.1 + 0.008)); fu.add(stalk);
+    }
+    // coffee table (matched, 850 round): two zones and the rest clear: design books with a small bronze bowl on top, and
+    // a low stoneware vase with a few eucalyptus stems (all under 30 cm)
+    const LF = spec.renovation.lounge_furniture, T = LF?.coffee_table;
+    if (T && spec.renovation.coffee_table === 'matched') {
+      const lf = rm('Lounge / living').floor, tz = lf + 0.4;
+      const top = bookStack(fu, T.x - 0.1, T.y - 0.12, tz, 0.24, 0.3, [[0.035, 0x2c3a52], [0.03, 0xd6b98f]], 0.4);
+      vessel(fu, T.x - 0.1, T.y - 0.12, top, [[0, 0], [0.03, 0], [0.06, 0.035], [0.062, 0.045], [0.055, 0.046], [0.05, 0.035], [0.02, 0.008], [0, 0.008]], decMat('bronze', 0x6e5235, { roughness: 0.45, metalness: 0.5 }));
+      vessel(fu, T.x + 0.16, T.y + 0.13, tz, [[0, 0], [0.045, 0], [0.055, 0.06], [0.04, 0.11], [0.022, 0.13], [0.024, 0.14], [0, 0.14]], decMat('stoneCream', 0xe6dccb, { roughness: 0.85 }));
+      sprays(fu, T.x + 0.16, T.y + 0.13, tz + 0.13, [[0.3, 0.25, 0.16], [2.4, 0.3, 0.14], [4.4, 0.15, 0.17]], 'euc');
+    }
+  }
   // --- renovated kitchen: white flat-panel joinery, stone top, tall units on the party wall (spec.renovation.kitchen) ---
   {
     const K = spec.renovation.kitchen, [rx0, rx1, ry0, ry1] = K.run, [qx0, qx1, qy0, qy1] = K.return || [0, 0, 0, 0];
@@ -3368,7 +3555,7 @@ export function buildHouse(spec) {
       realSink(int_, ...sinkCut, bh - top, 2, 'y', { x: qx1 - 0.065, y: (sy0 + sy1) / 2, face: '-x' });
       // subway tile splashback up the west wall, cut round the window; greige wall cabinet between the corner and the window
       { const ws = Win.W_splash || (spec.renovation.no_side_door ? Win.W3_kitchen : null), t0 = wy0 + ud + 0.3;
-        const bands = ws ? [[wy0 + dep, ws.y0, bh, uz0], [ws.y1, qy1, bh, uz0], [ws.y0, ws.y1, bh, ws.sill], [ws.y0, ws.y1, ws.head, uz0]] : [[wy0 + dep, qy1, bh, uz0]];
+        const bands = ws ? [[wy0 + 0.015, ws.y0, bh, uz0], [ws.y1, qy1, bh, uz0], [ws.y0, ws.y1, bh, ws.sill], [ws.y0, ws.y1, ws.head, uz0]] : [[wy0 + 0.015, qy1, bh, uz0]];   // from the north wall, so the corner behind the north run is covered too
         for (const [a, b, z0, z1] of bands) if (b - a > 0.005 && z1 - z0 > 0.005) splash(H.x_west_inner - 0.012, H.x_west_inner, a, b, z0, z1);
         const wcEnd = ws ? Math.min(ws.y0 - 0.04, qy1) : qy1;
         if (wcEnd - t0 > 0.25) {
@@ -3870,6 +4057,10 @@ export function buildHouse(spec) {
         box(g, bx0, wx, b0, b1, 0.06, 0.55, oak);                                                   // carcass on short legs
         for (const x of [bx0 + 0.03, wx - 0.06]) for (const y of [b0 + 0.03, b1 - 0.06]) box(g, x, x + 0.03, y, y + 0.03, 0, 0.06, M.frameA);
         for (const [z0, z1] of [[0.08, 0.3], [0.32, 0.53]]) { box(g, bx0 - 0.012, bx0, b0 + 0.01, b1 - 0.01, z0, z1, oak); box(g, bx0 - 0.024, bx0 - 0.012, (b0 + b1) / 2 - 0.07, (b0 + b1) / 2 + 0.07, (z0 + z1) / 2 - 0.008, (z0 + z1) / 2 + 0.008, M.frameA); }
+        if (spec.renovation.decor === 'styled') {                                                   // a book or two at the front of each bedside
+          const yb = (b0 + b1) / 2; let zz = 0.55;
+          for (const [t, c, k] of [[0.03, 0xd8cdb8, 0], [0.024, 0x8d9aa6, 1]]) { box(g, bx0 + 0.006 + k * 0.006, bx0 + 0.118 - k * 0.006, yb - 0.11 + k * 0.01, yb + 0.06 - k * 0.01, zz, zz + t, decMat('book' + c.toString(16), c, { roughness: 0.8 })); zz += t; }
+        }
         if (!lamps) continue;                                                                        // wall lights instead
         const lx = wx - 0.2, ly = (b0 + b1) / 2;                                                    // small lamp
         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.25, 16), M.frameA); base.position.copy(L(lx, ly, 0.675)); g.add(base);
@@ -4144,19 +4335,31 @@ export function buildHouse(spec) {
       const cer = (col, rough = 0.6) => M['cer' + col] || (M['cer' + col] = new THREE.MeshStandardMaterial({ color: col, roughness: rough }));
       const lathe = (pts, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), 28), mat); m.position.copy(L(x, y, z)); m.castShadow = true; fu.add(m); return m; };
       const dx = wx + 0.24;
-      lathe([[0, 0], [0.05, 0.005], [0.06, 0.05], [0.035, 0.1], [0.055, 0.15], [0.05, 0.2], [0.03, 0.23], [0.032, 0.25], [0, 0.25]], cer(0xeeeae2), dx, styY + 0.32, zt);
-      lathe([[0, 0], [0.04, 0.002], [0.045, 0.06], [0.04, 0.13], [0.025, 0.15], [0, 0.15]], M.fireGlassGreen || (M.fireGlassGreen = new THREE.MeshPhysicalMaterial({ color: 0x3d5a3a, transparent: true, opacity: 0.75, roughness: 0.1 })), dx + 0.04, styY + 0.18, zt);
-      lathe([[0, 0], [0.05, 0.005], [0.075, 0.08], [0.07, 0.16], [0.035, 0.22], [0.028, 0.27], [0.04, 0.29], [0, 0.29]], cer(0x6b4a35, 0.8), wx + 0.2, (by0 + shY1) / 2, zt);
-      plantModel(fu, 'rhyzome', wx + 0.22, (by0 + shY1) / 2 + 0.34, zt, 0.5, 2.2, null, 0.42);   // house plant beside the amphora, toward the TV
-      lathe([[0, 0], [0.03, 0], [0.05, 0.05], [0.055, 0.1], [0.04, 0.15], [0.025, 0.17], [0.028, 0.19], [0, 0.19]], cer(0xf2efe9, 0.4), wx + 0.14, (by0 + shY1) / 2 + 0.06, fz + 2.15);
-      lathe([[0, 0], [0.02, 0], [0.03, 0.04], [0.02, 0.07], [0, 0.07]], cer(0xf2efe9, 0.4), wx + 0.12, (by0 + shY1) / 2 - 0.13, fz + 2.15);
-      lathe([[0, 0], [0.04, 0], [0.012, 0.03], [0.012, 0.16], [0.09, 0.2], [0.095, 0.22], [0, 0.24]], cer(0x9c7b52, 0.5), wx + 0.13, (by0 + shY1) / 2, fz + 1.75);
-      if (spec.renovation.kl_lights !== 'grid') {                                             // the mushroom lamp, lit: a glowing disc under its cap
-        const glow = new THREE.Mesh(new THREE.CircleGeometry(0.075, 24), bedGlow('lLamp')); glow.rotation.x = Math.PI / 2; glow.position.copy(L(wx + 0.13, (by0 + shY1) / 2, fz + 1.75 + 0.198)); fu.add(glow);
-        G.ceilings.userData.bedLamps.points.push({ room: 'Lounge / living', layer: 'lLamp', kind: 'omni', x: wx + 0.13, y: (by0 + shY1) / 2, z: fz + 1.75 + 0.17, lm: 150 });
+      const styled = spec.renovation.decor === 'styled';
+      if (!styled) {                                                                           // the earlier styling, from the photo
+        lathe([[0, 0], [0.05, 0.005], [0.06, 0.05], [0.035, 0.1], [0.055, 0.15], [0.05, 0.2], [0.03, 0.23], [0.032, 0.25], [0, 0.25]], cer(0xeeeae2), dx, styY + 0.32, zt);
+        lathe([[0, 0], [0.04, 0.002], [0.045, 0.06], [0.04, 0.13], [0.025, 0.15], [0, 0.15]], M.fireGlassGreen || (M.fireGlassGreen = new THREE.MeshPhysicalMaterial({ color: 0x3d5a3a, transparent: true, opacity: 0.75, roughness: 0.1 })), dx + 0.04, styY + 0.18, zt);
+        lathe([[0, 0], [0.05, 0.005], [0.075, 0.08], [0.07, 0.16], [0.035, 0.22], [0.028, 0.27], [0.04, 0.29], [0, 0.29]], cer(0x6b4a35, 0.8), wx + 0.2, (by0 + shY1) / 2, zt);
+        plantModel(fu, 'rhyzome', wx + 0.22, (by0 + shY1) / 2 + 0.34, zt, 0.5, 2.2, null, 0.42);   // house plant beside the amphora, toward the TV
       }
+      lathe([[0, 0], [0.03, 0], [0.05, 0.05], [0.055, 0.1], [0.04, 0.15], [0.025, 0.17], [0.028, 0.19], [0, 0.19]], cer(styled ? 0xd9cbb4 : 0xf2efe9, styled ? 0.8 : 0.4), wx + 0.14, (by0 + shY1) / 2 + 0.06, fz + 2.15);
+      lathe([[0, 0], [0.02, 0], [0.03, 0.04], [0.02, 0.07], [0, 0.07]], cer(styled ? 0xb5673f : 0xf2efe9, styled ? 0.5 : 0.4), wx + 0.12, (by0 + shY1) / 2 - 0.13, fz + 2.15);
+      lathe([[0, 0], [0.04, 0], [0.012, 0.03], [0.012, 0.16], [0.09, 0.2], [0.095, 0.22], [0, 0.24]], cer(0x9c7b52, 0.5), wx + 0.13, (by0 + shY1) / 2, fz + 1.75);
       box(fu, wx + 0.02, wx + 0.23, (by0 + shY1) / 2 - 0.18, (by0 + shY1) / 2 + 0.12, fz + 1.35, fz + 1.4, cer(0x3d352c, 0.8));   // books
       box(fu, wx + 0.05, wx + 0.18, (by0 + shY1) / 2 - 0.12, (by0 + shY1) / 2 + 0.0, fz + 1.4, fz + 1.44, cer(0xe8e1d4, 0.5));    // lidded box
+      if (styled) {
+        // DECOR-STYLING.md D2: one tall group in the gap between the shelves and the TV (an oatmeal stoneware vase with
+        // olive branches leaning away from the screen, over a stack of design books with a small bronze bowl on top), the
+        // middle clear in front of the TV and soundbar, and a low group right of the TV (terracotta bowl, smoked-glass bud
+        // vase) for balance; the amphora, white and green vases and the small plant came out
+        const vy = 20.64;                                                                          // swapped with the books (client 2026-10-21)
+        vessel(fu, wx + 0.25, vy, zt, [[0, 0], [0.07, 0], [0.1, 0.12], [0.098, 0.26], [0.06, 0.37], [0.045, 0.4], [0.05, 0.42], [0, 0.42]], cer(0xd9cbb4, 0.85));
+        sprays(fu, wx + 0.25, vy, zt + 0.41, [[Math.PI / 2, 0.25, 0.62], [Math.PI / 2 - 0.6, 0.12, 0.7], [0.35, 0.22, 0.55], [Math.PI / 2, 0.42, 0.48], [0.9, 0.3, 0.5]], 'olive');   // leaning toward the room and the TV side, clear of the shelf
+        const bt = bookStack(fu, wx + 0.3, 21.0, zt, 0.22, 0.3, [[0.04, 0x2c3a52], [0.032, 0xd6b98f], [0.028, 0xb5673f]], 0.15);
+        vessel(fu, wx + 0.3, 21.0, bt, [[0, 0], [0.03, 0], [0.065, 0.04], [0.068, 0.05], [0.06, 0.051], [0.055, 0.04], [0.02, 0.008], [0, 0.008]], M.bronze || (M.bronze = new THREE.MeshStandardMaterial({ color: 0x6e5235, roughness: 0.45, metalness: 0.5 })));
+        vessel(fu, wx + 0.3, 23.3, zt, [[0, 0], [0.05, 0], [0.11, 0.05], [0.12, 0.07], [0.112, 0.072], [0.1, 0.05], [0.04, 0.01], [0, 0.01]], cer(0xb5673f, 0.5));
+        vessel(fu, wx + 0.15, 23.46, zt, [[0, 0], [0.045, 0], [0.05, 0.08], [0.03, 0.15], [0.018, 0.18], [0.02, 0.19], [0, 0.19]], M.smokedGlass || (M.smokedGlass = new THREE.MeshPhysicalMaterial({ color: 0x4a4038, transparent: true, opacity: 0.82, roughness: 0.12 })));
+      }
       // soundbar under the TV
       const sb = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.075, 0.95, 3, 0.03), cer(0x1a1a1a, 0.5));
       sb.position.copy(L(wx + 0.07, tv.y, tz0 - 0.08)); sb.castShadow = true; fu.add(sb);
@@ -4728,7 +4931,7 @@ export function buildHouse(spec) {
     //    (Mint, Middle Park: concealed linear LED in curtain pelmets kills the black window at night), 400 lm/m;
     //  - tape hidden at the top of the skylight well lighting its plaster linings: the well glows instead of a black
     //    hole, and lights the room below softly (~600 lm);
-    //  - a floor lamp in the corner behind the sofa's curve and the shelf's mushroom lamp: the living layer, on smart plugs;
+    //  - (the shelf's mushroom ornament stays unlit, client 2026-10-21);
     //  - a soft floor glow under the floating walnut run (in its block);
     //  - nothing over the TV (reflections in the screen).
     if (spec.renovation.kl_lights === 'grid') {
@@ -4753,7 +4956,8 @@ export function buildHouse(spec) {
       // the TV wall softly (easier on the eyes for evening viewing) and give the room its eye-level glow. Centred on the
       // TV, 300 clear of its sides, at 1.6
       const TVs = spec.renovation.lounge_furniture?.tv;
-      if (TVs) for (const s of [-1, 1]) wallLight(int_, BL, LR, TVs.wall_x + 0.12, TVs.y + s * (TVs.w / 2 + 0.3), 1.6, TVs.wall_x);
+      // (taken out, client 2026-10-21: no wall lights beside the TV; wallLight() stays available)
+      void TVs;
     }
     const p = { ...R.porch_hood, y1: H.y_front_outer + 0.015 };
     poly(G.roof, [[p.x0, p.y0, p.z_low], [p.x1, p.y0, p.z_low], [p.x1, p.y1, p.z_high], [p.x0, p.y1, p.z_high]], M.tile);
