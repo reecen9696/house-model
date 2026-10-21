@@ -1597,7 +1597,8 @@ function bedPendant(int_, BL, room, x, y, zc, style = 'augustOval', zb = 2.35, l
 // Slender indoor tree (client reference photos 2026-10-21: a false aralia / Schefflera elegantissima standard): a thin,
 // slightly leaning trunk to ~2.1 m, three loose tiers of fine branches with drooping fans of narrow leaflets, in a
 // 460 grey stone pot. Leaves are one instanced mesh (one draw)
-function slenderTree(group, x, y, z0) {
+// lim (optional): { xMax, yMax } lot-frame walls the canopy must stay inside (branch tips and leaf fans are held ~180 off them)
+function slenderTree(group, x, y, z0, lim = {}) {
   let sd = 7; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
   const pot = M.stonePot || (M.stonePot = new THREE.MeshStandardMaterial({ color: 0x6f6c67, roughness: 0.95 }));
   const bark = M.treeBark || (M.treeBark = new THREE.MeshStandardMaterial({ color: 0x5c5346, roughness: 0.9 }));
@@ -1610,8 +1611,9 @@ function slenderTree(group, x, y, z0) {
   const trunk = [V(0, 0, 0.38), V(-0.02, 0.01, 0.9), V(-0.05, 0.0, 1.5), V(-0.06, -0.03, 2.05)];
   tube(trunk, 0.018);
   const leaves = [], dummy = new THREE.Object3D();
+  const keepIn = v => { if (lim.xMax !== undefined) v.x = Math.max(v.x, -(lim.xMax - 0.18)); if (lim.yMax !== undefined) v.z = Math.min(v.z, lim.yMax - 0.18); return v; };   // three x = -lot x, z = lot y
   const fan = (tip, k = 1) => {                                            // a drooping palmate fan of narrow leaflets on a short stalk
-    const n = 9 + Math.floor(rnd(0, 4)), base = rnd(0, Math.PI * 2), c = tip.clone().add(new THREE.Vector3(rnd(-0.05, 0.05), rnd(-0.04, 0.06), rnd(-0.05, 0.05)));
+    const n = 9 + Math.floor(rnd(0, 4)), base = rnd(0, Math.PI * 2), c = keepIn(tip.clone().add(new THREE.Vector3(rnd(-0.05, 0.05), rnd(-0.04, 0.06), rnd(-0.05, 0.05))));
     for (let i = 0; i < n; i++) {
       const a = base + i / n * Math.PI * 2;
       dummy.position.copy(c); dummy.rotation.set(0, 0, 0);
@@ -1626,8 +1628,8 @@ function slenderTree(group, x, y, z0) {
     const o = curve.getPoint(hT);
     for (let b = 0; b < nB; b++) {
       const a = b / nB * Math.PI * 2 + rnd(-0.5, 0.5), l = len * rnd(0.8, 1.2), rise = rnd(0.1, 0.28);
-      const mid = o.clone().add(new THREE.Vector3(Math.cos(a) * l * 0.5, rise * 0.7, Math.sin(a) * l * 0.5));
-      const end = o.clone().add(new THREE.Vector3(Math.cos(a) * l, rise * 0.4 - rnd(0, 0.1), Math.sin(a) * l));   // tips weep a little
+      const mid = keepIn(o.clone().add(new THREE.Vector3(Math.cos(a) * l * 0.5, rise * 0.7, Math.sin(a) * l * 0.5)));
+      const end = keepIn(o.clone().add(new THREE.Vector3(Math.cos(a) * l, rise * 0.4 - rnd(0, 0.1), Math.sin(a) * l)));   // tips weep a little
       tube([o, mid, end], 0.006);
       const br = new THREE.CatmullRomCurve3([o, mid, end]);
       for (let t = 0.35; t <= 1.001; t += 0.13) fan(br.getPoint(t), 0.8 + 0.4 * t);
@@ -2034,9 +2036,10 @@ function glowTexture(kind) {                                               // in
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const u = (i + 0.5) / W, v = 1 - (j + 0.5) / H;                        // v = 0 at the bottom
     let a;
-    if (kind === 'up') {                                                   // an uplight's soft scallop: a gaussian fan, widening upward
-      const w = 0.12 + 0.3 * v, x = (u - 0.5) / w;
-      a = Math.exp(-x * x * 2.2) * Math.exp(-v * 2.4) * sm(Math.min(1, v / 0.04)) * (1 - sm(Math.max(0, (v - 0.75) / 0.25)));
+    if (kind === 'up') {                                                   // an uplight's beam on the wall: a cone from the fitting,
+      const hw = 0.02 + 0.46 * v, d = Math.abs(u - 0.5);                   // straight sides widening upward, softly edged, fading with height
+      const edge = 1 - sm(Math.max(0, Math.min(1, (d - hw * 0.72) / (hw * 0.28 + 0.01))));
+      a = edge * (0.35 + 0.65 * Math.exp(-v * 3.2)) * sm(Math.min(1, v / 0.03)) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
     } else if (kind === 'strip') {                                         // a linear wash from the base, fading up, soft at both ends
       const ends = sm(Math.min(1, u / 0.08)) * sm(Math.min(1, (1 - u) / 0.08));
       a = ends * sm(Math.min(1, v / 0.05)) * Math.exp(-v * 2.6) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
@@ -4379,7 +4382,8 @@ export function buildHouse(spec) {
       }
     };
     const xi = H.x_west_inner;
-    for (const k of ['W1_bed2', 'W2_living']) { const wn = Win[k]; shutterWindow(xi, (wn.y0 + wn.y1) / 2, -1, 0, wn.y1 - wn.y0, wn.sill, wn.head, k === 'W1_bed2' && spec.renovation.bed2 ? 1 / 3 : 0.5); }   // bedroom 2: 60 degrees, clear of the bedside
+    // bedrooms 2 and 3 have sheers and roller blinds instead (client 2026-10-21); the shutters stay in the front bay
+    for (const k of []) { const wn = Win[k]; shutterWindow(xi, (wn.y0 + wn.y1) / 2, -1, 0, wn.y1 - wn.y0, wn.sill, wn.head, k === 'W1_bed2' && spec.renovation.bed2 ? 1 / 3 : 0.5); }   // bedroom 2: 60 degrees, clear of the bedside
     // bay: each face's glass on the inner face of its wall (pane inset 0.12 from the outer corners, as the bay is built)
     const b = H.bay, t = W.ext, yf = H.y_front_outer - b.projection;
     for (const [p, q] of [[[b.x1, H.y_front_outer], [b.front_x1, yf]], [[b.front_x1, yf], [b.front_x0, yf]], [[b.front_x0, yf], [b.x0, H.y_front_outer]]]) {
@@ -4387,6 +4391,37 @@ export function buildHouse(spec) {
       let nx = dy / len, ny = -dx / len; if (ny < 0) { nx = -nx; ny = -ny; }                    // normal into the house
       const mx = (p[0] + q[0]) / 2 + nx * t, my = (p[1] + q[1]) / 2 + ny * t;
       shutterWindow(mx, my, nx, ny, len - 0.24, b.sill, b.head);                        // same pane width the bay is built with
+    }
+  }
+  // --- bedrooms 2 and 3 (client 2026-10-21, replacing their plantation shutters): a roller blind in the window reveal at
+  // the head (linen-look blockout in an 80 mm white cassette, shown lowered a little) and floor-to-ceiling sheers on a
+  // ceiling track 260 off the wall, clear of the cornice and the split systems, gathered open either side of the window
+  {
+    const xi = H.x_west_inner;
+    const sheerMat = M.sheer || (M.sheer = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false }));
+    const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
+    const cass = M.blindCass || (M.blindCass = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.45 }));
+    const fabric = M.blindFab || (M.blindFab = new THREE.MeshStandardMaterial({ color: 0xe6dfd2, roughness: 0.95 }));
+    fabric.userData.skyRoomSide = true; cass.userData.skyRoomSide = true;
+    for (const [k, rn] of [['W1_bed2', 'Bedroom 2'], ['W2_living', 'Bedroom 3']]) {
+      const wn = Win[k], rm = spec.rooms.find(r => r.name === rn); if (!wn || !rm) continue;
+      // roller blind, recess-fitted at the head
+      box(int_, xi + 0.006, xi + 0.086, wn.y0 + 0.006, wn.y1 - 0.006, wn.head - 0.08, wn.head - 0.004, cass);
+      box(int_, xi + 0.04, xi + 0.046, wn.y0 + 0.02, wn.y1 - 0.02, wn.head - 0.38, wn.head - 0.08, fabric);
+      box(int_, xi + 0.032, xi + 0.054, wn.y0 + 0.02, wn.y1 - 0.02, wn.head - 0.395, wn.head - 0.38, cass);   // bottom bar
+      if (!spec.renovation.curtains) continue;
+      const zc = rm.floor + rm.ceil, x = xi - 0.26, a0 = Math.max(rm.y0 + 0.02, wn.y0 - 0.2), a1 = Math.min(rm.y1 - 0.02, wn.y1 + 0.2);
+      box(int_, x - 0.016, x + 0.016, a0, a1, zc - 0.022, zc, track);
+      const stack = (s0, s1) => {                                                              // gathered sheer, deep S-folds at 90 pitch
+        const n = Math.ceil((s1 - s0) / 0.004), rows = 14, zB = rm.floor + 0.012, zT = zc - 0.025, pos = [], idx = [];
+        for (let i = 0; i <= n; i++) {
+          const u = s0 + (s1 - s0) * i / n, w = Math.sin(2 * Math.PI * (u - s0) / 0.09), sw = Math.sign(w) * Math.pow(Math.abs(w), 0.6);
+          for (let r = 0; r <= rows; r++) { const z = zB + (zT - zB) * r / rows, v = L(x - 0.07 - 0.06 * sw * (1 + 0.35 * (1 - r / rows)), u, z); pos.push(v.x, v.y, v.z); if (i && r) { const q = i * (rows + 1) + r, qp = q - (rows + 1); idx.push(qp - 1, q - 1, qp, q - 1, q, qp); } }
+        }
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+        const m = new THREE.Mesh(geo, sheerMat); m.renderOrder = 2; m.castShadow = false; int_.add(m);
+      };
+      stack(a0, Math.min(a0 + 0.38, wn.y0 + 0.18)); stack(Math.max(a1 - 0.38, wn.y1 - 0.18), a1);
     }
   }
   // --- sheer curtains (Reno sheet): floor-to-ceiling white sheers on a ceiling track over every glazed opening in the
@@ -5160,7 +5195,7 @@ export function buildHouse(spec) {
       // the back corner behind the sofa's curve: a slender indoor tree (client reference), in place of the floor lamp
       // pushed right into the south-west corner (client 2026-10-21): the 460 pot just in front of the gathered sheers on
       // both walls (west sheer ~90 off the wall, slider sheer ~70 off the glass), behind the sofa's curve
-      if (C) slenderTree(G.furniture, C.wall_x - 0.36, spec.renovation.lounge.south_y - 0.3, 0);   // nudged 70 closer to the sliders (client)
+      if (C) slenderTree(G.furniture, C.wall_x - 0.36, spec.renovation.lounge.south_y - 0.3, 0, { xMax: spec.renovation.lounge.wall_x - 0.03, yMax: spec.renovation.lounge.south_y - 0.03 });   // canopy held inside the two walls   // nudged 70 closer to the sliders (client)
       // and instead of a lamp, a pair of opal wall lights flanking the TV on the east wall (the sofa backs onto glass,
       // so it has no wall for a reading light; a floor lamp elsewhere stood in a walkway or a door's swing). They light
       // the TV wall softly (easier on the eyes for evening viewing) and give the room its eye-level glow. Centred on the
