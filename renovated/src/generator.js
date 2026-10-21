@@ -1655,7 +1655,7 @@ function wallLight(group, BL, room, x, y, z, wallX, layer = 'lWall') {
 // all along them (dark older leaves, lighter new growth at the tips), lying roughly in the screen's plane but tilted
 // every which way; a light scatter of small white star flowers. Faces -x (the screen on the side fence). All the leaves
 // are one instanced mesh, the flowers another
-function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.95, height = 1.9, depth = 0.08 } = {}) {
+function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.7, height = 1.8, depth = 0.08 } = {}) {
   let sd = seed * 7919 + 17; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
   const stemM = M.jasStem || (M.jasStem = new THREE.MeshStandardMaterial({ color: 0x5a4a32, roughness: 0.85 }));
   const leafM = M.jasLeaf || (M.jasLeaf = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42, side: THREE.DoubleSide }));
@@ -1699,12 +1699,12 @@ function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.95, height = 1
           const la = a + sgn * rnd(0.6, 1.1), du = Math.sin(la), dv = Math.cos(la) - 0.45;
           leafAt(y + sgn * 0.006, z, du, dv, size, f > 0.8);
         }
-        if (i % 2 === 0) for (let c = 0; c < 2 + Math.floor(rnd(0, 2)); c++) {               // a short leafy spur at every other node
+        if (i % 3 === 0) for (let c = 0; c < 1 + Math.floor(rnd(0, 2)); c++) {               // a short leafy spur at every third node
           const la = rnd(0, Math.PI * 2);
           leafAt(y + rnd(-0.03, 0.03), z + rnd(-0.02, 0.03), Math.sin(la), Math.cos(la) - 0.3, size * rnd(0.7, 1.0), f > 0.7);
         }
       }
-      if (depthN < 2 && i > 2 && i < n - 1 && rnd() < (depthN ? 0.2 : 0.42) * (0.6 + f)) grow(y, z, a + (rnd() < 0.5 ? -1 : 1) * rnd(0.5, 1.0), len * rnd(0.25, 0.5), depthN + 1);   // more shoots higher up: the fan fills out at the top
+      if (depthN < 2 && i > 2 && i < n - 1 && rnd() < (depthN ? 0.14 : 0.32) * (0.6 + f)) grow(y, z, a + (rnd() < 0.5 ? -1 : 1) * rnd(0.5, 1.0), len * rnd(0.25, 0.5), depthN + 1);   // more shoots higher up: the fan fills out at the top
       if (f > 0.85 && rnd() < 0.05) for (let k = 0; k < 4; k++) {                            // a small flower cluster near the tip
         dummy.position.copy(P(y + rnd(-0.04, 0.04), z + rnd(-0.03, 0.04), faceX - depth - 0.01)); dummy.rotation.set(0, -Math.PI / 2, rnd(0, 6.28)); dummy.rotateX(rnd(-0.4, 0.4));
         dummy.scale.setScalar(0.011 * rnd(0.85, 1.15)); dummy.updateMatrix(); flowers.push(dummy.matrix.clone());
@@ -1713,10 +1713,71 @@ function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.95, height = 1
     const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 2, depthN ? 0.0028 : 0.0045, 5, false), stemM);
     tube.castShadow = true; group.add(tube);
   };
-  const nS = 9 + Math.floor(rnd(0, 3));
+  const nS = 7 + Math.floor(rnd(0, 2));
   for (let k = 0; k < nS; k++) {
     const f = nS > 1 ? k / (nS - 1) : 0.5, ang = (f - 0.5) * 2 * spread + rnd(-0.12, 0.12);   // fan from the base, outer stems leaning out
     grow(yc + rnd(-0.05, 0.05), z0 + 0.02, ang, height * rnd(0.75, 1.0) * (1 - 0.25 * Math.abs(f - 0.5) * 2) + 0.25, 0);
+  }
+  const leafI = new THREE.InstancedMesh(LEAF, leafM, leaves.length);
+  leaves.forEach((m, i) => { leafI.setMatrixAt(i, m); leafI.setColorAt(i, cols[i]); });
+  leafI.castShadow = true; leafI.receiveShadow = true; group.add(leafI);
+  if (flowers.length) { const fI = new THREE.InstancedMesh(STAR, flowerM, flowers.length); flowers.forEach((m, i) => fI.setMatrixAt(i, m)); group.add(fI); }
+}
+// Star jasmine trained on a diamond lattice of wires (client reference: a plain wall with the vine in criss-cross
+// ribbons, framed along the top and sides): diagonal wires both ways ~600 apart (cells ~600 wide x 700 high), a top
+// wire and the two side wires; leaves crowded along every wire in a ~120 band, glossy dark with lighter new growth,
+// small white star flowers through it. Plants at the foot every ~1.2 m in mulched pockets, a stem up to the lattice.
+// faceX: the wire plane (the vine sits just in front of it, toward -x)
+function jasmineLattice(group, faceX, y0, y1, zg, zb, zt, seed = 5) {
+  let sd = seed * 7919 + 31; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
+  const stemM = M.jasStem || (M.jasStem = new THREE.MeshStandardMaterial({ color: 0x5a4a32, roughness: 0.85 }));
+  const wireM = M.jasWire || (M.jasWire = new THREE.MeshStandardMaterial({ color: 0x9aa0a4, roughness: 0.35, metalness: 0.8 }));
+  const leafM = M.jasLeaf || (M.jasLeaf = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42, side: THREE.DoubleSide }));
+  const flowerM = M.jasFlower || (M.jasFlower = new THREE.MeshStandardMaterial({ color: 0xfbf8ef, roughness: 0.6, side: THREE.DoubleSide }));
+  const mulch = M.mulch || (M.mulch = new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 1 }));
+  const LEAF = M.jasLeafGeo || (M.jasLeafGeo = (() => {
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(0.24, 0.3, 0.17, 0.62); sh.quadraticCurveTo(0.1, 0.86, 0, 1); sh.quadraticCurveTo(-0.1, 0.86, -0.17, 0.62); sh.quadraticCurveTo(-0.24, 0.3, 0, 0);
+    const g = new THREE.ShapeGeometry(sh, 6); g.userData.keep = true; return g; })());
+  const STAR = M.jasStarGeo || (M.jasStarGeo = (() => {
+    const sh = new THREE.Shape(); for (let i = 0; i <= 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.4 : 1; const px = Math.cos(a) * r, py = Math.sin(a) * r; i ? sh.lineTo(px, py) : sh.moveTo(px, py); }
+    const g = new THREE.ShapeGeometry(sh); g.userData.keep = true; return g; })());
+  const W = 0.6, Hc = 0.7, s = Hc / W, segs = [], rise = zt - zb;
+  const clipY = (a, b) => [Math.max(a, y0), Math.min(b, y1)];
+  for (let c = y0 - rise / s; c <= y1 + 1e-6; c += W) {                                     // rising to the south (+y)
+    const [ya, yb] = clipY(c, c + rise / s); if (yb - ya > 0.05) segs.push([ya, zb + s * (ya - c), yb, zb + s * (yb - c)]);
+  }
+  for (let c = y0; c <= y1 + rise / s + 1e-6; c += W) {                                     // falling to the south
+    const [ya, yb] = clipY(c - rise / s, c); if (yb - ya > 0.05) segs.push([ya, zb + s * (c - ya), yb, zb + s * (c - yb)]);
+  }
+  segs.push([y0, zt, y1, zt], [y0, zb, y0, zt], [y1, zb, y1, zt]);                          // top and the two sides
+  const leaves = [], cols = [], flowers = [], dummy = new THREE.Object3D(), col = new THREE.Color();
+  const dark = new THREE.Color(0x2c4623), light = new THREE.Color(0x6a8a3d);
+  const leafAt = (y, z, ang, size, t) => {
+    dummy.position.copy(L(faceX - rnd(0.01, 0.09), y, z)); dummy.rotation.set(0, 0, 0);
+    dummy.rotateY(-Math.PI / 2); dummy.rotateZ(-ang); dummy.rotateY(rnd(-0.9, 0.9)); dummy.rotateX(rnd(-0.6, 0.5));
+    dummy.scale.setScalar(size); dummy.updateMatrix(); leaves.push(dummy.matrix.clone());
+    cols.push(col.copy(dark).lerp(light, t).offsetHSL(rnd(-0.012, 0.012), 0, rnd(-0.04, 0.04)).clone());
+  };
+  const tube = (pts, r, mat) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), Math.max(2, pts.length * 2), r, 5, false), mat); m.castShadow = true; group.add(m); };
+  for (const [ya, za, yb, zb2] of segs) {
+    const len = Math.hypot(yb - ya, zb2 - za), du = (yb - ya) / len, dv = (zb2 - za) / len;
+    tube([L(faceX + 0.004, ya, za), L(faceX + 0.004, yb, zb2)], 0.0015, wireM);              // the stainless wire
+    const sp = []; for (let t = 0; t <= len + 1e-6; t += 0.12) sp.push(L(faceX - 0.012, ya + du * t + rnd(-0.008, 0.008), za + dv * t + rnd(-0.008, 0.008)));
+    if (sp.length > 1) tube(sp, 0.004, stemM);                                               // the vine twining along it
+    for (let t = 0; t <= len; t += 0.008) {                                                  // leaves crowded in a ~150 band, full like the reference
+      const off = rnd(-1, 1) * rnd(0.2, 1) * 0.08, y = ya + du * t - dv * off, z = za + dv * t + du * off;
+      const ang = Math.atan2(du, dv) + (rnd() < 0.5 ? 1 : -1) * rnd(0.4, 1.4);
+      leafAt(y, z, ang, rnd(0.05, 0.075), rnd() < 0.18 ? rnd(0.55, 1) : rnd(0, 0.35));
+      if (rnd() < 0.055) for (let k = 0; k < 2 + Math.floor(rnd(0, 3)); k++) {               // a little flower cluster
+        dummy.position.copy(L(faceX - 0.095, y + rnd(-0.04, 0.04), z + rnd(-0.04, 0.04))); dummy.rotation.set(0, -Math.PI / 2, rnd(0, 6.28)); dummy.rotateX(rnd(-0.4, 0.4));
+        dummy.scale.setScalar(0.013 * rnd(0.85, 1.15)); dummy.updateMatrix(); flowers.push(dummy.matrix.clone());
+      }
+    }
+  }
+  for (let y = y0 + 0.3; y < y1 - 0.2; y += 1.2) {                                          // the plants at the foot, ~1.2 m apart
+    box(group, faceX - 0.2, faceX + 0.06, y - 0.16, y + 0.16, zg, zg + 0.012, mulch);
+    tube([L(faceX - 0.015, y, zg + 0.01), L(faceX - 0.014, y + 0.02, (zg + zb) / 2), L(faceX - 0.012, y, zb + 0.05)], 0.007, stemM);
+    for (let z = zg + 0.06; z < zb; z += 0.03) leafAt(y + rnd(-0.05, 0.05), z, rnd(-1.2, 1.2), rnd(0.04, 0.06), rnd(0, 0.3));
   }
   const leafI = new THREE.InstancedMesh(LEAF, leafM, leaves.length);
   leaves.forEach((m, i) => { leafI.setMatrixAt(i, m); leafI.setColorAt(i, cols[i]); });
@@ -1963,6 +2024,54 @@ function bookStack(g, x, y, z, w, d, books, rot = 0) {
   });
   return zz;
 }
+// --- garden lighting (2026-10-21): light on the surfaces, not in the eyes. The model's interior lighting doesn't reach
+// outdoors, so each fitting's light is an additive glow painted on what it lights (a fence wash, a pool on a tread),
+// on the house Lights like the lounge ('lGarden'); dark by day. Fittings 2700 K, CRI 90+, IP65+, 12 V.
+function glowTexture(kind) {                                               // intensity in the colour (white to black, opaque): the emissive map reads rgb
+  const c = document.createElement('canvas'), g = c.getContext('2d'), v = a => `rgb(${Math.round(255 * a)},${Math.round(255 * a)},${Math.round(255 * a)})`;
+  if (kind === 'up') {                                                     // an uplight's scallop: bright at the base, fanning up
+    c.width = 128; c.height = 256; g.fillStyle = '#000'; g.fillRect(0, 0, 128, 256);
+    g.save(); g.translate(64, 256); g.scale(0.42, 1); const rg = g.createRadialGradient(0, 0, 0, 0, 0, 250);
+    rg.addColorStop(0, v(1)); rg.addColorStop(0.35, v(0.55)); rg.addColorStop(1, v(0));
+    g.fillStyle = rg; g.fillRect(-160, -256, 320, 256); g.restore();
+  } else if (kind === 'strip') {                                           // a linear wash from the bottom, fading up
+    c.width = 4; c.height = 256; const lg = g.createLinearGradient(0, 256, 0, 0);
+    lg.addColorStop(0, v(1)); lg.addColorStop(0.25, v(0.5)); lg.addColorStop(1, v(0));
+    g.fillStyle = lg; g.fillRect(0, 0, 4, 256);
+  } else {                                                                 // a soft pool on the ground
+    c.width = c.height = 128; g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128);
+    const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, v(0.9)); rg.addColorStop(1, v(0)); g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function glowMat(kind, k) {
+  const key = 'gGlow_' + kind;
+  if (!M[key]) {
+    const map = glowTexture(kind);
+    M[key] = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffd9a8, emissiveMap: map, emissiveIntensity: 0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    M[key].userData.bedLamp = 'lGarden'; M[key].userData.glowK = k;
+  }
+  return M[key];
+}
+// a spike (or deck-recessed) uplight at the base of a fence face: the fitting, and its scallop up the palings.
+// axis/face/dir as wallFace (the fence face, looking into the yard); c along the fence; z the ground
+function fenceUplight(g, axis, face, dir, c, z, { h = 1.7, w = 0.75, recessed = false } = {}) {
+  const off = face + dir * 0.12, lens = bedGlow('lGarden');
+  const fx = axis === 'x' ? off : c, fy = axis === 'x' ? c : off;
+  if (recessed) {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.004, 20), decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 })); ring.position.copy(L(fx, fy, z + 0.001)); g.add(ring);
+    const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.003, 16), lens); ln.position.copy(L(fx, fy, z + 0.003)); g.add(ln);
+  } else {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.032, 0.11, 14), decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 }));
+    body.position.copy(L(fx, fy, z + 0.07)); body.rotation.set(axis === 'y' ? dir * 0.25 : 0, 0, axis === 'x' ? dir * 0.25 : 0); g.add(body);
+    const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.004, 14), lens); ln.position.copy(L(fx, fy, z + 0.127)); g.add(ln);
+  }
+  wallFace(g, axis, face + dir * 0.006, dir, c, z + h / 2, w, h, glowMat('up', 1.6));
+}
+// a horizontal glow pool on a surface at height z, centred (x, y), w x d
+function glowPool(g, x, y, z, w, d, k = 1.2) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), glowMat('pool', k)); m.rotation.x = -Math.PI / 2; m.position.copy(L(x, y, z + 0.004)); g.add(m); return m;
+}
 // --- plaster cornices and roses (site photos: Downloads/circle.jpeg, the hall photos of Sep 25) -----------------------
 // Profiles are [o, t] pairs: o out from the wall into the room, t down from the ceiling, listed from the wall end to the
 // ceiling end. 'ornate' (entry, hall, bedrooms 2 and 3): a lip on the wall, a deep cove, then a raised band on the
@@ -2091,7 +2200,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'lattice' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2314,6 +2423,7 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.yard = yard === 'tiles' ? 'tiles' : 'deck';
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
+  spec.renovation.lounge_fence = loungeFence === 'screen' ? 'screen' : 'lattice';   // Reno > Lounge > Side fence
   spec.renovation.hall_pendant = ['pebble', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'pebble';
   spec.renovation.pendant_style = ['augustOval', 'augustRound', 'pipete', 'globe'].includes(pendant) ? pendant : 'augustOval';
   // bedroom 3's robe (the full south wall, drawn from fixed numbers before) joins the same treatment as the front two
@@ -5318,8 +5428,13 @@ export function buildHouse(spec) {
     // (90 proud of the palings), so the posts and rails sit hidden behind it; end battens close the sides
     {
       const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
-      if (LgW.length) {
-        // 1 m past the glass each way: the screen is ~0.9 m beyond it, so from across the room the white fence showed past its ends
+      if (LgW.length && spec.renovation.lounge_fence !== 'screen') {
+        // 'lattice' (default): star jasmine trained on stainless wires in a diamond lattice straight on the fence (client
+        // reference 2026-10-21), over the same stretch; the wires on stand-offs just proud of the fence posts
+        const y0 = Math.min(...LgW.map(w => w.y0)) - 1.0, y1 = Math.max(...LgW.map(w => w.y1)) + 1.0;
+        jasmineLattice(G.site, S.west_fence.x - 0.03 - 0.1, y0, y1, gz, gz + 0.3, gz + S.west_fence.h - 0.08);
+      } else if (LgW.length) {
+        // 'screen': 1 m past the glass each way: the screen is ~0.9 m beyond it, so from across the room the white fence showed past its ends
         const y0 = Math.min(...LgW.map(w => w.y0)) - 1.0, y1 = Math.max(...LgW.map(w => w.y1)) + 1.0, fx = S.west_fence.x - 0.03 - 0.09, z0 = gz, z1 = gz + S.west_fence.h;
         const back = M.screenBack || (M.screenBack = new THREE.MeshStandardMaterial({ color: 0x241a13, roughness: 0.9 }));
         const slatM = [0x6e4e3a, 0x684934, 0x72523d].map((c, i) => M['screenSlat' + i] || (M['screenSlat' + i] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })));
@@ -5337,6 +5452,32 @@ export function buildHouse(spec) {
     palingFence(G.site, 0, lot.width, S.rear_fence.y - 0.03, S.rear_fence.y + 0.03, gz, gz + S.rear_fence.lattice_from, -1, '-y');
     for (let x = 0.05; x < lot.width; x += 0.1) box(G.site, x, x + 0.02, S.rear_fence.y - 0.015, S.rear_fence.y + 0.015, gz + S.rear_fence.lattice_from, gz + S.rear_fence.h, M.fence);   // lattice top
     box(G.site, 0, lot.width, S.rear_fence.y - 0.02, S.rear_fence.y + 0.02, gz + S.rear_fence.h - 0.04, gz + S.rear_fence.h, M.fence);
+    // --- garden lighting (2026-10-21; DECOR-STYLING / BEDROOM-LIGHTING rules: 2700 K, CRI 90+, light surfaces, no glare) ---
+    {
+      const rz = S.rear_slab.z, deck = spec.renovation.deck_zones?.[0], dz = deck ? deck.z : rz;
+      // the feature wall: the white rear fence, washed up from a continuous LED strip at its base (behind the hedge, so
+      // the hedge reads backlit), ~400 lm/m, wide 120-degree diffused tape in an aluminium angle, aimed up the palings
+      const fy = S.rear_fence.y - 0.03, sz = rz + S.rear_bed_south.edge_h - 0.03;
+      box(G.site, 0.12, lot.width - 0.08, fy - 0.035, fy - 0.01, sz, sz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
+      box(G.site, 0.12, lot.width - 0.08, fy - 0.03, fy - 0.015, sz + 0.02, sz + 0.023, bedGlow('lGarden'));
+      wallFace(G.site, 'y', fy - 0.006, -1, lot.width / 2, sz + 0.75, lot.width - 0.2, 1.5, glowMat('strip', 1.1));
+      // the side fences: uplights grazing the white palings, ~1.3 m apart. West (along the deck): recessed in the deck
+      // boards beside the fence; east (along the lawn behind the bathroom wing): on spikes in the lawn.
+      const wf = S.west_fence.x - 0.03;
+      for (const y of deck ? [25.55, 26.85, 28.0] : [25.6, 27.0]) fenceUplight(G.site, 'x', wf, -1, y, dz, { recessed: !!deck });
+      const ef = S.east_fence.x + 0.03;
+      for (const y of [25.7, 27.05, 28.4]) fenceUplight(G.site, 'x', ef, 1, y, rz);
+      // deck steps: a low-glare louvred brick light in each riser (~50 lm, light thrown down onto the tread below only)
+      if (deck) {
+        const zs = spec.renovation.deck_zones, east = zs[2], nw = zs[3];
+        const riser = (x0, x1, y0, y1, zc, px, py, pw, pd, pz) => { box(G.site, x0, x1, y0, y1, zc - 0.015, zc + 0.015, decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 })); glowPool(G.site, px, py, pz, pw, pd, 1.3); };
+        for (const y of [25.6, 26.9, 28.2]) {
+          riser(east.x1 - 0.003, east.x1 + 0.002, y - 0.06, y + 0.06, dz - 0.09, east.x1 - 0.15, y, 0.28, 0.5, east.z);      // deck riser, onto the tread
+          riser(east.x0 - 0.003, east.x0 + 0.002, y - 0.06, y + 0.06, east.z - 0.09, east.x0 - 0.25, y, 0.5, 0.55, rz);     // tread riser, onto the lawn
+        }
+        riser((nw.x0 + nw.x1) / 2 - 0.06, (nw.x0 + nw.x1) / 2 + 0.06, nw.y1 - 0.002, nw.y1 + 0.003, dz - 0.09, (nw.x0 + nw.x1) / 2, nw.y1 - 0.15, 0.5, 0.35, nw.z);
+      }
+    }
     box(G.site, S.side_pier.x0, S.side_pier.x1, S.side_pier.y0, S.side_pier.y1, gz, gz + S.side_pier.h, M.white);
     box(G.site, S.side_gate.x0, S.side_gate.x1, S.side_gate.y - 0.02, S.side_gate.y + 0.02, gz, gz + S.side_gate.h, M.creamMetal).userData.door = true;
     box(G.site, S.side_gate.x0, S.side_gate.x0 + 0.05, S.side_gate.y - 0.05, S.side_gate.y + 0.05, gz, gz + S.side_gate.h + 0.1, M.green);   // hinge post on the house
