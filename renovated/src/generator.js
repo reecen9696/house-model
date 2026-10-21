@@ -1650,6 +1650,79 @@ function wallLight(group, BL, room, x, y, z, wallX, layer = 'lWall') {
   const g = new THREE.Mesh(new THREE.LatheGeometry(prof, 32), opal); g.position.copy(L(wallX + dir * 0.12, y, z - 0.11)); g.castShadow = false; group.add(g);
   BL.points.push({ room, layer, kind: 'omni', x: wallX + dir * 0.12, y, z, lm: 120 });
 }
+// Star jasmine (Trachelospermum jasminoides) trained flat on wires against a screen (client reference 2026-10-21): from
+// a mulched pocket at the foot, 6-7 stems fan up and out to ~1.9 m, each with side shoots; pairs of glossy pointed leaves
+// all along them (dark older leaves, lighter new growth at the tips), lying roughly in the screen's plane but tilted
+// every which way; a light scatter of small white star flowers. Faces -x (the screen on the side fence). All the leaves
+// are one instanced mesh, the flowers another
+function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.95, height = 1.9, depth = 0.08 } = {}) {
+  let sd = seed * 7919 + 17; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
+  const stemM = M.jasStem || (M.jasStem = new THREE.MeshStandardMaterial({ color: 0x5a4a32, roughness: 0.85 }));
+  const leafM = M.jasLeaf || (M.jasLeaf = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42, side: THREE.DoubleSide }));
+  const flowerM = M.jasFlower || (M.jasFlower = new THREE.MeshStandardMaterial({ color: 0xfbf8ef, roughness: 0.6, side: THREE.DoubleSide }));
+  const mulch = M.mulch || (M.mulch = new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 1 }));
+  box(group, faceX - 0.2, faceX, yc - 0.18, yc + 0.18, z0, z0 + 0.012, mulch);               // planting pocket in the paving
+  // leaf: a pointed ellipse, base at the origin, 1 long along +Y; built facing +Z, turned to face the path (-x lot = -X)
+  const LEAF = M.jasLeafGeo || (M.jasLeafGeo = (() => {
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(0.24, 0.3, 0.17, 0.62); sh.quadraticCurveTo(0.1, 0.86, 0, 1); sh.quadraticCurveTo(-0.1, 0.86, -0.17, 0.62); sh.quadraticCurveTo(-0.24, 0.3, 0, 0);
+    const g = new THREE.ShapeGeometry(sh, 6); g.userData.keep = true; return g; })());
+  const STAR = M.jasStarGeo || (M.jasStarGeo = (() => {
+    const sh = new THREE.Shape(); for (let i = 0; i <= 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.4 : 1; const px = Math.cos(a) * r, py = Math.sin(a) * r; i ? sh.lineTo(px, py) : sh.moveTo(px, py); }
+    const g = new THREE.ShapeGeometry(sh); g.userData.keep = true; return g; })());
+  const leaves = [], flowers = [], dummy = new THREE.Object3D(), col = new THREE.Color(), cols = [];
+  const out = () => faceX - rnd(0.012, depth);                                              // how far off the screen
+  const P = (y, z, x = out()) => L(x, y, z);
+  const leafAt = (y, z, du, dv, size, tip) => {                                              // du, dv: direction in the screen plane
+    dummy.position.copy(P(y, z)); dummy.rotation.set(0, 0, 0);
+    dummy.rotateY(-Math.PI / 2);                                                             // face -X (the path)
+    dummy.rotateZ(-Math.atan2(du, dv));                                                      // point along (du, dv)
+    dummy.rotateY(rnd(-0.7, 0.7)); dummy.rotateX(rnd(-0.5, 0.35));                            // tilt out of the plane, droop
+    dummy.scale.setScalar(size); dummy.updateMatrix(); leaves.push(dummy.matrix.clone());
+    const t = tip ? rnd(0.5, 1) : rnd(0, 0.35);
+    cols.push(col.set(0x2f4a25).lerp(new THREE.Color(0x6b8c3e), t).offsetHSL(rnd(-0.01, 0.01), 0, rnd(-0.04, 0.04)).clone());
+  };
+  // one stem (and its shoots): a wandering path in the plane, leaves in pairs along it
+  const grow = (y, z, ang, len, depthN) => {
+    const pts = [], seg = 0.05, n = Math.max(3, Math.round(len / seg));
+    let a = ang;
+    for (let i = 0; i <= n; i++) {
+      pts.push(P(y, z, faceX - 0.012 - 0.02 * (i / n)));
+      if (i === n) break;
+      a += rnd(-0.18, 0.18) + (depthN ? 0.03 : 0) * Math.sign(ang);                          // wander; shoots arch a little
+      if (i / n > 0.75) a += 0.08 * Math.sign(a || 1);                                       // tips weep outward and down
+      y += Math.sin(a) * seg; z += Math.cos(a) * seg;
+      if (z > z0 + height) z = z0 + height;
+      const f = i / n;
+      if (i > 1 && i % 1 === 0) {
+        const size = (0.055 + 0.025 * Math.sin(Math.PI * Math.min(1, f + 0.2))) * rnd(0.8, 1.2);   // 55-80 mm, as star jasmine
+        for (const sgn of [-1, 1]) {                                                         // opposite pair, ~50 degrees off the stem, drooping
+          const la = a + sgn * rnd(0.6, 1.1), du = Math.sin(la), dv = Math.cos(la) - 0.45;
+          leafAt(y + sgn * 0.006, z, du, dv, size, f > 0.8);
+        }
+        if (i % 2 === 0) for (let c = 0; c < 2 + Math.floor(rnd(0, 2)); c++) {               // a short leafy spur at every other node
+          const la = rnd(0, Math.PI * 2);
+          leafAt(y + rnd(-0.03, 0.03), z + rnd(-0.02, 0.03), Math.sin(la), Math.cos(la) - 0.3, size * rnd(0.7, 1.0), f > 0.7);
+        }
+      }
+      if (depthN < 2 && i > 2 && i < n - 1 && rnd() < (depthN ? 0.2 : 0.42) * (0.6 + f)) grow(y, z, a + (rnd() < 0.5 ? -1 : 1) * rnd(0.5, 1.0), len * rnd(0.25, 0.5), depthN + 1);   // more shoots higher up: the fan fills out at the top
+      if (f > 0.85 && rnd() < 0.05) for (let k = 0; k < 4; k++) {                            // a small flower cluster near the tip
+        dummy.position.copy(P(y + rnd(-0.04, 0.04), z + rnd(-0.03, 0.04), faceX - depth - 0.01)); dummy.rotation.set(0, -Math.PI / 2, rnd(0, 6.28)); dummy.rotateX(rnd(-0.4, 0.4));
+        dummy.scale.setScalar(0.011 * rnd(0.85, 1.15)); dummy.updateMatrix(); flowers.push(dummy.matrix.clone());
+      }
+    }
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 2, depthN ? 0.0028 : 0.0045, 5, false), stemM);
+    tube.castShadow = true; group.add(tube);
+  };
+  const nS = 9 + Math.floor(rnd(0, 3));
+  for (let k = 0; k < nS; k++) {
+    const f = nS > 1 ? k / (nS - 1) : 0.5, ang = (f - 0.5) * 2 * spread + rnd(-0.12, 0.12);   // fan from the base, outer stems leaning out
+    grow(yc + rnd(-0.05, 0.05), z0 + 0.02, ang, height * rnd(0.75, 1.0) * (1 - 0.25 * Math.abs(f - 0.5) * 2) + 0.25, 0);
+  }
+  const leafI = new THREE.InstancedMesh(LEAF, leafM, leaves.length);
+  leaves.forEach((m, i) => { leafI.setMatrixAt(i, m); leafI.setColorAt(i, cols[i]); });
+  leafI.castShadow = true; leafI.receiveShadow = true; group.add(leafI);
+  if (flowers.length) { const fI = new THREE.InstancedMesh(STAR, flowerM, flowers.length); flowers.forEach((m, i) => fI.setMatrixAt(i, m)); group.add(fI); }
+}
 // The kitchen's ceiling grid: columns at the buffet's front edge, the sink bench's front edge and midway between; rows
 // 0.8 apart centred on the table (the sink and table pairs on the first two, the buffet pair a row on, over the buffet)
 function kitchenGrid(spec) {
@@ -1712,6 +1785,7 @@ function artTex(seed, style, aspect) {
   let r = seed * 9301 + 49297; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
   const P = {
     bold: ['#efe6d6', '#c8923a', '#b5573a', '#6b6b3a', '#1f2f4a', '#d9b48a'],
+    blush: ['#f4ede4', '#e8c6ba', '#d9a69b', '#efdccc', '#b9786e', '#e2c2a8'],   // pink and cream (the hero, client 2026-10-21)
     quiet: ['#f1ebe0', '#d5ae7a', '#c07a5c', '#8a8a62', '#e3d2bb', '#2c3a52'],
     calm: ['#e9e6df', '#9aab95', '#cfc6b8', '#8d9aa6', '#b9c2b0', '#f2efe9'],
     textile: ['#e8dcc8', '#b5573a', '#d6b98f', '#6b6b3a', '#f1e8d8', '#8c5a3c'],
@@ -2791,7 +2865,7 @@ export function buildHouse(spec) {
     // 1. the hero: kitchen south wall beside the bathroom door, on the front door's axis 14.7 m away. 700 x 1000
     //    canvas in an oak float frame, centre 1.50; lit by spill (the buffet downlight beside it and the table lights)
     const kd = rm('Kitchen / dining'), hx = 0.59;
-    hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'bold', 0.65 / 0.95), { depth: 0.045 });
+    hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'blush', 0.65 / 0.95), { depth: 0.045 });
     {
       // no spot on the hero (client 2026-10-21: the scallop over the frame felt wrong). Per the lighting notes, art that
       // is part of the setting takes spill, and downlights belong over benches: the fitting serves the buffet instead.
@@ -5238,20 +5312,25 @@ export function buildHouse(spec) {
     const dv = S.divider_fence;
     pickets(dv.x, dv.y0 + 0.05, dv.x, dv.y1, dv.h);
     palingFence(G.site, S.west_fence.x - 0.03, S.west_fence.x + 0.03, S.west_fence.y0, S.west_fence.y1, gz, gz + S.west_fence.h, -1, '-x');   // our side painted white
-    // feature screen on our side of the side fence, opposite the lounge's glass wall only (client reference 2026-10-21):
+    // feature screen on our side of the side fence, opposite the lounge's glass wall and 1 m past it each way (client reference 2026-10-21):
     // fine vertical composite battens in a warm brown over a dark backing, so the gaps read as shadow lines; the fence's
     // height. ~32 mm battens at 42 mm pitch, 30 mm proud of a 15 mm backing board fixed to the face of the fence posts
     // (90 proud of the palings), so the posts and rails sit hidden behind it; end battens close the sides
     {
       const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
       if (LgW.length) {
-        const y0 = Math.min(...LgW.map(w => w.y0)), y1 = Math.max(...LgW.map(w => w.y1)), fx = S.west_fence.x - 0.03 - 0.09, z0 = gz, z1 = gz + S.west_fence.h;
+        // 1 m past the glass each way: the screen is ~0.9 m beyond it, so from across the room the white fence showed past its ends
+        const y0 = Math.min(...LgW.map(w => w.y0)) - 1.0, y1 = Math.max(...LgW.map(w => w.y1)) + 1.0, fx = S.west_fence.x - 0.03 - 0.09, z0 = gz, z1 = gz + S.west_fence.h;
         const back = M.screenBack || (M.screenBack = new THREE.MeshStandardMaterial({ color: 0x241a13, roughness: 0.9 }));
         const slatM = [0x6e4e3a, 0x684934, 0x72523d].map((c, i) => M['screenSlat' + i] || (M['screenSlat' + i] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })));
         box(G.site, fx - 0.015, fx, y0, y1, z0, z1, back);
         const n = Math.round((y1 - y0) / 0.042), pitch = (y1 - y0) / n;
         for (let i = 0; i < n; i++) box(G.site, fx - 0.045, fx - 0.015, y0 + i * pitch + 0.005, y0 + (i + 1) * pitch - 0.005, z0, z1, slatM[i % 3]);
         for (const [a, b] of [[y0 - 0.02, y0], [y1, y1 + 0.02]]) box(G.site, fx - 0.045, fx + 0.09, a, b, z0, z1, slatM[0]);   // end battens back to the palings
+        // three star jasmines trained flat on wires across it (client reference), ~1.9 m apart, the outer two a little in
+        // from the ends so the screen's edges stay crisp
+        const span = y1 - y0;
+        [[0.2, 3], [0.52, 8], [0.82, 13]].forEach(([f, sd]) => starJasmine(G.site, fx - 0.046, y0 + span * f, z0, sd));
       }
     }
     palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1, '+x');
