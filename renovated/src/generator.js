@@ -4970,7 +4970,7 @@ export function buildHouse(spec) {
       // the back corner behind the sofa's curve: a slender indoor tree (client reference), in place of the floor lamp
       // pushed right into the south-west corner (client 2026-10-21): the 460 pot just in front of the gathered sheers on
       // both walls (west sheer ~90 off the wall, slider sheer ~70 off the glass), behind the sofa's curve
-      if (C) slenderTree(G.furniture, C.wall_x - 0.36, spec.renovation.lounge.south_y - 0.37, 0);
+      if (C) slenderTree(G.furniture, C.wall_x - 0.36, spec.renovation.lounge.south_y - 0.3, 0);   // nudged 70 closer to the sliders (client)
       // and instead of a lamp, a pair of opal wall lights flanking the TV on the east wall (the sofa backs onto glass,
       // so it has no wall for a reading light; a floor lamp elsewhere stood in a walkway or a door's swing). They light
       // the TV wall softly (easier on the eyes for evening viewing) and give the room its eye-level glow. Centred on the
@@ -5240,16 +5240,18 @@ export function buildHouse(spec) {
     palingFence(G.site, S.west_fence.x - 0.03, S.west_fence.x + 0.03, S.west_fence.y0, S.west_fence.y1, gz, gz + S.west_fence.h, -1, '-x');   // our side painted white
     // feature screen on our side of the side fence, opposite the lounge's glass wall only (client reference 2026-10-21):
     // fine vertical composite battens in a warm brown over a dark backing, so the gaps read as shadow lines; the fence's
-    // height. ~32 mm battens at 42 mm pitch, 30 mm proud of a 15 mm backing board, on the fence posts
+    // height. ~32 mm battens at 42 mm pitch, 30 mm proud of a 15 mm backing board fixed to the face of the fence posts
+    // (90 proud of the palings), so the posts and rails sit hidden behind it; end battens close the sides
     {
       const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
       if (LgW.length) {
-        const y0 = Math.min(...LgW.map(w => w.y0)), y1 = Math.max(...LgW.map(w => w.y1)), fx = S.west_fence.x - 0.03, z0 = gz, z1 = gz + S.west_fence.h;
+        const y0 = Math.min(...LgW.map(w => w.y0)), y1 = Math.max(...LgW.map(w => w.y1)), fx = S.west_fence.x - 0.03 - 0.09, z0 = gz, z1 = gz + S.west_fence.h;
         const back = M.screenBack || (M.screenBack = new THREE.MeshStandardMaterial({ color: 0x241a13, roughness: 0.9 }));
         const slatM = [0x6e4e3a, 0x684934, 0x72523d].map((c, i) => M['screenSlat' + i] || (M['screenSlat' + i] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })));
         box(G.site, fx - 0.015, fx, y0, y1, z0, z1, back);
         const n = Math.round((y1 - y0) / 0.042), pitch = (y1 - y0) / n;
         for (let i = 0; i < n; i++) box(G.site, fx - 0.045, fx - 0.015, y0 + i * pitch + 0.005, y0 + (i + 1) * pitch - 0.005, z0, z1, slatM[i % 3]);
+        for (const [a, b] of [[y0 - 0.02, y0], [y1, y1 + 0.02]]) box(G.site, fx - 0.045, fx + 0.09, a, b, z0, z1, slatM[0]);   // end battens back to the palings
       }
     }
     palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1, '+x');
