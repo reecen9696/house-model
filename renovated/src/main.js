@@ -866,6 +866,7 @@ function floorAt(p) {                                  // floor level of the roo
   }
   if (best) return best.floor;
   const S = spec.site_items, sd = S.side_deck;
+  for (const d of spec.renovation?.deck_zones || []) if (x >= d.x0 && x <= d.x1 && y >= d.y0 && y <= d.y1) return d.z;   // the back deck and its steps
   if (sd && x >= sd.x0 && x <= sd.x1 && y >= spec.chimney.y1 && y <= sd.y1) return S.west_path.z + sd.h;   // side deck
   for (const k of ['rear_slab', 'west_path', 'front_path', 'front_garden']) {
     const z = S[k]; if (x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1) return z.z;

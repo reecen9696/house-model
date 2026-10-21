@@ -108,6 +108,14 @@ function boardTexture() {
 // heads at the rail lines. One tile = 1.2 m along (11 palings) x 2 m high; applied with fenceUV so the
 // palings run upright and continue along a fence of any length.
 const PALING_TILE = [1.2, 2.0];
+// the same palings painted white on our side (client 2026-10-21): flat off-white boards, the gaps a soft grey
+function palingWhiteTexture() {
+  const c = document.createElement('canvas'); c.width = 768; c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#9d988f'; g.fillRect(0, 0, c.width, c.height);
+  const n = 11, pw = c.width / n, gap = 5.8;
+  for (let i = 0; i < n; i++) { const l = 93 + Math.random() * 2; g.fillStyle = `hsl(40, 12%, ${l}%)`; g.fillRect(i * pw, 0, pw - gap, c.height); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 function palingTexture() {
   const c = document.createElement('canvas'); c.width = 768; c.height = 1280; const g = c.getContext('2d');
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -154,21 +162,28 @@ function fenceUV(mesh, tile, along) {
 }
 // A run of paling fence: the textured panel plus three rails and a post every 2.4 m on the side the
 // rails face ('rails' = +1 toward larger lot coordinate, -1 toward smaller, across the fence line).
-function palingFence(group, x0, x1, y0, y1, z0, z1, rails = 0) {
+// paint: the lot direction our side faces ('+x', '-x', '+y', '-y'): that face, the rails and the posts are painted white
+function palingFence(group, x0, x1, y0, y1, z0, z1, rails = 0, paint = null) {
   const along = Math.abs(x1 - x0) > Math.abs(y1 - y0) ? 'x' : 'y';
   const panel = fenceUV(box(group, x0, x1, y0, y1, z0, z1, M.paling), PALING_TILE, along);
+  if (paint) {
+    M.palingWhite = M.palingWhite || new THREE.MeshStandardMaterial({ map: palingWhiteTexture(), roughness: 0.85 });
+    const mats = Array(6).fill(M.paling); mats[{ '-x': 0, '+x': 1, '+y': 4, '-y': 5 }[paint]] = M.palingWhite;   // three faces: +X -X +Y -Y +Z -Z; lot x = -X
+    panel.material = mats;
+  }
+  const railMat = paint ? (M.railWhite || (M.railWhite = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.85 }))) : M.railTimber;
   if (!rails) return panel;
   const h = z1 - z0, a0 = along === 'x' ? Math.min(x0, x1) : Math.min(y0, y1), a1 = along === 'x' ? Math.max(x0, x1) : Math.max(y0, y1);
   const face = along === 'x' ? (rails > 0 ? Math.max(y0, y1) : Math.min(y0, y1)) : (rails > 0 ? Math.max(x0, x1) : Math.min(x0, x1));
   const r0 = face, r1 = face + rails * 0.038, p1 = face + rails * 0.09;
   for (const f of [0.12, 0.5, 0.88]) {                                      // 75 x 38 rails
     const rz = z0 + h * f - 0.037;
-    if (along === 'x') box(group, a0, a1, Math.min(r0, r1), Math.max(r0, r1), rz, rz + 0.075, M.railTimber);
-    else box(group, Math.min(r0, r1), Math.max(r0, r1), a0, a1, rz, rz + 0.075, M.railTimber);
+    if (along === 'x') box(group, a0, a1, Math.min(r0, r1), Math.max(r0, r1), rz, rz + 0.075, railMat);
+    else box(group, Math.min(r0, r1), Math.max(r0, r1), a0, a1, rz, rz + 0.075, railMat);
   }
   for (let a = a0 + 0.05; a < a1 - 0.05; a += 2.4) {                        // 90 x 90 posts
-    if (along === 'x') box(group, a, a + 0.09, Math.min(r0, p1), Math.max(r0, p1), z0, z1 - 0.02, M.railTimber);
-    else box(group, Math.min(r0, p1), Math.max(r0, p1), a, a + 0.09, z0, z1 - 0.02, M.railTimber);
+    if (along === 'x') box(group, a, a + 0.09, Math.min(r0, p1), Math.max(r0, p1), z0, z1 - 0.02, railMat);
+    else box(group, Math.min(r0, p1), Math.max(r0, p1), a, a + 0.09, z0, z1 - 0.02, railMat);
   }
   return panel;
 }
@@ -4939,11 +4954,15 @@ export function buildHouse(spec) {
       const LR = 'Lounge / living', lz = ceilZ, wallX = spec.renovation.lounge.wall_x, sy = spec.renovation.lounge.south_y;
       if (spec.renovation.curtains) {
         const pel = (x0, x1, y0, y1) => box(G.ceilings, x0, x1, y0, y1, lz - 0.13, lz - 0.001, M.ceiling);
-        pel(wallX - 0.218, wallX - 0.2, 19.62, sy - 0.2);                                        // west pelmet board
+        // the west board stops short of the north wall, behind the side door's sheer stack (it ran through it), and returns
+        // to the wall there
+        const pn = spec.renovation.lounge.side_door ? 19.76 : 19.62;
+        pel(wallX - 0.218, wallX - 0.2, pn, sy - 0.2);                                           // west pelmet board
+        if (pn > 19.62) pel(wallX - 0.218, wallX - 0.001, pn, pn + 0.018);                         // its return to the wall
         pel(spec.renovation.lounge.wall_x - 3.76, wallX - 0.2, sy - 0.218, sy - 0.2);              // south pelmet board
-        box(G.ceilings, wallX - 0.17, wallX - 0.15, 19.66, sy - 0.22, lz - 0.02, lz - 0.012, bedGlow('lPelmet'));   // the tape, seen as a glow in the slot
+        box(G.ceilings, wallX - 0.17, wallX - 0.15, pn + 0.04, sy - 0.22, lz - 0.02, lz - 0.012, bedGlow('lPelmet'));   // the tape, seen as a glow in the slot
         box(G.ceilings, wallX - 3.72, wallX - 0.22, sy - 0.17, sy - 0.15, lz - 0.02, lz - 0.012, bedGlow('lPelmet'));
-        BL.lines.push({ room: LR, layer: 'lPelmet', mode: 2, along: 'y', x0: 19.66, x1: sy - 0.22, y: wallX - 0.16, z: lz - 0.02, ay: 0.35, az: -0.94, lmPerM: 400 });
+        BL.lines.push({ room: LR, layer: 'lPelmet', mode: 2, along: 'y', x0: pn + 0.04, x1: sy - 0.22, y: wallX - 0.16, z: lz - 0.02, ay: 0.35, az: -0.94, lmPerM: 400 });
         BL.lines.push({ room: LR, layer: 'lPelmet', mode: 2, x0: wallX - 3.72, x1: wallX - 0.22, y: sy - 0.16, z: lz - 0.02, ay: 0.35, az: -0.94, lmPerM: 400 });
       }
       if (sk) BL.points.push({ room: LR, layer: 'lSky', kind: 'down', x: (sk.x0 + sk.x1) / 2, y: (sk.y0 + sk.y1) / 2, z: lz - 0.01, lm: 600 });
@@ -5124,8 +5143,12 @@ export function buildHouse(spec) {
       const dx0 = 2.85, dx1 = S.west_fence.x - 0.035, tb = S.tree.bed, by = S.rear_bed_south.y0 - 0.005, board = 0.14, gap = 0.006;
       const deckRect = (x0, x1, y0, y1, zTop, zBase) => {                                     // subframe, then boards along x
         box(G.site, x0 + 0.02, x1 - 0.02, y0 + 0.02, y1 - 0.02, zBase, zTop - 0.025, M.darkTimber);
-        for (let y = y0; y < y1 - 0.02; y += board + gap) box(G.site, x0, x1, y, Math.min(y + board, y1), zTop - 0.025, zTop, deckMat);
+        for (let x = x0; x < x1 - 0.02; x += board + gap) box(G.site, x, Math.min(x + board, x1), y0, y1, zTop - 0.025, zTop, deckMat);   // boards run north-south, like the floor inside
       };
+      const px0 = spec.renovation.lounge.wall_outer_x;                                         // the side-path step: lounge's west wall to the fence
+      // walkable levels for Walk mode (main.js floorAt): the deck and its two treads
+      spec.renovation.deck_zones = [{ x0: dx0, x1: tb.x0, y0: 25.0, y1: by, z: dz }, { x0: tb.x0, x1: dx1, y0: 25.0, y1: tb.y0, z: dz },
+        { x0: 2.55, x1: dx0, y0: 25.0, y1: by, z: dz - r }, { x0: px0, x1: dx1, y0: 24.7, y1: 25.0, z: dz - r }];
       deckRect(dx0, tb.x0, 25.0, by, dz, rs.z);                                                 // the main deck, to the rear bed
       deckRect(tb.x0, dx1, 25.0, tb.y0 - 0.005, dz, rs.z);                                      // west of the bump-out, to its front
       box(G.site, tb.x0 - 0.02, tb.x0, tb.y0 - 0.005, by, rs.z, dz, deckMat);                   // fascia down the notch
@@ -5136,7 +5159,6 @@ export function buildHouse(spec) {
       box(G.site, dx0 - 0.02, dx0, 25.0, by, dz - r, dz, deckMat);                              // riser face of the deck above it
       box(G.site, 2.55, 2.57, 25.0, by, rs.z, dz - r, deckMat);                                 // riser face of the tread
       // north-west step onto the side path (concrete, 6.33 to the fence, ending at y 25.0): a tread on the path's end
-      const px0 = spec.renovation.lounge.wall_outer_x;                                         // from the lounge's west wall to the fence
       box(G.site, px0, dx1, 24.7, 25.0, rs.z, dz - r, deckMat);
       for (let x = px0; x < dx1 - 0.02; x += board + gap) box(G.site, x, Math.min(x + board, dx1), 24.7, 25.0, dz - r - 0.002, dz - r + 0.001, deckMat);
       box(G.site, px0, dx1, 25.0, 25.02, dz - r, dz, deckMat);                                 // riser face of the deck above it
@@ -5213,9 +5235,9 @@ export function buildHouse(spec) {
     box(G.site, ff.gate_x0, ff.gate_x1, 0.02, 0.05, gz + 0.05, gz + ff.h - 0.05, M.fence).userData.door = true;
     const dv = S.divider_fence;
     pickets(dv.x, dv.y0 + 0.05, dv.x, dv.y1, dv.h);
-    palingFence(G.site, S.west_fence.x - 0.03, S.west_fence.x + 0.03, S.west_fence.y0, S.west_fence.y1, gz, gz + S.west_fence.h, -1);
-    palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1);
-    palingFence(G.site, 0, lot.width, S.rear_fence.y - 0.03, S.rear_fence.y + 0.03, gz, gz + S.rear_fence.lattice_from, -1);
+    palingFence(G.site, S.west_fence.x - 0.03, S.west_fence.x + 0.03, S.west_fence.y0, S.west_fence.y1, gz, gz + S.west_fence.h, -1, '-x');   // our side painted white
+    palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1, '+x');
+    palingFence(G.site, 0, lot.width, S.rear_fence.y - 0.03, S.rear_fence.y + 0.03, gz, gz + S.rear_fence.lattice_from, -1, '-y');
     for (let x = 0.05; x < lot.width; x += 0.1) box(G.site, x, x + 0.02, S.rear_fence.y - 0.015, S.rear_fence.y + 0.015, gz + S.rear_fence.lattice_from, gz + S.rear_fence.h, M.fence);   // lattice top
     box(G.site, 0, lot.width, S.rear_fence.y - 0.02, S.rear_fence.y + 0.02, gz + S.rear_fence.h - 0.04, gz + S.rear_fence.h, M.fence);
     box(G.site, S.side_pier.x0, S.side_pier.x1, S.side_pier.y0, S.side_pier.y1, gz, gz + S.side_pier.h, M.white);
