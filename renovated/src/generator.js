@@ -2899,7 +2899,7 @@ export function buildHouse(spec) {
       box(ph, -0.02, 0, -0.1, 0.1, 0, 0.25, artOak());
       wallFace(ph, 'x', 0.001, 1, 0, 0.125, 0.16, 0.21, new THREE.MeshStandardMaterial({ map: artTex(21, 'calm', 0.16 / 0.21), roughness: 0.8 }));
       plantModel(fu, 'rhyzome', wx + 0.17, sy0 + 0.86, top, 0.45, 1.1, null, 0.32);
-      bookStack(fu, wx + 0.36, sy0 + 0.94, top, 0.16, 0.22, [[0.03, 0xd6b98f], [0.025, 0x2c3a52]], 0.25);
+      bookStack(fu, wx + 0.29, sy0 + 1.06, top, 0.16, 0.22, [[0.03, 0xd6b98f], [0.025, 0x2c3a52]], 0.25);   // set back beside the plant, clear of the front edge
       if (spec.renovation.art === 'v2') {                                                      // keys in the olive bowl (centre wx + 0.27, ks - 0.2; floor 20 up)
         const kx = wx + 0.27, ky = spec.kitchen_south_wall.y0 - 0.2, kz = top + 0.024;
         const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0018, 6, 20), artBrass()); ring.rotation.x = Math.PI / 2; ring.position.copy(L(kx, ky, kz)); fu.add(ring);
