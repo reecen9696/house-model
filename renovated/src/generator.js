@@ -2028,20 +2028,26 @@ function bookStack(g, x, y, z, w, d, books, rot = 0) {
 // outdoors, so each fitting's light is an additive glow painted on what it lights (a fence wash, a pool on a tread),
 // on the house Lights like the lounge ('lGarden'); dark by day. Fittings 2700 K, CRI 90+, IP65+, 12 V.
 function glowTexture(kind) {                                               // intensity in the colour (white to black, opaque): the emissive map reads rgb
-  const c = document.createElement('canvas'), g = c.getContext('2d'), v = a => `rgb(${Math.round(255 * a)},${Math.round(255 * a)},${Math.round(255 * a)})`;
-  if (kind === 'up') {                                                     // an uplight's scallop: bright at the base, fanning up
-    c.width = 128; c.height = 256; g.fillStyle = '#000'; g.fillRect(0, 0, 128, 256);
-    g.save(); g.translate(64, 256); g.scale(0.42, 1); const rg = g.createRadialGradient(0, 0, 0, 0, 0, 250);
-    rg.addColorStop(0, v(1)); rg.addColorStop(0.35, v(0.55)); rg.addColorStop(1, v(0));
-    g.fillStyle = rg; g.fillRect(-160, -256, 320, 256); g.restore();
-  } else if (kind === 'strip') {                                           // a linear wash from the bottom, fading up
-    c.width = 4; c.height = 256; const lg = g.createLinearGradient(0, 256, 0, 0);
-    lg.addColorStop(0, v(1)); lg.addColorStop(0.25, v(0.5)); lg.addColorStop(1, v(0));
-    g.fillStyle = lg; g.fillRect(0, 0, 4, 256);
-  } else {                                                                 // a soft pool on the ground
-    c.width = c.height = 128; g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128);
-    const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64); rg.addColorStop(0, v(0.9)); rg.addColorStop(1, v(0)); g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  const W = kind === 'pool' ? 128 : 128, H = kind === 'pool' ? 128 : 256; c.width = W; c.height = H;
+  const img = g.createImageData(W, H), sm = t => t * t * (3 - 2 * t);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const u = (i + 0.5) / W, v = 1 - (j + 0.5) / H;                        // v = 0 at the bottom
+    let a;
+    if (kind === 'up') {                                                   // an uplight's soft scallop: a gaussian fan, widening upward
+      const w = 0.12 + 0.3 * v, x = (u - 0.5) / w;
+      a = Math.exp(-x * x * 2.2) * Math.exp(-v * 2.4) * sm(Math.min(1, v / 0.04)) * (1 - sm(Math.max(0, (v - 0.75) / 0.25)));
+    } else if (kind === 'strip') {                                         // a linear wash from the base, fading up, soft at both ends
+      const ends = sm(Math.min(1, u / 0.08)) * sm(Math.min(1, (1 - u) / 0.08));
+      a = ends * sm(Math.min(1, v / 0.05)) * Math.exp(-v * 2.6) * (1 - sm(Math.max(0, (v - 0.7) / 0.3)));
+    } else {                                                               // a soft ambient pool
+      const x = (u - 0.5) * 2, y = (v - 0.5) * 2, r2 = x * x + y * y;
+      a = Math.exp(-r2 * 3.2) * (1 - sm(Math.min(1, Math.max(0, (Math.sqrt(r2) - 0.75) / 0.25))));
+    }
+    const k = (j * W + i) * 4, val = Math.round(255 * Math.max(0, Math.min(1, a)));
+    img.data[k] = img.data[k + 1] = img.data[k + 2] = val; img.data[k + 3] = 255;
   }
+  g.putImageData(img, 0, 0);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 function glowMat(kind, k) {
@@ -2055,7 +2061,7 @@ function glowMat(kind, k) {
 }
 // a spike (or deck-recessed) uplight at the base of a fence face: the fitting, and its scallop up the palings.
 // axis/face/dir as wallFace (the fence face, looking into the yard); c along the fence; z the ground
-function fenceUplight(g, axis, face, dir, c, z, { h = 1.7, w = 0.75, recessed = false } = {}) {
+function fenceUplight(g, axis, face, dir, c, z, { h = 1.9, w = 1.2, recessed = false } = {}) {
   const off = face + dir * 0.12, lens = bedGlow('lGarden');
   const fx = axis === 'x' ? off : c, fy = axis === 'x' ? c : off;
   if (recessed) {
@@ -2066,10 +2072,10 @@ function fenceUplight(g, axis, face, dir, c, z, { h = 1.7, w = 0.75, recessed = 
     body.position.copy(L(fx, fy, z + 0.07)); body.rotation.set(axis === 'y' ? dir * 0.25 : 0, 0, axis === 'x' ? dir * 0.25 : 0); g.add(body);
     const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.004, 14), lens); ln.position.copy(L(fx, fy, z + 0.127)); g.add(ln);
   }
-  wallFace(g, axis, face + dir * 0.006, dir, c, z + h / 2, w, h, glowMat('up', 1.6));
+  wallFace(g, axis, face + dir * 0.1, dir, c, z + h / 2, w, h, glowMat('up', 1.1));   // in front of the rails and posts, so they catch it too
 }
 // a horizontal glow pool on a surface at height z, centred (x, y), w x d
-function glowPool(g, x, y, z, w, d, k = 1.2) {
+function glowPool(g, x, y, z, w, d, k = 0.5) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), glowMat('pool', k)); m.rotation.x = -Math.PI / 2; m.position.copy(L(x, y, z + 0.004)); g.add(m); return m;
 }
 // --- plaster cornices and roses (site photos: Downloads/circle.jpeg, the hall photos of Sep 25) -----------------------
@@ -5472,22 +5478,36 @@ export function buildHouse(spec) {
       const fy = S.rear_fence.y - 0.03, sz = rz + S.rear_bed_south.edge_h - 0.03;
       box(G.site, 0.12, lot.width - 0.08, fy - 0.035, fy - 0.01, sz, sz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
       box(G.site, 0.12, lot.width - 0.08, fy - 0.03, fy - 0.015, sz + 0.02, sz + 0.023, bedGlow('lGarden'));
-      wallFace(G.site, 'y', fy - 0.006, -1, lot.width / 2, sz + 0.75, lot.width - 0.2, 1.5, glowMat('strip', 1.1));
+      wallFace(G.site, 'y', fy - 0.1, -1, lot.width / 2, rz + 0.95, lot.width - 0.1, 1.9, glowMat('strip', 0.85));   // in front of the rails; soft at the ends
       // the side fences: uplights grazing the white palings, ~1.3 m apart. West (along the deck): recessed in the deck
       // boards beside the fence; east (along the lawn behind the bathroom wing): on spikes in the lawn.
       const wf = S.west_fence.x - 0.03;
       for (const y of deck ? [25.55, 26.85, 28.0] : [25.6, 27.0]) fenceUplight(G.site, 'x', wf, -1, y, dz, { recessed: !!deck });
+      // the jasmine feature wall (west fence opposite the lounge's glass): a continuous strip at its foot behind the vines,
+      // washing up through the leaves (~350 lm/m), the same soft wash as the rear fence
+      const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
+      if (LgW.length) {
+        const jy0 = Math.min(...LgW.map(w => w.y0)) - 1.0, jy1 = Math.max(...LgW.map(w => w.y1)) + 1.0, jz = rz, jf = wf - 0.12;
+        box(G.site, jf - 0.025, jf, jy0 + 0.05, jy1 - 0.05, jz, jz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
+        box(G.site, jf - 0.02, jf - 0.005, jy0 + 0.05, jy1 - 0.05, jz + 0.02, jz + 0.023, bedGlow('lGarden'));
+        wallFace(G.site, 'x', wf - 0.16, -1, (jy0 + jy1) / 2, jz + 0.95, jy1 - jy0, 1.9, glowMat('strip', 0.85));
+      }
+      // the side path by the kitchen: recessed uplights in the bistro deck beside the fence, and spike uplights in the
+      // planted bed further north, grazing the white palings
+      { const sd = S.side_deck, wp = S.west_path, dTop = wp.z + sd.h;
+        for (const y of [16.5, 17.8, 19.0]) fenceUplight(G.site, 'x', wf, -1, y, dTop, { recessed: true });
+        for (const y of [12.6, 13.9, 15.2]) fenceUplight(G.site, 'x', wf, -1, y, wp.z); }
       const ef = S.east_fence.x + 0.03;
       for (const y of [25.7, 27.05, 28.4]) fenceUplight(G.site, 'x', ef, 1, y, rz);
       // deck steps: a low-glare louvred brick light in each riser (~50 lm, light thrown down onto the tread below only)
       if (deck) {
         const zs = spec.renovation.deck_zones, east = zs[2], nw = zs[3];
-        const riser = (x0, x1, y0, y1, zc, px, py, pw, pd, pz) => { box(G.site, x0, x1, y0, y1, zc - 0.015, zc + 0.015, decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 })); glowPool(G.site, px, py, pz, pw, pd, 1.3); };
+        const riser = (x0, x1, y0, y1, zc, px, py, pw, pd, pz) => { box(G.site, x0, x1, y0, y1, zc - 0.015, zc + 0.015, decMat('bronzeTrim', 0x4a3a2c, { roughness: 0.5, metalness: 0.4 })); glowPool(G.site, px, py, pz, pw, pd); };
         for (const y of [25.6, 26.9, 28.2]) {
-          riser(east.x1 - 0.003, east.x1 + 0.002, y - 0.06, y + 0.06, dz - 0.09, east.x1 - 0.15, y, 0.28, 0.5, east.z);      // deck riser, onto the tread
-          riser(east.x0 - 0.003, east.x0 + 0.002, y - 0.06, y + 0.06, east.z - 0.09, east.x0 - 0.25, y, 0.5, 0.55, rz);     // tread riser, onto the lawn
+          riser(east.x1 - 0.003, east.x1 + 0.002, y - 0.06, y + 0.06, dz - 0.09, east.x1 - 0.15, y, 0.3, 1.0, east.z);      // deck riser, onto the tread
+          riser(east.x0 - 0.003, east.x0 + 0.002, y - 0.06, y + 0.06, east.z - 0.09, east.x0 - 0.4, y, 0.9, 1.1, rz);     // tread riser, onto the lawn
         }
-        riser((nw.x0 + nw.x1) / 2 - 0.06, (nw.x0 + nw.x1) / 2 + 0.06, nw.y1 - 0.002, nw.y1 + 0.003, dz - 0.09, (nw.x0 + nw.x1) / 2, nw.y1 - 0.15, 0.5, 0.35, nw.z);
+        riser((nw.x0 + nw.x1) / 2 - 0.06, (nw.x0 + nw.x1) / 2 + 0.06, nw.y1 - 0.002, nw.y1 + 0.003, dz - 0.09, (nw.x0 + nw.x1) / 2, nw.y1 - 0.3, 0.55, 0.8, nw.z);
       }
     }
     box(G.site, S.side_pier.x0, S.side_pier.x1, S.side_pier.y0, S.side_pier.y1, gz, gz + S.side_pier.h, M.white);
