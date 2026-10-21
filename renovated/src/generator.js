@@ -2039,7 +2039,7 @@ function glowTexture(kind) {                                               // in
     if (kind === 'up') {                                                   // an uplight's beam on the wall: a cone from the fitting,
       const hw = 0.03 + 0.3 * v, d = Math.abs(u - 0.5);                    // a soft cone widening upward, blended into a broad low halo
       const cone = 1 - sm(Math.max(0, Math.min(1, (d - hw * 0.35) / (hw * 0.9 + 0.02))));   // that spreads the light along the fence
-      const halo = Math.exp(-((u - 0.5) / 0.3) ** 2 * 2) * Math.exp(-v * 2.2);
+      const halo = Math.exp(-2 * ((u - 0.5) / 0.3) ** 2) * Math.exp(-v * 2.2);
       a = (0.55 * cone * (0.3 + 0.7 * Math.exp(-v * 2.6)) + 0.4 * halo) * sm(Math.min(1, v / 0.04)) * (1 - sm(Math.max(0, (v - 0.6) / 0.4)));
     } else if (kind === 'strip') {                                         // a linear wash from the base, fading up, soft at both ends
       const ends = sm(Math.min(1, u / 0.08)) * sm(Math.min(1, (1 - u) / 0.08));
