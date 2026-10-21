@@ -4301,12 +4301,37 @@ export function buildHouse(spec) {
   }
   // --- beds (Reno): upholstered queen or king with bedside drawers either side. Built in a local frame with the
   // headboard's face at x = 0 (the bed running toward -x) and centred on y = 0, then set against its wall.
-  const bedSet = (size, bedside, bsW = 0.45, lamps = true, headH = 1.2, bsStyle = 'oak') => {
-    const g = new THREE.Group();
-    const mw = size === 'king' ? 1.83 : 1.53, ml = 2.03, fw = mw + 0.1, fl = ml + 0.1;          // mattress, and the frame round it
+  const bedSet = (size, bedside, bsW = 0.45, lamps = true, headH = 1.2, bsStyle = 'oak', bedStyle = 'box') => {
+    const g = new THREE.Group(), cloud = bedStyle === 'cloud';
+    const mw = size === 'king' ? 1.83 : 1.53, ml = 2.03, fw = mw + (cloud ? 0.3 : 0.1), fl = ml + 0.1;          // mattress, and the frame round it
     const wx = -0.015, fx0 = wx - fl, y0 = -fw / 2, y1 = fw / 2;
     const m = (k, c, o = {}) => M[k] || (M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...o }));
     const frame = m('bedFrame', 0xb3aa9c), linen = m('bedLinen', 0xf3f0e8), duvet = m('bedDuvet', 0xe3dccf), throwM = m('bedThrow', 0x6e6a63), pillow = m('bedPillow', 0xfbfaf6);
+    if (cloud) {
+      // 'Cloud' upholstered bed (client reference 2026-10-21): a puffy cream boucle base that rings the mattress like a
+      // bolster on a recessed dark plinth, a tall thick rounded headboard, the mattress sitting down inside; soft bedding:
+      // a fitted grey-white sheet, a duvet with its top folded back in a soft roll, and two plump pillows across the bed
+      // propped against the headboard
+      const boucle = m('bedBoucle', 0xd8cdb9, { roughness: 1 }), plinth = m('bedPlinth', 0x2a2522, { roughness: 0.6 });
+      const sheet = m('bedSheet', 0xdedcd8, { roughness: 0.9 }), duv = m('bedDuvetSoft', 0xe8e6e1, { roughness: 0.92 }), pil = m('bedPillowSoft', 0xeceae6, { roughness: 0.92 });
+      const rb = (lx, lz, ly, r, mat, cx, cy, cz, rotZ = 0) => {                                       // a rounded box: lot sizes x, z, y; centre in lot coords
+        const mesh = new THREE.Mesh(new RoundedBoxGeometry(lx, lz, ly, 5, r), mat); mesh.position.copy(L(cx, cy, cz)); mesh.rotation.z = rotZ; mesh.castShadow = mesh.receiveShadow = true; g.add(mesh); return mesh;
+      };
+      const hbT = 0.24, hbH = Math.min(1.1, Math.max(1.0, headH - 0.2)), hx1 = wx - hbT;               // headboard: thick, rounded, ~1.05 tall
+      rb(hbT, hbH - 0.04, fw, 0.11, boucle, wx - hbT / 2, 0, 0.04 + hbH / 2);
+      const bl = ml + 0.16, bx1 = hx1 + 0.03, bx0 = bx1 - bl, bh = 0.25;                                // the base ring, tucked under the headboard
+      box(g, bx0 + 0.14, bx1 - 0.06, y0 + 0.14, y1 - 0.14, 0, 0.05, plinth);                            // recessed plinth
+      rb(bl, bh, fw, 0.12, boucle, (bx0 + bx1) / 2, 0, 0.05 + bh / 2);
+      const mx1 = hx1 - 0.01, mx0 = mx1 - ml + 0.02, mz0 = 0.2, mz1 = 0.47;                             // mattress inside the ring
+      rb(mx1 - mx0, mz1 - mz0, mw - 0.02, 0.05, sheet, (mx0 + mx1) / 2, 0, (mz0 + mz1) / 2);
+      // duvet: a soft slab over the lower two-thirds, falling a little over the sides, with a folded roll at its head end
+      const dx1 = mx1 - 0.62, dx0 = mx0 - 0.03;
+      rb(dx1 - dx0, 0.075, mw + 0.05, 0.035, duv, (dx0 + dx1) / 2, 0, mz1 + 0.025);
+      const roll = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, mw - 0.06, 6, 16), duv); roll.rotation.x = Math.PI / 2; roll.position.copy(L(dx1 - 0.02, 0, mz1 + 0.06)); roll.castShadow = true; g.add(roll);
+      // pillows: two plump ones across, propped against the headboard (the edge by the headboard raised)
+      const pwid = (mw - 0.08) / 2;
+      for (const s2 of [-1, 1]) rb(0.46, 0.16, pwid - 0.02, 0.075, pil, mx1 - 0.25, s2 * (pwid / 2 + 0.01), mz1 + 0.1, -0.32);
+    } else {
     box(g, fx0, wx - 0.07, y0, y1, 0.08, 0.34, frame);                                             // upholstered base
     for (const x of [fx0 + 0.04, wx - 0.12]) for (const y of [y0 + 0.04, y1 - 0.08]) box(g, x, x + 0.04, y, y + 0.04, 0, 0.08, M.frameA);   // legs
     box(g, wx - 0.07, wx, y0 - 0.02, y1 + 0.02, 0.08, headH, frame);                                  // headboard
@@ -4315,6 +4340,7 @@ export function buildHouse(spec) {
     box(g, fx0 + 0.01, fx0 + 0.55, y0, y1, 0.52, 0.64, throwM);                                      // throw across the foot
     const np = size === 'king' ? 3 : 2, pw = (mw - 0.1) / np;                                       // pillows standing against the headboard
     for (let i = 0; i < np; i++) { const a = y0 + 0.1 + i * pw + 0.02, b = a + pw - 0.04; box(g, wx - 0.3, wx - 0.1, a, b, 0.58, 0.82, pillow); box(g, wx - 0.55, wx - 0.3, a + 0.05, b - 0.05, 0.58, 0.7, pillow); }
+    }
     if (bedside) {
       const oak = M.oak || (M.oak = new THREE.MeshStandardMaterial({ color: 0xc9a47a, roughness: 0.55 }));
       const shade = m('lampShade', 0xf1ece0, { emissive: 0x4a4436 });
@@ -4359,7 +4385,7 @@ export function buildHouse(spec) {
   // space between the bay wall and the built-in
   if (spec.renovation.front_bed) {
     const FB = spec.renovation.front_bed, rm = spec.rooms.find(r => r.name === 'Front bedroom');
-    placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson'), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
+    placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson', 'cloud'), 'west', rm.x1, (rm.y0 + spec.fixtures.robe_front.y0) / 2);
   }
   // bedroom 2: the west wall has the window and the south wall is all robe, so the headboard goes on the north wall,
   // with the foot 690 short of the robe doors. The hall door swings in across the foot corner, so the bed sits 50 west
