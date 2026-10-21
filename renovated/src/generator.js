@@ -1787,9 +1787,9 @@ function jasmineLattice(group, faceX, y0, y1, zg, zb, zt, seed = 5) {
   if (flowers.length) { const fI = new THREE.InstancedMesh(STAR, flowerM, flowers.length); flowers.forEach((m, i) => fI.setMatrixAt(i, m)); group.add(fI); }
 }
 // Roller blind face-fixed on the wall above an opening (client 2026-10-21): a white cassette (h tall, 80 deep) on the wall
-// just above the head, white blockout fabric 100 wider than the opening each side, shown lowered a little. along: 'x' or
+// just above the head, white blockout fabric 100 wider than the opening each side, rolled up (only the bottom bar shows). along: 'x' or
 // 'y' (the wall runs along lot x or y), face: the wall's room face, inward: +1/-1 toward the room
-function rollerBlind(group, along, face, inward, a0, a1, zBot, { h = 0.08, drop = 0.3 } = {}) {
+function rollerBlind(group, along, face, inward, a0, a1, zBot, { h = 0.08, drop = 0 } = {}) {   // drop 0: rolled right up (client)
   const cass = M.blindCass || (M.blindCass = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.45 }));
   const fabric = M.blindFab || (M.blindFab = new THREE.MeshStandardMaterial({ color: 0xf7f7f5, roughness: 0.9 }));
   cass.userData.skyRoomSide = fabric.userData.skyRoomSide = true;
@@ -1797,7 +1797,7 @@ function rollerBlind(group, along, face, inward, a0, a1, zBot, { h = 0.08, drop 
     along === 'x' ? box(group, u0, u1, lo, hi, z0, z1, m) : box(group, lo, hi, u0, u1, z0, z1, m); };
   const u0 = a0 - 0.1, u1 = a1 + 0.1;
   b(0.002, 0.085, u0, u1, zBot, zBot + h, cass);
-  b(0.054, 0.06, u0 + 0.01, u1 - 0.01, zBot - drop, zBot, fabric);
+  if (drop > 0) b(0.054, 0.06, u0 + 0.01, u1 - 0.01, zBot - drop, zBot, fabric);
   b(0.046, 0.068, u0 + 0.01, u1 - 0.01, zBot - drop - 0.015, zBot - drop, cass);           // bottom bar
 }
 // The kitchen's ceiling grid: columns at the buffet's front edge, the sink bench's front edge and midway between; rows
@@ -2857,7 +2857,7 @@ export function buildHouse(spec) {
     { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen;
       // a slim 50 mm roller blind cassette sits on the window's architrave (client); the head unit sits 10 above it, its top
       // into the cornice line (the cornice is notched behind it)
-      rollerBlind(int_, 'y', kd.x1, -1, w3.y0, w3.y1, w3.head + 0.075, { h: 0.05, drop: 0.325 });
+      rollerBlind(int_, 'y', kd.x1, -1, w3.y0, w3.y1, w3.head + 0.075, { h: 0.05 });
       split(kd.x1, (w3.y0 + w3.y1) / 2, -1, 0, KW50, w3.head + 0.075 + 0.05 + 0.01 + KW50[0]); }
   }
   // --- bedroom lighting (spec.renovation.bed_lights): robe-top strip and night light always; angled downlights,
@@ -4430,7 +4430,7 @@ export function buildHouse(spec) {
       const wn = Win[k], rm = spec.rooms.find(r => r.name === rn); if (!wn || !rm) continue;
       // roller blind, face-fixed on the wall above the window (client): an 80 x 80 cassette just over the architrave, the
       // fabric 100 wider than the window each side so it covers the architrave too, shown lowered a little
-      rollerBlind(int_, 'y', xi, -1, wn.y0, wn.y1, wn.head + 0.075, { drop: 0.375 });
+      rollerBlind(int_, 'y', xi, -1, wn.y0, wn.y1, wn.head + 0.075);
       if (!spec.renovation.curtains) continue;
       const zc = rm.floor + rm.ceil, x = xi - 0.26, a0 = Math.max(rm.y0 + 0.02, wn.y0 - 0.2), a1 = Math.min(rm.y1 - 0.02, wn.y1 + 0.2);
       box(int_, x - 0.016, x + 0.016, a0, a1, zc - 0.022, zc, track);
@@ -4450,6 +4450,8 @@ export function buildHouse(spec) {
   {
     const Lg = spec.renovation.lounge, fz = loungeFloor;
     for (const w of Lg.windows.filter(w => w.floorGlass)) rollerBlind(int_, 'y', Lg.wall_x, -1, w.y0, w.y1, fz + w.head + 0.02);
+    // the side glass door in the north wall: over its architrave, kept inside the room
+    if (Lg.side_door) rollerBlind(int_, 'x', H.y_rear_outer, 1, Lg.side_door[0] + 0.02, Math.min(Lg.side_door[1], Lg.wall_x - 0.13), fz + Lg.slider_head + 0.075);
     const bd = Lg.back_door; if (bd) rollerBlind(int_, 'x', Lg.south_y, -1, Math.max(bd.from, Lg.wall_x - 3.76 + 0.1), Math.min(bd.to ?? bd.from + bd.w, Lg.wall_x - 0.1), fz + bd.h + 0.02);
   }
   // --- sheer curtains (Reno sheet): floor-to-ceiling white sheers on a ceiling track over every glazed opening in the
@@ -5550,12 +5552,23 @@ export function buildHouse(spec) {
       // washing up through the leaves (~350 lm/m), the same soft wash as the rear fence
       const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
       if (LgW.length) {
-        const jy0 = Math.min(...LgW.map(w => w.y0)) - 1.0, jy1 = Math.max(...LgW.map(w => w.y1)) + 1.0, jz = rz, jf = wf - 0.12;
-        box(G.site, jf - 0.025, jf, jy0 + 0.05, jy1 - 0.05, jz, jz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
-        box(G.site, jf - 0.02, jf - 0.005, jy0 + 0.05, jy1 - 0.05, jz + 0.02, jz + 0.023, bedGlow('lGarden'));
-        wallFace(G.site, 'x', wf - 0.004, -1, (jy0 + jy1) / 2, jz + 1.0, jy1 - jy0, 2.0, glowMat('tall', 0.9));   // flat on the palings behind the vines
+        const jy0 = Math.min(...LgW.map(w => w.y0)) - 1.0, jy1 = Math.max(...LgW.map(w => w.y1)) + 1.0;
+        if (spec.renovation.lounge_fence === 'screen') {
+          // the batten screen with its planters (default): a strip tucked under each planter's folded rim on the screen
+          // side, washing up the battens from the rim (z0 + 0.4) to the top; the wash lies on the batten faces, just
+          // behind the vines
+          const sx = S.west_fence.x - 0.03 - 0.09 - 0.045 - 0.004, z0 = gz + 0.4, zt = gz + S.west_fence.h;
+          box(G.site, sx - 0.012, sx, jy0 + 0.05, jy1 - 0.05, z0 - 0.01, z0 + 0.008, bedGlow('lGarden'));
+          wallFace(G.site, 'x', sx, -1, (jy0 + jy1) / 2, (z0 + zt) / 2, jy1 - jy0, zt - z0, glowMat('tall', 1.0));
+        } else {
+          // the lattice on the fence: a strip at the fence's foot behind the vines, the wash flat on the palings
+          const jz = rz, jf = wf - 0.12;
+          box(G.site, jf - 0.025, jf, jy0 + 0.05, jy1 - 0.05, jz, jz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
+          box(G.site, jf - 0.02, jf - 0.005, jy0 + 0.05, jy1 - 0.05, jz + 0.02, jz + 0.023, bedGlow('lGarden'));
+          wallFace(G.site, 'x', wf - 0.004, -1, (jy0 + jy1) / 2, jz + 1.0, jy1 - jy0, 2.0, glowMat('tall', 0.9));
+        }
         // and the vines themselves catch it: the jasmine's leaves and flowers glow softly on the garden circuit, so they read
-        // lit in front of the bright fence instead of as silhouettes (client)
+        // lit in front of the bright wall instead of as silhouettes (client)
         for (const [m, col, k] of [[M.jasLeaf, 0x3c5c34, 0.45], [M.jasFlower, 0xfff0d8, 0.3]]) if (m) { m.emissive.set(col); m.userData.bedLamp = 'lGarden'; m.userData.glowK = k; }
       }
       // the side path by the kitchen: recessed uplights in the bistro deck beside the fence, and spike uplights in the
