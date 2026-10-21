@@ -171,7 +171,7 @@ function palingFence(group, x0, x1, y0, y1, z0, z1, rails = 0, paint = null) {
     const mats = Array(6).fill(M.paling); mats[{ '-x': 0, '+x': 1, '+y': 4, '-y': 5 }[paint]] = M.palingWhite;   // three faces: +X -X +Y -Y +Z -Z; lot x = -X
     panel.material = mats;
   }
-  const railMat = paint ? (M.railWhite || (M.railWhite = (() => { const m = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.85, emissive: 0xffd9a8, emissiveIntensity: 0 }); m.userData.bedLamp = 'lGarden'; m.userData.glowK = 0.12; return m; })())) : M.railTimber;   // rails catch a little of the garden light at night
+  const railMat = paint ? (M.railWhite || (M.railWhite = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.85 }))) : M.railTimber;   // (their night glow came out: it lit every rail evenly, lights or not, client)
   if (!rails) return panel;
   const h = z1 - z0, a0 = along === 'x' ? Math.min(x0, x1) : Math.min(y0, y1), a1 = along === 'x' ? Math.max(x0, x1) : Math.max(y0, y1);
   const face = along === 'x' ? (rails > 0 ? Math.max(y0, y1) : Math.min(y0, y1)) : (rails > 0 ? Math.max(x0, x1) : Math.min(x0, x1));
@@ -2687,9 +2687,9 @@ export function buildHouse(spec) {
   // hall west wall: wider entry section to the front bedroom, then it steps out into the hall for bedroom 2 (plan, vent photo)
   const hs = H.hall_step;
   wallRect(int_, hs.front_wall_x0, hs.front_wall_x1, H.porch.y1, hs.step_y + iw, 0, W.plate_z, [
-    { from: D.front_bed.y0, to: D.front_bed.y1, sill: 0, head: D.front_bed.head, kind: 'door', swing: -1 }], M.intWall);
+    { from: D.front_bed.y0, to: D.front_bed.y1, sill: 0, head: D.front_bed.head, kind: 'door', swing: -1, hinge: 'end' }], M.intWall);
   wallRect(int_, hs.rear_wall_x0, hs.rear_wall_x1, hs.step_y, 11.49, 0, W.plate_z, [
-    { from: D.bed2.y0, to: D.bed2.y1, sill: 0, head: D.bed2.head, kind: 'door', swing: -1 }], M.intWall);
+    { from: D.bed2.y0, to: D.bed2.y1, sill: 0, head: D.bed2.head, kind: 'door', swing: -1, hinge: 'end' }], M.intWall);
   wallRect(int_, hs.rear_wall_x0, H.x_west_inner, hs.step_y, hs.step_y + iw, 0, W.plate_z, [], M.intWall);   // bed1 / bed2, including the step's return
   // bed2+hall / bed3+hall extension; with the reno hall doorway off, the hall part comes out and the hall runs straight through
   if (spec.renovation.hall_doorway === 'arch') {
@@ -4473,16 +4473,18 @@ export function buildHouse(spec) {
     const sw = (room, along, face, inward, u, gangs, dim, label) => { switchPlate(int_, along, face, inward, u, 1.05, gangs, { dim }); SW.push({ room, along, face, u, gangs, dim, label }); };
     // entry: just inside the front door on the latch (west) side: hall pendants (2-way with the kitchen end, dimmer) + porch light
     sw('Entry', 'y', 1.47, -1, 5.0, 1, 1, 'hall pendants (2-way, dimmer); porch light');
-    // front bedroom: inside, latch side (south) of its door in the east wall, clear of the open shelving
-    sw('Front bedroom', 'y', 1.58, 1, 7.42, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    // front bedroom and bedroom 2: the joinery (open shelving, robe) runs right up to each door's south jamb, so both doors
+    // are rehung on that jamb (opening against the joinery) and the plate goes inside on the latch (north) side
+    sw('Front bedroom', 'y', 1.58, 1, D.front_bed.y0 - 0.17, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    sw('Bedroom 2', 'y', 1.41, 1, D.bed2.y0 - 0.17, 1, 1, 'pendant (dimmer); robe-top + floor strips');
     // bedroom 3: inside, latch side (south) of its door
     sw('Bedroom 3', 'y', 1.41, 1, 12.8, 1, 1, 'pendant (dimmer); robe-top + floor strips');
     // kitchen: on the party wall just inside the hall opening, where the hall ends: hall pendants (2-way), the bench task
     // lights (tape + sink pair), table + buffet downlights (dimmer)
     sw('Kitchen / dining', 'y', 0.115, 1, 15.3, 2, 1, 'hall pendants (2-way); bench task light; table + buffet (dimmer)');
-    // lounge: north wall between the kitchen opening and the side glass door (its latch side): pelmet + skylight (dimmer),
-    // wall lights (dimmer), joinery floor glow
-    sw('Lounge / living', 'x', 19.54, 1, 5.05, 1, 2, 'pelmet wash + skylight (dimmer); TV wall lights (dimmer); joinery glow');
+    // lounge: on the kitchen's west wall at its south end, past the bench return, where you walk through into the lounge
+    // (the strip beside the side glass door was too cramped): pelmet + skylight (dimmer), wall lights (dimmer), joinery glow
+    sw('Lounge / living', 'y', 4.69, -1, 18.95, 1, 2, 'pelmet wash + skylight (dimmer); TV wall lights (dimmer); joinery glow');
     // bathroom: outside, on the kitchen side of the bath door's latch (inside, the room ends at the latch jamb): light + fan
     sw('Bath', 'x', 18.88, -1, 2.12, 2, 0, 'bathroom light; exhaust fan (run-on timer)');
   }
