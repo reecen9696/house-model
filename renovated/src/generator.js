@@ -2266,7 +2266,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2487,6 +2487,8 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // back yard (Reno > Outside > Back yard): 'deck' a timber deck level with the sliders, stepping down to the lawn and the
   // side path (client 2026-10-21), or 'tiles' the earlier tessellated slab with steps up to the sliders
   spec.renovation.yard = yard === 'tiles' ? 'tiles' : 'deck';
+  // front bedroom window seat in the bay (Reno > Bedroom > Bay window seat, client 2026-10-21)
+  spec.renovation.bay_seat = baySeat !== 'off';
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
   spec.renovation.lounge_fence = loungeFence === 'lattice' ? 'lattice' : 'screen';   // Reno > Lounge > Side fence
@@ -4397,6 +4399,38 @@ export function buildHouse(spec) {
   if (spec.renovation.front_bed) {
     const FB = spec.renovation.front_bed, rm = spec.rooms.find(r => r.name === 'Front bedroom');
     placeBed(bedSet(FB.size, FB.bedside, 0.48, !bedProposed, spec.renovation.art === 'v2' ? 1.3 : 1.2, 'lawson', 'cloud'), 'west', rm.x1, frontBedY(spec));
+  }
+  // --- front bedroom window seat (client reference 2026-10-21): a built-in seat filling the bay and running straight
+  // across its mouth 170 into the room (the bay is only ~350 deep inside), painted cream on a shadow-gap kick, its top
+  // at 420; three dark-cream cushions following the bay's three facets, and two lumbar cushions against the glass.
+  // Top of the cushions ~500, under the 800 sill.
+  if (spec.renovation.bay_seat) {
+    const fu = G.furniture, b = H.bay, fr = spec.rooms.find(r => r.name === 'Front bedroom'), ry = fr.y0, fz = fr.floor;
+    const yIn = H.y_front_outer - b.projection + W.ext * 0.7 + 0.01, ys = ry + 0.17;            // bay's inside face, the seat front
+    const pts = [[b.x0, ys], [b.x1, ys], [b.x1, ry], [b.front_x1 - 0.02, yIn], [b.front_x0 + 0.02, yIn], [b.x0, ry]];
+    const cxp = (b.x0 + b.x1) / 2, cyp = (ys + yIn) / 2;
+    const plan = (P, inset = 0) => new THREE.Shape(P.map(([x, y]) => new THREE.Vector2(-(x + (cxp - x) * inset), -(y + (cyp - y) * inset))));
+    const slab = (shape, z0, z1, mat, bevel = 0) => {                                          // a plan shape extruded up from z0 to z1
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: z1 - z0 - 2 * bevel, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 4 });
+      geo.rotateX(-Math.PI / 2); geo.translate(0, z0 + bevel, 0);
+      const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; fu.add(m); return m;
+    };
+    const cream = M.seatCream || (M.seatCream = new THREE.MeshStandardMaterial({ color: 0xe9e1d0, roughness: 0.55 }));
+    const cush = M.seatCushion || (M.seatCushion = new THREE.MeshStandardMaterial({ color: 0xc9b690, roughness: 0.95 }));
+    const lumb = M.seatLumbar || (M.seatLumbar = new THREE.MeshStandardMaterial({ color: 0xd9cbb0, roughness: 0.95 }));
+    slab(plan(pts, 0.025), fz, fz + 0.08, M.trimDark || cream);                                // shadow-gap kick, set back
+    slab(plan(pts), fz + 0.08, fz + 0.42, cream);                                              // the box and its top
+    const midA = [b.front_x0 + 0.02, yIn], midB = [b.front_x1 - 0.02, yIn];
+    const facets = [                                                                           // a cushion per facet, 80 thick, soft edges
+      [[b.x0 + 0.01, ys - 0.01], [midA[0], ys - 0.01], midA, [b.x0 + 0.01, ry]],
+      [[midA[0] + 0.01, ys - 0.01], [midB[0] - 0.01, ys - 0.01], [midB[0] - 0.01, yIn], [midA[0] + 0.01, yIn]],
+      [[midB[0], ys - 0.01], [b.x1 - 0.01, ys - 0.01], [b.x1 - 0.01, ry], midB],
+    ];
+    for (const f of facets) { const c = f.reduce((a, [x, y]) => [a[0] + x / f.length, a[1] + y / f.length], [0, 0]); slab(new THREE.Shape(f.map(([x, y]) => new THREE.Vector2(-(x + (c[0] - x) * 0.04), -(y + (c[1] - y) * 0.04)))), fz + 0.42, fz + 0.5, cush, 0.018); }
+    for (const s2 of [-1, 1]) {                                                                // two lumbar cushions leaning on the front pane
+      const c = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.26, 0.12, 4, 0.05), lumb);
+      c.position.copy(L((b.front_x0 + b.front_x1) / 2 + s2 * 0.28, yIn + 0.09, fz + 0.5 + 0.12)); c.rotation.x = -0.25; c.castShadow = true; fu.add(c);
+    }
   }
   // bedroom 2: the west wall has the window and the south wall is all robe, so the headboard goes on the north wall,
   // with the foot 690 short of the robe doors. The hall door swings in across the foot corner, so the bed sits 50 west

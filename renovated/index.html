@@ -389,6 +389,13 @@ body.clean > *:not(canvas) { display: none !important; }
     <div class="field"><div class="lab"><span>Dimmer, ceiling circuit: pendant or downlights (2700 K, warm-dim)</span><span class="val" id="blDimVal"></span></div><input type="range" id="blDim" min="5" max="100" step="5" value="100"></div>
     <div class="field"><div class="lab"><span>Dimmer, secondary circuit: LED strips and accent downlight</span><span class="val" id="blDimSecVal"></span></div><input type="range" id="blDimSec" min="5" max="100" step="5" value="100"></div>
     <div class="grid3"><button class="btn" type="button" data-bscene="all">All on</button><button class="btn" type="button" data-bscene="evening">Evening</button><button class="btn" type="button" data-bscene="sleep">Sleep</button></div>
+    <div class="q">
+      <span class="lab" id="renoBaySeatLab">Bay window seat</span>
+      <select data-pick="bayseat" aria-labelledby="renoBaySeatLab">
+        <option value="on">On: built-in seat in the bay, cream base, dark cream cushions</option>
+        <option value="off">Off</option>
+      </select>
+    </div>
     <div class="grid3"><button class="btn" type="button" data-bview="front">Front bedroom, robe</button><button class="btn" type="button" data-bview="frontBed">Front bedroom, from the bed</button><button class="btn" type="button" data-bview="bed2">Bedroom 2</button><button class="btn" type="button" data-bview="bed3">Bedroom 3</button></div>
     <div class="grid3"><button class="btn" type="button" data-bview="frontSheer">Front bedroom, bay</button><button class="btn" type="button" data-bview="frontPillow">Front bedroom, from the pillow</button></div>
     <p class="note">Scenes set the time and the switches: All on (everything, full) and Evening (downlights 25%, robe strip 50%) at 9:30 pm; Sleep (night light only, the ceiling dark) at 11:30 pm. Midday is on the Sun sheet. Two round buttons at the side work the two circuits: the bulb is the ceiling lights (the downlights or pendant, and the rest of the house), the strip beside it the secondary lights (robe LED, plus corner downlights or reading spots in those versions; K key).</p>
