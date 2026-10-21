@@ -4475,8 +4475,8 @@ export function buildHouse(spec) {
     sw('Entry', 'y', 1.47, -1, 5.0, 1, 1, 'hall pendants (2-way, dimmer); porch light');
     // front bedroom and bedroom 2: the joinery (open shelving, robe) runs right up to each door's south jamb, so both doors
     // are rehung on that jamb (opening against the joinery) and the plate goes inside on the latch (north) side
-    sw('Front bedroom', 'y', 1.58, 1, D.front_bed.y0 - 0.17, 1, 1, 'pendant (dimmer); robe-top + floor strips');
-    sw('Bedroom 2', 'y', 1.41, 1, D.bed2.y0 - 0.17, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    sw('Front bedroom', 'y', 1.58, 1, D.front_bed.y0 - 0.125, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    sw('Bedroom 2', 'y', 1.41, 1, D.bed2.y0 - 0.125, 1, 1, 'pendant (dimmer); robe-top + floor strips');
     // bedroom 3: inside, latch side (south) of its door
     sw('Bedroom 3', 'y', 1.41, 1, 12.8, 1, 1, 'pendant (dimmer); robe-top + floor strips');
     // kitchen: on the party wall just inside the hall opening, where the hall ends: hall pendants (2-way), the bench task
