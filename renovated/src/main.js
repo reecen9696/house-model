@@ -12,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'lattice' };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1 };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -46,6 +46,7 @@ if (savedReno && (savedReno.furnitureV || 0) < 1) {
 }
 // hall end: the original door-sized opening became the default (2026-10-21): move saved choices over once
 if (savedReno && (savedReno.hallV || 0) < 2) Object.assign(reno, { hallDoorway: 'arch' });
+if (savedReno && (savedReno.loungeFenceV || 0) < 1) { Object.assign(reno, { loungeFence: 'screen', loungeFenceV: 1 }); try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {} }   // the slatted screen became the default (client)
 if (savedReno && (savedReno.hallV || 0) < 3) {
   Object.assign(reno, { hallPendant: 'pebble', hallV: 3 });   // opal pebble pendants replace the woven ones (client)
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
@@ -1181,7 +1182,7 @@ const PICKS = {
   fridge: [() => reno.fridge, v => { reno.fridge = v; }],
   dt: [() => reno.diningTable || 'oak', v => { reno.diningTable = v; }],
   sideboard: [() => reno.sideboard === true ? 'portobello' : reno.sideboard || 'none', v => { reno.sideboard = v === 'none' ? false : v; }],
-  lfence: [() => reno.loungeFence || 'lattice', v => { reno.loungeFence = v; }],
+  lfence: [() => reno.loungeFence || 'screen', v => { reno.loungeFence = v; }],
   lstyle: [() => reno.loungeStyle === 'fireplace' ? 'walnut' : reno.loungeStyle || 'standard', v => { reno.loungeStyle = v; }],
   tvu: [() => reno.tvUnit || 'white', v => { reno.tvUnit = v; }],
   ct: [() => reno.coffeeTable || 'round', v => { reno.coffeeTable = v; }],

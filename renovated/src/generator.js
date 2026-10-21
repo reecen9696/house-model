@@ -1655,13 +1655,13 @@ function wallLight(group, BL, room, x, y, z, wallX, layer = 'lWall') {
 // all along them (dark older leaves, lighter new growth at the tips), lying roughly in the screen's plane but tilted
 // every which way; a light scatter of small white star flowers. Faces -x (the screen on the side fence). All the leaves
 // are one instanced mesh, the flowers another
-function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.7, height = 1.8, depth = 0.08 } = {}) {
+function starJasmine(group, faceX, yc, z0, seed = 1, { spread = 0.7, height = 1.8, depth = 0.08, pocket = true } = {}) {
   let sd = seed * 7919 + 17; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
   const stemM = M.jasStem || (M.jasStem = new THREE.MeshStandardMaterial({ color: 0x5a4a32, roughness: 0.85 }));
   const leafM = M.jasLeaf || (M.jasLeaf = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42, side: THREE.DoubleSide }));
   const flowerM = M.jasFlower || (M.jasFlower = new THREE.MeshStandardMaterial({ color: 0xfbf8ef, roughness: 0.6, side: THREE.DoubleSide }));
   const mulch = M.mulch || (M.mulch = new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 1 }));
-  box(group, faceX - 0.2, faceX, yc - 0.18, yc + 0.18, z0, z0 + 0.012, mulch);               // planting pocket in the paving
+  if (pocket) box(group, faceX - 0.2, faceX, yc - 0.18, yc + 0.18, z0, z0 + 0.012, mulch);   // planting pocket in the paving
   // leaf: a pointed ellipse, base at the origin, 1 long along +Y; built facing +Z, turned to face the path (-x lot = -X)
   const LEAF = M.jasLeafGeo || (M.jasLeafGeo = (() => {
     const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(0.24, 0.3, 0.17, 0.62); sh.quadraticCurveTo(0.1, 0.86, 0, 1); sh.quadraticCurveTo(-0.1, 0.86, -0.17, 0.62); sh.quadraticCurveTo(-0.24, 0.3, 0, 0);
@@ -2200,7 +2200,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'lattice' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2423,7 +2423,7 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.yard = yard === 'tiles' ? 'tiles' : 'deck';
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
-  spec.renovation.lounge_fence = loungeFence === 'screen' ? 'screen' : 'lattice';   // Reno > Lounge > Side fence
+  spec.renovation.lounge_fence = loungeFence === 'lattice' ? 'lattice' : 'screen';   // Reno > Lounge > Side fence
   spec.renovation.hall_pendant = ['pebble', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'pebble';
   spec.renovation.pendant_style = ['augustOval', 'augustRound', 'pipete', 'globe'].includes(pendant) ? pendant : 'augustOval';
   // bedroom 3's robe (the full south wall, drawn from fixed numbers before) joins the same treatment as the front two
@@ -5444,8 +5444,20 @@ export function buildHouse(spec) {
         for (const [a, b] of [[y0 - 0.02, y0], [y1, y1 + 0.02]]) box(G.site, fx - 0.045, fx + 0.09, a, b, z0, z1, slatM[0]);   // end battens back to the palings
         // three star jasmines trained flat on wires across it (client reference), ~1.9 m apart, the outer two a little in
         // from the ends so the screen's edges stay crisp
-        const span = y1 - y0;
-        [[0.2, 3], [0.52, 8], [0.82, 13]].forEach(([f, sd]) => starJasmine(G.site, fx - 0.046, y0 + span * f, z0, sd));
+        // planted in three long rectangular troughs along its foot (realistic: there is no soil under the side path's
+        // paving): charcoal powder-coated steel, 200 deep x 400 high, ~1.8 m each with 60 mm gaps, a soil surface 30 below
+        // the rim; the jasmines grow out of them
+        const span = y1 - y0, pD = 0.2, pH = 0.4, gap = 0.06, nP = 3, pL = (span - gap * (nP - 1)) / nP, pf = fx - 0.046;
+        const steel = M.planterSteel || (M.planterSteel = new THREE.MeshStandardMaterial({ color: 0x34363a, roughness: 0.55, metalness: 0.35 }));
+        const soil = M.planterSoil || (M.planterSoil = new THREE.MeshStandardMaterial({ color: 0x3b2c20, roughness: 1 }));
+        for (let i = 0; i < nP; i++) {
+          const a = y0 + i * (pL + gap), b = a + pL, t = 0.004;
+          box(G.site, pf - pD, pf, a, b, z0, z0 + pH - 0.03, soil);                              // body (soil inside)
+          for (const [xa, xb, ya, yb] of [[pf - pD, pf - pD + t, a, b], [pf - t, pf, a, b], [pf - pD, pf, a, a + t], [pf - pD, pf, b - t, b]]) box(G.site, xa, xb, ya, yb, z0, z0 + pH, steel);
+          box(G.site, pf - pD - 0.006, pf - pD + 0.012, a, b, z0 + pH - 0.004, z0 + pH, steel);  // folded top lip on the path side
+          box(G.site, pf - pD, pf, a + 0.02, b - 0.02, z0, z0 + 0.03, M.planterFoot || (M.planterFoot = new THREE.MeshStandardMaterial({ color: 0x1e1f21, roughness: 0.8 })));   // shadow gap at the foot
+          starJasmine(G.site, pf, (a + b) / 2, z0 + pH - 0.03, [3, 8, 13][i], { pocket: false });
+        }
       }
     }
     palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1, '+x');
