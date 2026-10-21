@@ -241,6 +241,14 @@ body.clean > *:not(canvas) { display: none !important; }
       </select>
       <p class="note" id="renoSbNote"></p>
     </div>
+    <div class="q">
+      <span class="lab" id="renoKLLab">Kitchen &amp; lounge lighting</span>
+      <select data-pick="kllight" aria-labelledby="renoKLLab">
+        <option value="designed">Layered, by task (recommended)</option>
+        <option value="grid">Downlight grids (the earlier plan)</option>
+      </select>
+      <p class="note">Kitchen: tape under the wall cupboards, two low-glare downlights over the sink bench, one onto the tall run, two narrow downlights pooling light on the table (no pendant), a lamp on the sideboard. Lounge: a pelmet over the glass washing the sheers, a glowing skylight well, a floor lamp and the shelf lamp, a soft glow under the walnut run; nothing over the TV. 2700 K, CRI 90+, ~2.3 W/m².</p>
+    </div>
     <div class="sws">
       <label class="sw"><span>Cupboards to ceiling</span><input type="checkbox" id="renoTall"><span class="tk"></span></label>
       <label class="sw"><span>Island</span><input type="checkbox" id="renoIsland"><span class="tk"></span></label>
@@ -396,17 +404,27 @@ body.clean > *:not(canvas) { display: none !important; }
         <option value="art">Pendants + one painting, like Mint's period halls (recommended)</option>
         <option value="downlights">Downlights down the centre</option>
       </select>
-      <p class="note">Three matching pendants on the centreline, bottoms at 2.1 m (door-head height): on the entry rose, mid-hall and mid-extension (new plain roses); the door-sized opening makes the extension its own space. Two paintings on the long party wall, each centred on a pendant (900 x 1100 mid-hall, 700 x 900 past the arch), centre 1.55 m, lit by their spill (no spotlight: in a 1.19 m hall a 30° spot would sit against the opposite wall; a frame-mounted picture light if wanted). No downlights.</p>
+      <p class="note">Three matching pendants on the centreline, bottoms at 2.1 m (door-head height): on the entry rose, mid-hall and mid-extension (new plain roses); the door-sized opening makes the extension its own space. The art is set under Artwork below (pieces lit by the pendants' spill: in a 1.19 m hall a 30° spot would sit against the opposite wall). No downlights.</p>
     </div>
     <div class="q">
       <span class="lab" id="renoHallPendLab">Hall pendants</span>
       <select data-pick="hpend" aria-labelledby="renoHallPendLab">
-        <option value="woven">Woven rattan bell, ~350 (moodboard)</option>
+        <option value="pebble">Opal pebble, ~310 x 280 (reference photo)</option>
         <option value="augustOval">Lucci August oval, opal (matches the bedrooms)</option>
         <option value="augustRound">Lucci August round, opal, 300</option>
       </select>
     </div>
     <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="hallFront">Hall from the front door</button><button class="btn" type="button" data-bview="hallBack">Hall from the kitchen end</button></div>
+    <div class="q">
+      <span class="lab" id="renoArtLab">Artwork (whole house)</span>
+      <select data-pick="art" aria-labelledby="renoArtLab">
+        <option value="v2">Proposed layout: fewer, bigger, on the sightlines (recommended)</option>
+        <option value="hall">Earlier: two hall paintings only</option>
+        <option value="none">None</option>
+      </select>
+      <p class="note">ART-PLACEMENT.md Part D. Hero 700 x 1000 on the kitchen wall beside the bathroom door, on the front door's axis, with one 30° spot; one 700 x 900 mid-hall (lit by its pendant); arched mirror and key ledge in the entry; extension bare; the sideboard keeps its top clear of art (lamp moves to the north end, bowl at the south); a calm 800 x 1000 pair fixed to the front bedroom's hall wall, a taller bedhead under the split system; 1100 x 800 over bedroom 2's bed; a woven hanging over the study desk; the lounge keeps its TV and no art; a print in the WC; an outdoor print on the rear fence. Centres at 1.50 m.</p>
+    </div>
+    <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="kitchenEnd">Kitchen end: hero and sideboard</button><button class="btn" type="button" data-bview="frontBed">Front bedroom, from the bed</button></div>
   </div>
 
   <div class="rpanel" id="rp-outside" role="tabpanel" data-panel="outside" hidden>

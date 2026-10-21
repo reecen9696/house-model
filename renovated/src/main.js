@@ -12,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 2, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'woven' };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 2, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1 };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -45,14 +45,20 @@ if (savedReno && (savedReno.furnitureV || 0) < 1) {
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // hall end: the original door-sized opening became the default (2026-10-21): move saved choices over once
-if (savedReno && (savedReno.hallV || 0) < 2) {
-  Object.assign(reno, { hallDoorway: 'arch', hallV: 2 });
+if (savedReno && (savedReno.hallV || 0) < 2) Object.assign(reno, { hallDoorway: 'arch' });
+if (savedReno && (savedReno.hallV || 0) < 3) {
+  Object.assign(reno, { hallPendant: 'pebble', hallV: 3 });   // opal pebble pendants replace the woven ones (client)
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // bedrooms: the August oval pendant with the robe-top and robe-floor strips became the default (2026-10-21): move
 // saved choices over once
 if (savedReno && (savedReno.bedLightsV || 0) < 3) {
   Object.assign(reno, { bedLights: 'pendant', pendant: 'augustOval', bedLightsV: 3 });
+  try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
+}
+// artwork: the proposed layout (ART-PLACEMENT.md Part D) became the default (2026-10-21): move saved choices over once
+if (savedReno && (savedReno.artV || 0) < 1) {
+  Object.assign(reno, { art: 'v2', artV: 1 });
   try { localStorage.setItem(RENO_KEY, JSON.stringify(reno)); } catch {}
 }
 // the whole agreed setup became the default (simple archway, white woodwork, no pavers ...): move everyone over once
@@ -162,18 +168,23 @@ let skyGrid = null;                                                       // { x
 // bounce fill per room from the lumens that are on. Units match the downlights: DL_I (1.7) is a 700 lm fitting's
 // 261 cd, so 1 cd = 1.7 / 261, and a lumen of bounce is the lamp field's 0.00358 per lm.
 const V4 = n => Array.from({ length: n }, () => new THREE.Vector4());
-const BEDU = { bedOn: { value: 0 }, bedRm: { value: V4(5) }, bedBay: { value: new THREE.Vector4() }, bedBayY: { value: new THREE.Vector2() },
-  bedPt: { value: V4(14) }, bedPtK: { value: V4(14) }, bedLn: { value: V4(10) }, bedLnA: { value: V4(10) }, bedLnM: { value: new Array(10).fill(0) }, bedFill: { value: new THREE.Vector4() }, bedSpill: { value: new THREE.Vector4() }, bedOccA: { value: V4(4) }, bedOccB: { value: V4(4) },
+const NPT = 22, NLN = 14, NRECT = 8, NZONE = 6;                         // point and line source slots, outline rects, zones
+const BEDU = { bedOn: { value: 0 }, bedRm: { value: V4(NRECT) }, bedZone: { value: new Array(NRECT).fill(-1) }, bedBay: { value: new THREE.Vector4() }, bedBayY: { value: new THREE.Vector2() },
+  bedPt: { value: V4(NPT) }, bedPtK: { value: V4(NPT) }, bedLn: { value: V4(NLN) }, bedLnA: { value: V4(NLN) }, bedLnM: { value: new Array(NLN).fill(0) }, bedFill: { value: new Array(NZONE).fill(0) }, bedSpill: { value: new THREE.Vector4() }, bedOccA: { value: V4(4) }, bedOccB: { value: V4(4) },
   bedCol: { value: new THREE.Color() }, bedNightCol: { value: new THREE.Color(0xffa860) } };
 // Bounce fill: Sumpner's inter-reflection formula, average indirect irradiance = flux x rho / (A x (1 - rho)), with
 // rho the area-weighted reflectance. These rooms: white ceiling ~0.85, off-white walls ~0.75, light cream carpet ~0.5
 // -> rho ~0.72, rho / (1 - rho) ~2.6. (The first version used a single 55% bounce, 0.00358 per lm: several times too
 // dark for white rooms, which made lit bedrooms read far darker than they will be.)
-// zones lit in the shader: the three bedrooms, and the hall (entry + hall + hall extension, open to each other)
-const BED_ROOMS = ['Front bedroom', 'Bedroom 2', 'Hall', 'Bedroom 3'], CD = 1.7 / 261, FILL_LM = CD * 2.6;
+// zones lit in the shader: the three bedrooms, the hall (entry + hall + hall extension, open to each other), and the
+// kitchen and lounge (their designed lighting, 2026-10-21)
+const BED_ROOMS = ['Front bedroom', 'Bedroom 2', 'Hall', 'Bedroom 3', 'Kitchen / dining', 'Lounge / living'], CD = 1.7 / 261, FILL_LM = CD * 2.6;
 const zoneRects = () => { const R = n => spec.rooms.find(r => r.name === n), ha = R('Hall'), ext = R('Hall extension');
-  return [R('Front bedroom'), R('Bedroom 2'), R('Entry'), { x0: ha.x0, x1: ha.x1, y0: ha.y0, y1: ext.y1, ceil: ha.ceil }, R('Bedroom 3')]; };
-const ZONE_OF_RECT = [0, 1, 2, 2, 3];
+  return [R('Front bedroom'), R('Bedroom 2'), R('Entry'), { x0: ha.x0, x1: ha.x1, y0: ha.y0, y1: ext.y1, ceil: ha.ceil }, R('Bedroom 3'), R('Kitchen / dining'), R('Lounge / living'),
+    // the kitchen-to-lounge opening through the 230 wall: its jambs, head and floor strip face neither room and went
+    // black once the kitchen's downlight grid (which lit them) came out; they count with the kitchen
+    (() => { const k = R('Kitchen / dining'), l = R('Lounge / living'); return { x0: Math.max(k.x0, l.x0), x1: Math.min(k.x1, l.x1), y0: k.y1, y1: l.y0, ceil: k.ceil }; })()]; };
+const ZONE_OF_RECT = [0, 1, 2, 2, 3, 4, 5, 4];
 // every page load starts with the pendant, reading spots and robe-top strip on at full (scenes and switches are for
 // the visit only, not remembered)
 const bedState = { pendant: true, angled: true, reading: true, corner: true, cove: true, wallwash: true, sheer: true, night: true, dim: 100, dimSec: 100 };   // dim: ceiling circuit, dimSec: secondary
@@ -346,9 +357,13 @@ function skyMaterial(src) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, { skyField: SKYF.field, skyXf: SKYF.xf, skyBounce: SKYF.bounce, lampOn: SKYF.lamp, lampCol: SKYF.lampCol }, BEDU);
     sh.vertexShader = 'varying vec3 vSkyP; varying vec3 vSkyN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
-      { vec4 sp = modelMatrix * vec4( transformed, 1.0 ); vSkyN = normalize( mat3( modelMatrix ) * ${skyNormal} ); vSkyP = sp.xyz + vSkyN * 0.15; }`);
+      { vec4 sp = vec4( transformed, 1.0 ); vec3 sn = ${skyNormal};
+      #ifdef USE_INSTANCING
+        sp = instanceMatrix * sp; sn = mat3( instanceMatrix ) * sn;
+      #endif
+      sp = modelMatrix * sp; vSkyN = normalize( mat3( modelMatrix ) * sn ); vSkyP = sp.xyz + vSkyN * 0.15; }   // instanced pieces (the tree's leaves) at their own places`);
     sh.fragmentShader = 'uniform sampler2D skyField; uniform vec4 skyXf; uniform float skyBounce; uniform float lampOn; uniform vec3 lampCol; varying vec3 vSkyP; varying vec3 vSkyN;\n' +
-      'uniform float bedOn; uniform vec4 bedRm[5]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[14]; uniform vec4 bedPtK[14]; uniform vec4 bedLn[10]; uniform vec4 bedLnA[10]; uniform float bedLnM[10]; uniform vec4 bedFill; uniform vec3 bedCol; uniform vec3 bedNightCol; uniform vec4 bedSpill; uniform vec4 bedOccA[4]; uniform vec4 bedOccB[4];\n' +
+      'uniform float bedOn; uniform vec4 bedRm[8]; uniform float bedZone[8]; uniform vec4 bedBay; uniform vec2 bedBayY; uniform vec4 bedPt[22]; uniform vec4 bedPtK[22]; uniform vec4 bedLn[14]; uniform vec4 bedLnA[14]; uniform float bedLnM[14]; uniform float bedFill[6]; uniform vec3 bedCol; uniform vec3 bedNightCol; uniform vec4 bedSpill; uniform vec4 bedOccA[4]; uniform vec4 bedOccB[4];\n' +
       sh.fragmentShader.replace('#include <aomap_fragment>', `{
         // three.js world (X, Z) is lot (-x, y); surfaces sample 150 mm in front of themselves, in the room they face
         // a double-sided sheet seen from its back (the lounge ceiling, drawn with its normal up) samples on the side
@@ -378,8 +393,8 @@ function skyMaterial(src) {
           // the wall (no room in front) fall back to the nearest room around the surface itself
           vec3 Q = vec3( -skyP.x, skyP.z, skyP.y );
           int room = -1;
-          for ( int r = 0; r < 5; r ++ ) { vec4 b = bedRm[ r ]; if ( Q.x >= b.x && Q.x <= b.z && Q.y >= b.y && Q.y <= b.w ) room = r == 3 ? 2 : r == 4 ? 3 : r; }
-          if ( room < 0 ) for ( int r = 0; r < 5; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.08 && P.x <= b.z + 0.08 && P.y >= b.y - 0.08 && P.y <= b.w + 0.08 ) room = r == 3 ? 2 : r == 4 ? 3 : r; }   // rect 3 (hall) is zone 2 with the entry; rect 4 is bedroom 3
+          for ( int r = 0; r < 8; r ++ ) { vec4 b = bedRm[ r ]; if ( Q.x >= b.x && Q.x <= b.z && Q.y >= b.y && Q.y <= b.w ) room = int( bedZone[ r ] + 0.5 ); }
+          if ( room < 0 ) for ( int r = 0; r < 8; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.08 && P.x <= b.z + 0.08 && P.y >= b.y - 0.08 && P.y <= b.w + 0.08 ) room = int( bedZone[ r ] + 0.5 ); }   // rect 3 (hall) is zone 2 with the entry; rect 4 is bedroom 3
           if ( room < 0 && P.y >= bedBayY.x - 0.02 && P.y < bedRm[ 0 ].y ) {        // the front bedroom's bay
             float t = clamp( ( bedBayY.y - P.y ) / ( bedBayY.y - bedBayY.x ), 0.0, 1.0 );
             if ( P.x >= mix( bedBay.x, bedBay.z, t ) - 0.02 && P.x <= mix( bedBay.y, bedBay.w, t ) + 0.02 ) room = 0;
@@ -389,8 +404,9 @@ function skyMaterial(src) {
           float wSpill = 1.0;
           if ( room < 0 && Q.x >= bedSpill.x && Q.x <= bedSpill.z && Q.y >= bedSpill.y && Q.y <= bedSpill.w ) { room = 2; wSpill = 1.0 - ( Q.y - bedSpill.y ) / ( bedSpill.w - bedSpill.y ); }
           if ( room >= 0 ) {
-            vec3 E = ( room == 0 ? bedFill.x : room == 1 ? bedFill.y : room == 2 ? bedFill.z : bedFill.w ) * ( 0.75 + 0.25 * N.z ) * bedCol;
-            for ( int i = 0; i < 14; i ++ ) {
+            float fl = 0.0; for ( int z = 0; z < 6; z ++ ) if ( z == room ) fl = bedFill[ z ];
+            vec3 E = fl * ( 0.75 + 0.25 * N.z ) * bedCol;
+            for ( int i = 0; i < 22; i ++ ) {
               if ( int( bedPtK[ i ].x + 0.5 ) != room || bedPt[ i ].w <= 0.0 ) continue;
               vec3 d = bedPt[ i ].xyz - P; float d2 = max( dot( d, d ), 0.0025 ); vec3 l = d * inversesqrt( d2 );
               float I = bedPt[ i ].w;
@@ -401,14 +417,14 @@ function skyMaterial(src) {
               else if ( bedPtK[ i ].y > 0.5 ) I *= smoothstep( 0.906, 0.978, ca ); // reading spot: 24 degree beam, edge to 50
               E += I * max( dot( N, l ), 0.0 ) / d2 * bedCol;
             }
-            for ( int i = 0; i < 10; i ++ ) {
+            for ( int i = 0; i < 14; i ++ ) {
               vec4 ln = bedLn[ i ], la = bedLnA[ i ];
               if ( int( la.w + 0.5 ) != room || la.z <= 0.0 ) continue;
               // mode 0 uplight: nothing below its edge; 1 floor strip: the floor only; +10: the strip runs along lot y (the
               // hall rails), so swap x and y and the same along-x maths applies
               float mm = bedLnM[ i ]; bool alongY = mm > 9.5; int mode = int( mod( mm, 10.0 ) + 0.5 );
               vec3 Pl = alongY ? P.yxz : P, Nl = alongY ? N.yxz : N;
-              if ( mode == 0 && Pl.z < ln.w - 0.03 || mode == 1 && Pl.z > 0.15 ) continue;
+              if ( mode == 0 && Pl.z < ln.w - 0.03 || mode == 1 && Pl.z > 0.15 || mode == 2 && Pl.z > ln.w + 0.03 ) continue;   // 2: down only (under-cupboard, pelmet)
               // continuous strip along lot x, Lambertian about its axis (no x part): integrated in closed form along
               // the strip, so it reads as an even line of light, not a row of hot spots
               vec3 ax = vec3( 0.0, la.x, la.y ), v = vec3( 0.0, ln.z - Pl.y, ln.w - Pl.z );
@@ -656,7 +672,7 @@ function applyLightMode() {
 // level of a bedroom layer, 0..1: the Lights switch, the layer's own switch, and the room dimmer, which works the
 // pendant and the robe-top strip (the reading spots and the night light are on their own switches, at full)
 const bedLevel = layer => {
-  if (layer.startsWith('hall')) return !document.getElementById('sunOnly')?.checked && lightsOn() ? 1 : 0;   // hall: on the house Lights
+  if (layer.startsWith('hall') || /^[kl][A-Z]/.test(layer)) return !document.getElementById('sunOnly')?.checked && lightsOn() ? 1 : 0;   // hall, kitchen (k...), lounge (l...): on the house Lights
   if (document.getElementById('sunOnly')?.checked || !bedState[layer]) return 0;
   if (layer === 'pendant' || layer === 'angled' ? !lightsOn() : SECONDARY.includes(layer) && !secondaryOn) return 0;
   // each circuit on its own dimmer (trailing-edge, LED-rated): ceiling = downlights or pendant; secondary = robe strip,
@@ -680,7 +696,8 @@ function updateBedLights() {
   for (const m of bedMats) m.emissiveIntensity = (m.userData.glowK ?? (m.userData.bedLamp === 'night' ? 1 : 3)) * bedLevel(m.userData.bedLamp);   // a woven shade glows less, so its weave reads
   if (!on) return;
   const rects = zoneRects(), b = spec.house.bay;
-  rects.forEach((r, i) => BEDU.bedRm.value[i].set(r.x0, r.y0, r.x1, r.y1));
+  rects.forEach((r, i) => { BEDU.bedRm.value[i].set(r.x0, r.y0, r.x1, r.y1); BEDU.bedZone.value[i] = ZONE_OF_RECT[i]; });
+  if (BLs.points.length > NPT || BLs.lines.length > NLN) console.warn('bed lights: more sources than slots', BLs.points.length, BLs.lines.length);
   BEDU.bedBay.value.set(b.x0, b.x1, b.front_x0, b.front_x1); BEDU.bedBayY.value.set(spec.house.y_front_outer - b.projection, spec.house.y_front_outer);
   BEDU.bedPt.value.forEach((v, i) => {
     const p = BLs.points[i], k = BEDU.bedPtK.value[i];
@@ -698,7 +715,7 @@ function updateBedLights() {
   });
   const area = r => { const w = r.x1 - r.x0, d = r.y1 - r.y0, h = r.ceil; return 2 * (w * d + w * h + d * h); };
   const fill = z => bedLumens(BED_ROOMS[z]) * FILL_LM / rects.reduce((a, r, i) => a + (ZONE_OF_RECT[i] === z ? area(r) : 0), 0);
-  BEDU.bedFill.value.set(fill(0), fill(1), fill(2), fill(3));
+  for (let z = 0; z < NZONE; z++) BEDU.bedFill.value[z] = fill(z);
   // the hall's light spilling into the kitchen: the 1.5 m of kitchen beyond the hall's full-width opening
   const ext = spec.rooms.find(r => r.name === 'Hall extension');
   if (spec.renovation.hall_lights === 'art' && ext) BEDU.bedSpill.value.set(ext.x0, ext.y1, ext.x1, ext.y1 + 1.5); else BEDU.bedSpill.value.set(0, 0, 0, 0);
@@ -878,6 +895,7 @@ function rebuild() {
   house.clear();
   for (const g of old) g.traverse(o => {
     if (!o.geometry?.userData.keep) o.geometry?.dispose();
+    if (o.isReflector) o.getRenderTarget().dispose();                     // the entry mirror's reflection target
     for (const m of [o.material].flat()) if (m) mats.add(m);
   });
   for (const m of mats) { if (!m.map?.userData.keep) m.map?.dispose(); m.dispose(); }
@@ -1159,7 +1177,9 @@ const PICKS = {
   blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
   pend: [() => reno.pendant || 'augustOval', v => { reno.pendant = v; }],
   hlight: [() => reno.hallLights === 'downlights' ? 'downlights' : 'art', v => { reno.hallLights = v; }],
-  hpend: [() => reno.hallPendant || 'woven', v => { reno.hallPendant = v; }],
+  hpend: [() => reno.hallPendant || 'pebble', v => { reno.hallPendant = v; }],
+  art: [() => reno.art || 'v2', v => { reno.art = v; }],
+  kllight: [() => reno.klLights || 'designed', v => { reno.klLights = v; }],
   hall: [() => hallKey(reno.hallDoorway), v => { reno.hallDoorway = { open: false, classic: true, simple: 'simple', door: 'door', arch: 'arch' }[v]; }],
 };
 document.querySelectorAll('select[data-pick]').forEach(s => s.addEventListener('change', () => {
@@ -1195,7 +1215,7 @@ if (!['single', 'none'].includes(reno.kitchenDoor)) reno.kitchenDoor = 'double';
 $('renoIsland').addEventListener('change', () => { reno.island = $('renoIsland').checked; saveReno(); renoSummary(); rebuild(); });
 $('renoReset').addEventListener('click', () => {
   for (const [key] of RENO) setReno(key, RENO_DEFAULT[key] * 100, null, false);
-  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current', bedLights: RENO_DEFAULT.bedLights, pendant: RENO_DEFAULT.pendant, hallLights: RENO_DEFAULT.hallLights });
+  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current', bedLights: RENO_DEFAULT.bedLights, pendant: RENO_DEFAULT.pendant, hallLights: RENO_DEFAULT.hallLights, art: RENO_DEFAULT.art });
   $('renoSkylight').checked = reno.skylight; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise; reno.glassWall = RENO_DEFAULT.glassWall; $('renoGlassWall').checked = reno.glassWall;
   $('renoIsland').checked = reno.island;
   saveReno(); renoSummary(); rebuild();
@@ -1237,7 +1257,7 @@ document.querySelectorAll('[data-bscene]').forEach(b => b.addEventListener('clic
 }));
 // stand in a bedroom (Walk): front bedroom from the bay corner by the hall wall, facing the bed and the robe; bedroom 2
 // in the window corner beside the bed, facing the robe across the room (the view from the bed, standing); frontBed: beside the front bed's head, facing the wall the bed faces
-const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 } };
+const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 }, kitchenEnd: { x: 3.9, y: 16.0, tx: 0.45, ty: 19.0, pitch: 0.12 } };
 document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click', () => {
   const v = BED_VIEWS[b.dataset.bview];
   if (!walk.on) setWalk(true); else window.closeSheets?.();
@@ -1300,7 +1320,7 @@ function followRoom() {
   else here.hidden = true;
 }
 
-window.__app = { get skyAt() { return skyAt; }, get ceilOver() { return ceilOver; }, nb, doors, toggleDoor, poseDoor, animateDoors, scene, ctx, get G() { return G; }, rebuild, reno, renderer, sun, camera, THREE, walk, stepWalk, colliders, blocked, controls,
+window.__app = { get spec() { return spec; }, get skyAt() { return skyAt; }, get ceilOver() { return ceilOver; }, nb, doors, toggleDoor, poseDoor, animateDoors, scene, ctx, get G() { return G; }, rebuild, reno, renderer, sun, camera, THREE, walk, stepWalk, colliders, blocked, controls,
   // debug: place the camera in lot coordinates and render one frame
   view(p, t) { camera.position.copy(L(...p)); controls.target.copy(L(...t)); controls.update(); renderer.render(scene, camera); } };
 const doorClock = new THREE.Clock();

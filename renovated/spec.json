@@ -1059,10 +1059,11 @@
    "tv": {
     "wall_x": 2.25,
     "y": 22.3,
-    "w": 1.56,
-    "h": 0.9,
-    "bottom": 0.75,
-    "_note": "70-inch TV (about 1550 x 872 screen plus a slim bezel) wall-mounted over the cabinet, east wall of the lounge"
+    "w": 1.675,
+    "h": 0.96,
+    "bottom": 0.72,
+    "_mount_note": "screen centre ~1.2 m: the low sofa (420 seat) puts seated eyes at ~1.0-1.05; eyes about a third up the screen (CEDIA, after SMPTE), ~11 degrees to the top at ~3.1 m (limit 15). Was 1.02 bottom / 1.5 centre on the walnut wall, too high. Bottom 160 over the stone top (560), soundbar between",
+    "_note": "75-inch TV (16:9: 1660 x 934 screen, about 1675 x 960 with its slim bezel, as a Samsung or LG 75) wall-mounted over the cabinet, east wall of the lounge"
    },
    "tv_cabinet": {
     "x0": 2.25,
@@ -1107,11 +1108,11 @@
     "_note": "round weathered-oak coffee table, 1000 dia x 420 high: thick top, four splayed square legs with an X stretcher. In front of the 2-seater, in line with the TV, about 0.5 clear of the sofa on each side"
    },
    "rug": {
-    "x0": 3.5,
-    "x1": 5.9,
-    "y0": 20.6,
-    "y1": 23.8,
-    "_note": "2400 x 3200 low-pile rug in oatmeal and taupe with a fine streaky weave and a bound edge; pushed back toward the windows, running almost to the west wall under the sofa; the coffee table on it"
+    "x0": 3.38,
+    "x1": 5.88,
+    "y0": 20.3,
+    "y1": 24.3,
+    "_note": "2500 x 4000 low-pile rug (custom size) in oatmeal and taupe with a fine streaky weave and a bound edge. All legs on: the whole sofa (footprint x 3.68-5.82, y 20.50-24.11) and the coffee table sit on it, 200-300 past the sofa's open ends (rule: at least 150-200 beyond the sofa each side, the full chaise on), ~60-190 past its backs (glass wall, sliders). Leaves 650 of floor in front of the walnut unit and ~150-470 to the walls. A stock 3000 x 4000 would come within 150 of the walnut unit; 2400 x 3400 stops short of the chaise and the curve. Low pile (12 mm): clears the side door's swing at its north edge"
    }
   },
   "tv_units": {
