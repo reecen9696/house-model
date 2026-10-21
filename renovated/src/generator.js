@@ -2002,7 +2002,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2220,6 +2220,9 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.art = ['v2', 'hall', 'none'].includes(art) ? art : 'v2';
   // styling: plants, branches and surface objects (Reno > Hall > Styling): 'styled' (DECOR-STYLING.md Part D) or 'earlier'
   spec.renovation.decor = decor === 'earlier' ? 'earlier' : 'styled';
+  // back yard (Reno > Outside > Back yard): 'deck' a timber deck level with the sliders, stepping down to the lawn and the
+  // side path (client 2026-10-21), or 'tiles' the earlier tessellated slab with steps up to the sliders
+  spec.renovation.yard = yard === 'tiles' ? 'tiles' : 'deck';
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
   spec.renovation.hall_pendant = ['pebble', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'pebble';
@@ -2784,7 +2787,8 @@ export function buildHouse(spec) {
       const zc = kd.floor + kd.ceil, KG = kitchenGrid(spec), bx = KG.cols[0];
       for (const by of KG.rows.slice(1)) {
         const dl = dlFitting(); dl.position.copy(L(bx, by, zc - 0.012)); int_.add(dl);
-        BL.points.push({ room: 'Kitchen / dining', layer: 'kBuffet', kind: 'spot', x: bx, y: by, z: zc - 0.03, lm: 130 });
+        // the south one tilts a touch north (~10 degrees): its pool still lands on the buffet, its edge clear of the painting
+        BL.points.push({ room: 'Kitchen / dining', layer: 'kBuffet', kind: 'pin', x: bx, y: by, z: zc - 0.03, ax: 0, ay: by > ks - 0.6 ? -0.17 : 0, lm: 130 });   // 15 degree: keeps the beams off the walls and the painting (24 degree threw two arcs)
       }
     }
     // 2. mid-hall: one 700 x 900 original on the party wall, centred on the mid-hall pendant, which lights it; 35 deep
@@ -3038,7 +3042,7 @@ export function buildHouse(spec) {
       // 'walnut' is the front finish: walnut veneer, or white matt for the white kitchen
       const walnut = K.gl ? (M.ghGloss || (M.ghGloss = new THREE.MeshStandardMaterial({ color: 0xf7f7f4, roughness: 0.1, metalness: 0.05 })))   // gloss white
         : WH ? (M.stdWhite || (M.stdWhite = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))
-        : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: 0xffffff })));
+        : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: new THREE.Color(1.3, 1.3, 1.3) /* lifted to LRV ~15: lacquered American walnut is 12-20, the texture alone ~11 */ })));
       const channel = K.oak ? (M.oakCh || (M.oakCh = new THREE.MeshStandardMaterial({ color: 0xb9b6b0, roughness: 0.5, metalness: 0.2 })))   // the channel's satin aluminium lining, in shadow
         : WH ? (M.stdWhiteCh || (M.stdWhiteCh = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.6 })))   // the finger channel, white like the fronts
         : (M.wnChannel || (M.wnChannel = new THREE.MeshStandardMaterial({ color: 0x21150d, roughness: 0.85 })));
@@ -3341,7 +3345,7 @@ export function buildHouse(spec) {
       // cream handleless tall units, quartzite top 40 thick and the same slab up the wall to the wall cabinets
       const WN = K.walnut;
       const walnut = K.cream ? (M.crFront || (M.crFront = new THREE.MeshStandardMaterial({ color: 0xe9e3d7, roughness: 0.72 })))   // cream: warm off-white, matt
-        : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: 0xffffff })));
+        : (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: new THREE.Color(1.3, 1.3, 1.3) /* lifted to LRV ~15: lacquered American walnut is 12-20, the texture alone ~11 */ })));
       const cream = M.wnCream || (M.wnCream = new THREE.MeshStandardMaterial({ color: 0xece8df, roughness: 0.62 }));
       const channel = K.cream ? (M.crChannel || (M.crChannel = new THREE.MeshStandardMaterial({ color: 0xb9b1a3, roughness: 0.85 })))   // the channel in the front's colour, in shadow
         : (M.wnChannel || (M.wnChannel = new THREE.MeshStandardMaterial({ color: 0x21150d, roughness: 0.85 })));
@@ -5077,10 +5081,11 @@ export function buildHouse(spec) {
     // the back-yard concrete is tiled like the front porch: tessellated octagon field everywhere, and round the main
     // yard (behind the wing, inside the beds) the porch's border of terracotta, a charcoal line, the triangle band and
     // another charcoal line
-    worldUV(box(G.site, 2.55, rs.x1, 25.0, rs.y1, gz - 0.06, rs.z, M.tess), TESS_TILE);
+    const deckYard = spec.renovation.yard === 'deck';
+    worldUV(box(G.site, 2.55, rs.x1, 25.0, rs.y1, gz - 0.06, rs.z, deckYard ? M.concrete : M.tess), TESS_TILE);   // under the deck: the old slab
     // down the side of the house (west of the lounge, up to the deck) stays plain concrete like the side path
     for (const [x0, x1, y0, y1] of [[6.33, rs.x1, 19.54, 25.0], [rs.x0, rs.x1, rs.y0, 19.54]]) box(G.site, x0, x1, y0, y1, gz - 0.06, rs.z, M.concrete);
-    {
+    if (!deckYard) {
       const fx0 = 2.55, fx1 = S.west_fence.x - 0.05, fy0 = 25.0, fy1 = S.rear_bed_south.y0, zt = rs.z + 0.003;   // border runs right out to the side fence
       const bands = [[0, 0.075, M.tessRed], [0.075, 0.085, M.tessBlack], [0.085, 0.145, M.tessBand], [0.145, 0.155, M.tessBlack]];
       for (const [b0, b1, m] of bands) {
@@ -5109,7 +5114,33 @@ export function buildHouse(spec) {
         if (nosing) box(G.site, x0, x1, dir > 0 ? yb : yb - 0.012, dir > 0 ? yb + 0.012 : yb, zLow, zt, nosing);
       }
     };
-    { const [sx0, sx1] = spec.renovation.lounge.door_pairs[0]; stepsUp(Math.min(sx0, 2.55), Math.max(sx1 + 0.1, 6.0), 25.0, 1, rs.z, M.tess, M.tessRed); }
+    if (!deckYard) { const [sx0, sx1] = spec.renovation.lounge.door_pairs[0]; stepsUp(Math.min(sx0, 2.55), Math.max(sx1 + 0.1, 6.0), 25.0, 1, rs.z, M.tess, M.tessRed); }
+    else {
+      // Raised deck (client 2026-10-21): level with the sliders' threshold, from the back of the lounge to the rear bed
+      // (notched round the lemon tree's bump-out), boards running across the yard parallel to the house (140 + 6 gap) on
+      // a dark subframe, fascia boards on the open edges. Two equal 190 risers down: a full-length step along the east
+      // edge onto the lawn behind the bathroom wing, and a step at the north-west corner down onto the side path.
+      const dz = loungeFloor, r = (dz - rs.z) / 2, deckMat = M.deck || (M.deck = new THREE.MeshStandardMaterial({ color: 0x8a5d3b, roughness: 0.7 }));
+      const dx0 = 2.85, dx1 = S.west_fence.x - 0.035, tb = S.tree.bed, by = S.rear_bed_south.y0 - 0.005, board = 0.14, gap = 0.006;
+      const deckRect = (x0, x1, y0, y1, zTop, zBase) => {                                     // subframe, then boards along x
+        box(G.site, x0 + 0.02, x1 - 0.02, y0 + 0.02, y1 - 0.02, zBase, zTop - 0.025, M.darkTimber);
+        for (let y = y0; y < y1 - 0.02; y += board + gap) box(G.site, x0, x1, y, Math.min(y + board, y1), zTop - 0.025, zTop, deckMat);
+      };
+      deckRect(dx0, tb.x0, 25.0, by, dz, rs.z);                                                 // the main deck, to the rear bed
+      deckRect(tb.x0, dx1, 25.0, tb.y0 - 0.005, dz, rs.z);                                      // west of the bump-out, to its front
+      box(G.site, tb.x0 - 0.02, tb.x0, tb.y0 - 0.005, by, rs.z, dz, deckMat);                   // fascia down the notch
+      box(G.site, tb.x0, dx1, tb.y0 - 0.025, tb.y0 - 0.005, rs.z, dz, deckMat);                 // fascia along the bump-out front
+      box(G.site, dx0, tb.x0, by - 0.02, by, rs.z, dz, deckMat);                                // fascia along the rear bed
+      // east step onto the lawn: a 300 tread at mid height the whole depth of the deck, fascia on its face
+      deckRect(2.55, dx0, 25.0, by, dz - r, rs.z);
+      box(G.site, dx0 - 0.02, dx0, 25.0, by, dz - r, dz, deckMat);                              // riser face of the deck above it
+      box(G.site, 2.55, 2.57, 25.0, by, rs.z, dz - r, deckMat);                                 // riser face of the tread
+      // north-west step onto the side path (concrete, 6.33 to the fence, ending at y 25.0): a tread on the path's end
+      const px0 = spec.renovation.lounge.wall_outer_x;                                         // from the lounge's west wall to the fence
+      box(G.site, px0, dx1, 24.7, 25.0, rs.z, dz - r, deckMat);
+      for (let x = px0; x < dx1 - 0.02; x += board + gap) box(G.site, x, Math.min(x + board, dx1), 24.7, 25.0, dz - r - 0.002, dz - r + 0.001, deckMat);
+      box(G.site, px0, dx1, 25.0, 25.02, dz - r, dz, deckMat);                                 // riser face of the deck above it
+    }
     stepsUp(spec.renovation.lounge.side_door[0] - 0.05, spec.renovation.lounge.side_door[1] + 0.05, 19.31, -1, S.west_path.z, M.concrete);
     // Concrete continues around the extension into the backyard along the fence.
     // the rear bed bulges out round the lemon tree (the real brick edge curves out there), one bed with it
@@ -5273,7 +5304,7 @@ export function buildHouse(spec) {
   // three-seat sofa and two armchairs with open frames (tapered legs, a base rail, a flat 120 mm arm band that wraps
   // round the back) and off-white cushions; a small slatted teak coffee table between them
   {
-    const ol = spec.site_items.outdoor_lounge, z = spec.site_items.rear_slab.z;
+    const ol = spec.site_items.outdoor_lounge, z = spec.renovation.yard === 'deck' ? loungeFloor : spec.site_items.rear_slab.z;   // on the deck when there is one
     const teak = M.teak || (M.teak = new THREE.MeshStandardMaterial({ color: 0xc19a6c, roughness: 0.65 }));
     const fab = M.outdoorFab || (M.outdoorFab = new THREE.MeshStandardMaterial({ color: 0xebe8e1, roughness: 0.95 }));
     // everything below is built round its own centre in lot axes (front to -y) and then placed and turned
