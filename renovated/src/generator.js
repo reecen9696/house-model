@@ -4968,7 +4968,9 @@ export function buildHouse(spec) {
       if (sk) BL.points.push({ room: LR, layer: 'lSky', kind: 'down', x: (sk.x0 + sk.x1) / 2, y: (sk.y0 + sk.y1) / 2, z: lz - 0.01, lm: 600 });
       const C = spec.renovation.lounge_furniture?.couch;
       // the back corner behind the sofa's curve: a slender indoor tree (client reference), in place of the floor lamp
-      if (C) slenderTree(G.furniture, C.wall_x - 0.36, C.south_y - 0.12, 0);
+      // pushed right into the south-west corner (client 2026-10-21): the 460 pot just in front of the gathered sheers on
+      // both walls (west sheer ~90 off the wall, slider sheer ~70 off the glass), behind the sofa's curve
+      if (C) slenderTree(G.furniture, C.wall_x - 0.36, spec.renovation.lounge.south_y - 0.37, 0);
       // and instead of a lamp, a pair of opal wall lights flanking the TV on the east wall (the sofa backs onto glass,
       // so it has no wall for a reading light; a floor lamp elsewhere stood in a walkway or a door's swing). They light
       // the TV wall softly (easier on the eyes for evening viewing) and give the room its eye-level glow. Centred on the
@@ -5236,6 +5238,20 @@ export function buildHouse(spec) {
     const dv = S.divider_fence;
     pickets(dv.x, dv.y0 + 0.05, dv.x, dv.y1, dv.h);
     palingFence(G.site, S.west_fence.x - 0.03, S.west_fence.x + 0.03, S.west_fence.y0, S.west_fence.y1, gz, gz + S.west_fence.h, -1, '-x');   // our side painted white
+    // feature screen on our side of the side fence, opposite the lounge's glass wall only (client reference 2026-10-21):
+    // fine vertical composite battens in a warm brown over a dark backing, so the gaps read as shadow lines; the fence's
+    // height. ~32 mm battens at 42 mm pitch, 30 mm proud of a 15 mm backing board, on the fence posts
+    {
+      const LgW = (spec.renovation.lounge?.windows || []).filter(w => w.floorGlass);
+      if (LgW.length) {
+        const y0 = Math.min(...LgW.map(w => w.y0)), y1 = Math.max(...LgW.map(w => w.y1)), fx = S.west_fence.x - 0.03, z0 = gz, z1 = gz + S.west_fence.h;
+        const back = M.screenBack || (M.screenBack = new THREE.MeshStandardMaterial({ color: 0x241a13, roughness: 0.9 }));
+        const slatM = [0x6e4e3a, 0x684934, 0x72523d].map((c, i) => M['screenSlat' + i] || (M['screenSlat' + i] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })));
+        box(G.site, fx - 0.015, fx, y0, y1, z0, z1, back);
+        const n = Math.round((y1 - y0) / 0.042), pitch = (y1 - y0) / n;
+        for (let i = 0; i < n; i++) box(G.site, fx - 0.045, fx - 0.015, y0 + i * pitch + 0.005, y0 + (i + 1) * pitch - 0.005, z0, z1, slatM[i % 3]);
+      }
+    }
     palingFence(G.site, S.east_fence.x - 0.03, S.east_fence.x + 0.03, S.east_fence.y0, S.east_fence.y1, gz, gz + S.east_fence.h, 1, '+x');
     palingFence(G.site, 0, lot.width, S.rear_fence.y - 0.03, S.rear_fence.y + 0.03, gz, gz + S.rear_fence.lattice_from, -1, '-y');
     for (let x = 0.05; x < lot.width; x += 0.1) box(G.site, x, x + 0.02, S.rear_fence.y - 0.015, S.rear_fence.y + 0.015, gz + S.rear_fence.lattice_from, gz + S.rear_fence.h, M.fence);   // lattice top
