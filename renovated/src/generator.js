@@ -171,7 +171,7 @@ function palingFence(group, x0, x1, y0, y1, z0, z1, rails = 0, paint = null) {
     const mats = Array(6).fill(M.paling); mats[{ '-x': 0, '+x': 1, '+y': 4, '-y': 5 }[paint]] = M.palingWhite;   // three faces: +X -X +Y -Y +Z -Z; lot x = -X
     panel.material = mats;
   }
-  const railMat = paint ? (M.railWhite || (M.railWhite = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.85 }))) : M.railTimber;
+  const railMat = paint ? (M.railWhite || (M.railWhite = (() => { const m = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.85, emissive: 0xffd9a8, emissiveIntensity: 0 }); m.userData.bedLamp = 'lGarden'; m.userData.glowK = 0.12; return m; })())) : M.railTimber;   // rails catch a little of the garden light at night
   if (!rails) return panel;
   const h = z1 - z0, a0 = along === 'x' ? Math.min(x0, x1) : Math.min(y0, y1), a1 = along === 'x' ? Math.max(x0, x1) : Math.max(y0, y1);
   const face = along === 'x' ? (rails > 0 ? Math.max(y0, y1) : Math.min(y0, y1)) : (rails > 0 ? Math.max(x0, x1) : Math.min(x0, x1));
@@ -1786,6 +1786,20 @@ function jasmineLattice(group, faceX, y0, y1, zg, zb, zt, seed = 5) {
   leafI.castShadow = true; leafI.receiveShadow = true; group.add(leafI);
   if (flowers.length) { const fI = new THREE.InstancedMesh(STAR, flowerM, flowers.length); flowers.forEach((m, i) => fI.setMatrixAt(i, m)); group.add(fI); }
 }
+// Roller blind face-fixed on the wall above an opening (client 2026-10-21): a white cassette (h tall, 80 deep) on the wall
+// just above the head, white blockout fabric 100 wider than the opening each side, shown lowered a little. along: 'x' or
+// 'y' (the wall runs along lot x or y), face: the wall's room face, inward: +1/-1 toward the room
+function rollerBlind(group, along, face, inward, a0, a1, zBot, { h = 0.08, drop = 0.3 } = {}) {
+  const cass = M.blindCass || (M.blindCass = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.45 }));
+  const fabric = M.blindFab || (M.blindFab = new THREE.MeshStandardMaterial({ color: 0xf7f7f5, roughness: 0.9 }));
+  cass.userData.skyRoomSide = fabric.userData.skyRoomSide = true;
+  const b = (d0, d1, u0, u1, z0, z1, m) => { const p0 = face + inward * d0, p1 = face + inward * d1, lo = Math.min(p0, p1), hi = Math.max(p0, p1);
+    along === 'x' ? box(group, u0, u1, lo, hi, z0, z1, m) : box(group, lo, hi, u0, u1, z0, z1, m); };
+  const u0 = a0 - 0.1, u1 = a1 + 0.1;
+  b(0.002, 0.085, u0, u1, zBot, zBot + h, cass);
+  b(0.054, 0.06, u0 + 0.01, u1 - 0.01, zBot - drop, zBot, fabric);
+  b(0.046, 0.068, u0 + 0.01, u1 - 0.01, zBot - drop - 0.015, zBot - drop, cass);           // bottom bar
+}
 // The kitchen's ceiling grid: columns at the buffet's front edge, the sink bench's front edge and midway between; rows
 // 0.8 apart centred on the table (the sink and table pairs on the first two, the buffet pair a row on, over the buffet)
 function kitchenGrid(spec) {
@@ -2079,7 +2093,7 @@ function fenceUplight(g, axis, face, dir, c, z, { h = 1.9, w = 1.7, recessed = f
     body.position.copy(L(fx, fy, z + 0.07)); body.rotation.set(axis === 'y' ? dir * 0.25 : 0, 0, axis === 'x' ? dir * 0.25 : 0); g.add(body);
     const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.004, 14), lens); ln.position.copy(L(fx, fy, z + 0.127)); g.add(ln);
   }
-  wallFace(g, axis, face + dir * 0.1, dir, c, z + h / 2, w, h, glowMat('up', 0.9));   // in front of the rails and posts, so they catch it too
+  wallFace(g, axis, face + dir * 0.004, dir, c, z + h / 2, w, h, glowMat('up', 0.9));   // flat on the palings, where the light lands
 }
 // a horizontal glow pool on a surface at height z, centred (x, y), w x d
 function glowPool(g, x, y, z, w, d, k = 0.5) {
@@ -2839,8 +2853,12 @@ export function buildHouse(spec) {
     const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2'), b3 = spec.rooms.find(r => r.name === 'Bedroom 3');
     split(fr.x1, (fr.y0 + F.robe_front.y0) / 2, -1, 0, KW35, 2.65, 'Front bedroom');
     const w1 = Win.W1_bed2; split(b2.x1, (w1.y1 + 0.07 + F.robe_bed2.y0) / 2, -1, 0, KW25, 2.65, 'Bedroom 2');
-    if (b3) { const w2 = Win.W2_living; split(b3.x1, (w2.y0 + w2.y1) / 2, -1, 0, KW25, w2.head + 0.07 + 0.05 + KW25[0], 'Bedroom 3'); }
-    { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen; split(kd.x1, (w3.y0 + w3.y1) / 2, -1, 0, KW50, kd.floor + kd.ceil - 0.15); }
+    if (b3) { const w2 = Win.W2_living; split(b3.x1, (w2.y0 + w2.y1) / 2, -1, 0, KW25, w2.head + 0.075 + 0.08 + 0.05 + KW25[0], 'Bedroom 3'); }   // clear of the roller blind's cassette over the architrave
+    { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen;
+      // a slim 50 mm roller blind cassette sits on the window's architrave (client); the head unit sits 10 above it, its top
+      // into the cornice line (the cornice is notched behind it)
+      rollerBlind(int_, 'y', kd.x1, -1, w3.y0, w3.y1, w3.head + 0.075, { h: 0.05, drop: 0.325 });
+      split(kd.x1, (w3.y0 + w3.y1) / 2, -1, 0, KW50, w3.head + 0.075 + 0.05 + 0.01 + KW50[0]); }
   }
   // --- bedroom lighting (spec.renovation.bed_lights): robe-top strip and night light always; angled downlights,
   // corner downlights or reading spots by version ---
@@ -3892,7 +3910,8 @@ export function buildHouse(spec) {
     if (F.pantry_shelves && !pantryOpen) for (const z of F.pantry_shelves.levels) box(int_, F.pantry_shelves.x0, F.pantry_shelves.x1, F.pantry_shelves.y0, F.pantry_shelves.y1, z, z + 0.02, white);
     // cove cornice and downlights
     const southEnd = spec.renovation.no_pantry ? spec.renovation.pantry.x0 : spec.renovation.pantry.x1;   // the bath/pantry wall ends here
-    const cornices = [[0.115, southEnd, 18.88, 18.98], [0.115, 0.215, 15.02, 18.98], [4.59, 4.69, 15.02, 19.31], [southEnd, 4.69, 19.21, 19.31, 19.31, -1]];
+    const kSplitY = (Win.W3_kitchen.y0 + Win.W3_kitchen.y1) / 2;   // the west wall's cornice is notched behind the split system
+    const cornices = [[0.115, southEnd, 18.88, 18.98], [0.115, 0.215, 15.02, 18.98], [4.59, 4.69, 15.02, kSplitY - 0.51], [4.59, 4.69, kSplitY + 0.51, 19.31], [southEnd, 4.69, 19.21, 19.31, 19.31, -1]];
     // north wall: the hall opening takes it from the party wall to x 1.30 (full height, no cornice across it), so the run
     // starts at the opening's west jamb; with tall cupboards to the ceiling it stops where they start
     if (!K.tall) cornices.push([1.30, 4.69, 15.02, 15.12]);
@@ -4397,22 +4416,21 @@ export function buildHouse(spec) {
       shutterWindow(mx, my, nx, ny, len - 0.24, b.sill, b.head);                        // same pane width the bay is built with
     }
   }
-  // --- bedrooms 2 and 3 (client 2026-10-21, replacing their plantation shutters): a roller blind in the window reveal at
-  // the head (linen-look blockout in an 80 mm white cassette, shown lowered a little) and floor-to-ceiling sheers on a
+  // --- bedrooms 2 and 3 (client 2026-10-21, replacing their plantation shutters): a roller blind face-fixed on the wall
+  // above the window (linen-look blockout in an 80 mm white cassette, shown lowered a little) and floor-to-ceiling sheers on a
   // ceiling track 260 off the wall, clear of the cornice and the split systems, gathered open either side of the window
   {
     const xi = H.x_west_inner;
     const sheerMat = M.sheer || (M.sheer = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false }));
     const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
     const cass = M.blindCass || (M.blindCass = new THREE.MeshStandardMaterial({ color: 0xf4f3ef, roughness: 0.45 }));
-    const fabric = M.blindFab || (M.blindFab = new THREE.MeshStandardMaterial({ color: 0xe6dfd2, roughness: 0.95 }));
+    const fabric = M.blindFab || (M.blindFab = new THREE.MeshStandardMaterial({ color: 0xf7f7f5, roughness: 0.9 }));
     fabric.userData.skyRoomSide = true; cass.userData.skyRoomSide = true;
     for (const [k, rn] of [['W1_bed2', 'Bedroom 2'], ['W2_living', 'Bedroom 3']]) {
       const wn = Win[k], rm = spec.rooms.find(r => r.name === rn); if (!wn || !rm) continue;
-      // roller blind, recess-fitted at the head
-      box(int_, xi + 0.006, xi + 0.086, wn.y0 + 0.006, wn.y1 - 0.006, wn.head - 0.08, wn.head - 0.004, cass);
-      box(int_, xi + 0.04, xi + 0.046, wn.y0 + 0.02, wn.y1 - 0.02, wn.head - 0.38, wn.head - 0.08, fabric);
-      box(int_, xi + 0.032, xi + 0.054, wn.y0 + 0.02, wn.y1 - 0.02, wn.head - 0.395, wn.head - 0.38, cass);   // bottom bar
+      // roller blind, face-fixed on the wall above the window (client): an 80 x 80 cassette just over the architrave, the
+      // fabric 100 wider than the window each side so it covers the architrave too, shown lowered a little
+      rollerBlind(int_, 'y', xi, -1, wn.y0, wn.y1, wn.head + 0.075, { drop: 0.375 });
       if (!spec.renovation.curtains) continue;
       const zc = rm.floor + rm.ceil, x = xi - 0.26, a0 = Math.max(rm.y0 + 0.02, wn.y0 - 0.2), a1 = Math.min(rm.y1 - 0.02, wn.y1 + 0.2);
       box(int_, x - 0.016, x + 0.016, a0, a1, zc - 0.022, zc, track);
@@ -4427,6 +4445,12 @@ export function buildHouse(spec) {
       };
       stack(a0, Math.min(a0 + 0.38, wn.y0 + 0.18)); stack(Math.max(a1 - 0.38, wn.y1 - 0.18), a1);
     }
+  }
+  // --- lounge roller blinds above the big glazing (client 2026-10-21): the west glass wall and the rear sliders
+  {
+    const Lg = spec.renovation.lounge, fz = loungeFloor;
+    for (const w of Lg.windows.filter(w => w.floorGlass)) rollerBlind(int_, 'y', Lg.wall_x, -1, w.y0, w.y1, fz + w.head + 0.02);
+    const bd = Lg.back_door; if (bd) rollerBlind(int_, 'x', Lg.south_y, -1, Math.max(bd.from, Lg.wall_x - 3.76 + 0.1), Math.min(bd.to ?? bd.from + bd.w, Lg.wall_x - 0.1), fz + bd.h + 0.02);
   }
   // --- sheer curtains (Reno sheet): floor-to-ceiling white sheers on a ceiling track over every glazed opening in the
   // lounge (the two west windows, the rear sliders, the side glass door), pulled open and bunched either side.
@@ -5517,7 +5541,7 @@ export function buildHouse(spec) {
       const fy = S.rear_fence.y - 0.03, sz = rz + S.rear_bed_south.edge_h - 0.03;
       box(G.site, 0.12, lot.width - 0.08, fy - 0.035, fy - 0.01, sz, sz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
       box(G.site, 0.12, lot.width - 0.08, fy - 0.03, fy - 0.015, sz + 0.02, sz + 0.023, bedGlow('lGarden'));
-      wallFace(G.site, 'y', fy - 0.1, -1, lot.width / 2, rz + 0.95, lot.width - 0.1, 1.9, glowMat('strip', 0.85));   // in front of the rails; soft at the ends
+      wallFace(G.site, 'y', fy - 0.004, -1, lot.width / 2, rz + 0.95, lot.width - 0.1, 1.9, glowMat('strip', 0.85));   // flat on the palings; soft at the ends
       // the side fences: uplights grazing the white palings, ~1.3 m apart. West (along the deck): recessed in the deck
       // boards beside the fence; east (along the lawn behind the bathroom wing): on spikes in the lawn.
       const wf = S.west_fence.x - 0.03;
@@ -5529,7 +5553,10 @@ export function buildHouse(spec) {
         const jy0 = Math.min(...LgW.map(w => w.y0)) - 1.0, jy1 = Math.max(...LgW.map(w => w.y1)) + 1.0, jz = rz, jf = wf - 0.12;
         box(G.site, jf - 0.025, jf, jy0 + 0.05, jy1 - 0.05, jz, jz + 0.02, decMat('alu', 0x8d8f91, { roughness: 0.4, metalness: 0.6 }));
         box(G.site, jf - 0.02, jf - 0.005, jy0 + 0.05, jy1 - 0.05, jz + 0.02, jz + 0.023, bedGlow('lGarden'));
-        wallFace(G.site, 'x', wf - 0.3, -1, (jy0 + jy1) / 2, jz + 1.0, jy1 - jy0, 2.0, glowMat('tall', 1.25));   // in front of the vines, so the leaves read lit, not silhouetted (client)
+        wallFace(G.site, 'x', wf - 0.004, -1, (jy0 + jy1) / 2, jz + 1.0, jy1 - jy0, 2.0, glowMat('tall', 0.9));   // flat on the palings behind the vines
+        // and the vines themselves catch it: the jasmine's leaves and flowers glow softly on the garden circuit, so they read
+        // lit in front of the bright fence instead of as silhouettes (client)
+        for (const [m, col, k] of [[M.jasLeaf, 0x3c5c34, 0.45], [M.jasFlower, 0xfff0d8, 0.3]]) if (m) { m.emissive.set(col); m.userData.bedLamp = 'lGarden'; m.userData.glowK = k; }
       }
       // the side path by the kitchen: recessed uplights in the bistro deck beside the fence, and spike uplights in the
       // planted bed further north, grazing the white palings
