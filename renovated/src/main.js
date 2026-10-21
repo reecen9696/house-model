@@ -685,6 +685,7 @@ function applyLightMode() {
 // level of a bedroom layer, 0..1: the Lights switch, the layer's own switch, and the room dimmer, which works the
 // pendant and the robe-top strip (the reading spots and the night light are on their own switches, at full)
 const bedLevel = layer => {
+  if (layer === 'lGarden') return !document.getElementById('sunOnly')?.checked && lightsOn() && daylight < 0.55 ? 1 : 0;   // garden lights: night only, even if the house lights are switched on by day (client)
   if (layer.startsWith('hall') || /^[kl][A-Z]/.test(layer)) return !document.getElementById('sunOnly')?.checked && lightsOn() ? 1 : 0;   // hall, kitchen (k...), lounge (l...): on the house Lights
   if (document.getElementById('sunOnly')?.checked || !bedState[layer]) return 0;
   if (layer === 'pendant' || layer === 'angled' ? !lightsOn() : SECONDARY.includes(layer) && !secondaryOn) return 0;

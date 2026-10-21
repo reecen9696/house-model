@@ -1786,6 +1786,26 @@ function jasmineLattice(group, faceX, y0, y1, zg, zb, zt, seed = 5) {
   leafI.castShadow = true; leafI.receiveShadow = true; group.add(leafI);
   if (flowers.length) { const fI = new THREE.InstancedMesh(STAR, flowerM, flowers.length); flowers.forEach((m, i) => fI.setMatrixAt(i, m)); group.add(fI); }
 }
+// Light switch plate (AU standard, e.g. Clipsal Iconic: 117 x 75, 10 proud), centre at z, on a wall face along lot 'x' or
+// 'y', facing 'inward' (+1/-1). gangs: rockers stacked in the plate; dim: one rotary dimmer knob in place of a rocker
+function switchPlate(group, along, face, inward, u, z, gangs = 1, { dim = 0, label = '' } = {}) {
+  const plate = M.swPlate || (M.swPlate = new THREE.MeshStandardMaterial({ color: 0xf6f6f3, roughness: 0.35 }));
+  const rock = M.swRock || (M.swRock = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+  const knob = M.swKnob || (M.swKnob = new THREE.MeshStandardMaterial({ color: 0xe9e8e3, roughness: 0.4 }));
+  const b = (d0, d1, u0, u1, z0, z1, m) => { const p0 = face + inward * d0, p1 = face + inward * d1, lo = Math.min(p0, p1), hi = Math.max(p0, p1);
+    along === 'x' ? box(group, u0, u1, lo, hi, z0, z1, m) : box(group, lo, hi, u0, u1, z0, z1, m); };
+  const n = gangs + dim, w = n > 3 ? 0.146 : 0.075, H = 0.117;                                // more than 3 mechanisms: a double-width plate
+  b(0.001, 0.01, u - w / 2, u + w / 2, z - H / 2, z + H / 2, plate);
+  const cols = n > 3 ? 2 : 1, rows = Math.ceil(n / cols), cw = (w - 0.02) / cols, rh = Math.min(0.03, (H - 0.03) / rows);
+  for (let i = 0; i < n; i++) {
+    const c = i % cols, r = Math.floor(i / cols), uc = u - w / 2 + 0.01 + cw * (c + 0.5), zc = z + (rows - 1) * rh / 2 - r * (rh + 0.006);
+    if (i < dim) {                                                                         // rotary dimmer
+      const k = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.012, 20), knob);
+      if (along === 'x') k.rotation.x = Math.PI / 2; else k.rotation.z = Math.PI / 2;
+      const pos = along === 'x' ? L(uc, face + inward * 0.016, zc) : L(face + inward * 0.016, uc, zc); k.position.copy(pos); group.add(k);
+    } else b(0.01, 0.014, uc - Math.min(0.012, cw / 2 - 0.003), uc + Math.min(0.012, cw / 2 - 0.003), zc - rh / 2 + 0.002, zc + rh / 2 - 0.002, rock);
+  }
+}
 // Roller blind face-fixed on the wall above an opening (client 2026-10-21): a white cassette (h tall, 80 deep) on the wall
 // just above the head, white blockout fabric 100 wider than the opening each side, rolled up (only the bottom bar shows). along: 'x' or
 // 'y' (the wall runs along lot x or y), face: the wall's room face, inward: +1/-1 toward the room
@@ -4445,6 +4465,26 @@ export function buildHouse(spec) {
       };
       stack(a0, Math.min(a0 + 0.38, wn.y0 + 0.18)); stack(Math.max(a1 - 0.38, wn.y1 - 0.18), a1);
     }
+  }
+  // --- light switches (2026-10-21; layout in SWITCHES.md). Latch side of each door, ~100 off the architrave, centre 1.05;
+  // a rotary dimmer for each dimmed circuit, rockers for the rest. Plates live in G.switches so they can be found
+  {
+    const SW = spec.renovation.switches = [];
+    const sw = (room, along, face, inward, u, gangs, dim, label) => { switchPlate(int_, along, face, inward, u, 1.05, gangs, { dim }); SW.push({ room, along, face, u, gangs, dim, label }); };
+    // entry: just inside the front door on the latch (west) side: hall pendants (2-way with the kitchen end, dimmer) + porch light
+    sw('Entry', 'y', 1.47, -1, 5.0, 1, 1, 'hall pendants (2-way, dimmer); porch light');
+    // front bedroom: inside, latch side (south) of its door in the east wall, clear of the open shelving
+    sw('Front bedroom', 'y', 1.58, 1, 7.42, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    // bedroom 3: inside, latch side (south) of its door
+    sw('Bedroom 3', 'y', 1.41, 1, 12.8, 1, 1, 'pendant (dimmer); robe-top + floor strips');
+    // kitchen: on the party wall just inside the hall opening, where the hall ends: hall pendants (2-way), the bench task
+    // lights (tape + sink pair), table + buffet downlights (dimmer)
+    sw('Kitchen / dining', 'y', 0.115, 1, 15.3, 2, 1, 'hall pendants (2-way); bench task light; table + buffet (dimmer)');
+    // lounge: north wall between the kitchen opening and the side glass door (its latch side): pelmet + skylight (dimmer),
+    // wall lights (dimmer), joinery floor glow
+    sw('Lounge / living', 'x', 19.54, 1, 5.05, 1, 2, 'pelmet wash + skylight (dimmer); TV wall lights (dimmer); joinery glow');
+    // bathroom: outside, on the kitchen side of the bath door's latch (inside, the room ends at the latch jamb): light + fan
+    sw('Bath', 'x', 18.88, -1, 2.12, 2, 0, 'bathroom light; exhaust fan (run-on timer)');
   }
   // --- lounge roller blinds above the big glazing (client 2026-10-21): the west glass wall and the rear sliders
   {
