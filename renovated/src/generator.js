@@ -1535,6 +1535,111 @@ function bedGlow(layer) {
   if (!M[k]) { M[k] = new THREE.MeshStandardMaterial({ color: 0xfbf7ef, roughness: 0.6, emissive: 0xffd8a8, emissiveIntensity: 0 }); M[k].userData.bedLamp = layer; }
   return M[k];
 }
+// Spanish alabaster: warm white stone with soft amber and grey veins, drawn once and shared (map and emissive map, so
+// the veins show through when the lamp is on, as in the listing photos)
+function alabasterTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#f4ead9'; g.fillRect(0, 0, 512, 512);
+  let sd = 11; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+  for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(${230 + rnd() * 20},${205 + rnd() * 25},${170 + rnd() * 30},0.18)`; g.beginPath(); g.ellipse(rnd() * 512, rnd() * 512, 30 + rnd() * 90, 15 + rnd() * 50, rnd() * 3, 0, Math.PI * 2); g.fill(); }
+  for (let i = 0; i < 14; i++) {
+    g.strokeStyle = i % 3 ? 'rgba(196,140,92,0.35)' : 'rgba(150,140,128,0.3)'; g.lineWidth = 1 + rnd() * 3;
+    g.beginPath(); let px = rnd() * 512, py = rnd() * 512; g.moveTo(px, py);
+    for (let k = 0; k < 6; k++) { px += (rnd() - 0.4) * 120; py += (rnd() - 0.5) * 90; g.lineTo(px, py); }
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+// Moodboard pendants (Reno > Bedroom / Hall > Moodboard pendants): the Alibaba shortlist from the moodboard's Lighting
+// tab, one catalog entry each in spec.renovation.mood_pendants (sizes from the listings, see lighting.json). The same
+// fitting hangs in the bedrooms (bottom at 2.35) and down the hall (2.1). p.d and p.h are the shade's width and the
+// fitting's height without the cable, in mm; p.shape picks the build below. Lumens out: p.lm (default 800)
+function moodPendant(int_, BL, room, x, y, zc, p, zb, layer) {
+  const d = (p.d_mm || 300) / 1000, h = (p.h_mm || 250) / 1000, r = d / 2, lm = p.lm || 800;
+  const std = (k, color, o = {}) => M[k] || (M[k] = new THREE.MeshStandardMaterial({ color, roughness: 0.5, ...o }));
+  const black = std('mpBlack', 0x1c1b1a, { metalness: 0.4 }), brass = std('mpBrass', 0xc29a5b, { metalness: 0.3, roughness: 0.35 });
+  const white = std('mpWhite', 0xeeece8, { roughness: 0.4 }), steel = std('mpSteel', 0xc4c6c8, { metalness: 0.3, roughness: 0.3 });
+  const metal = { brass, black, white, steel }[p.metal] || black;
+  // glowing shade materials: cloned from the layer's glow so main.js's switches and dimmers drive them (glowK: how hard)
+  const glow = (k, set) => { const key = 'mp_' + k + '_' + layer; return M[key] || (M[key] = (() => { const m = bedGlow(layer).clone(); set(m); m.userData.bedLamp = layer; return m; })()); };
+  const stone = glow('alab', m => { const t = alabasterTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xffffff); m.emissive.set(0xffc58a); m.roughness = 0.75; m.userData.glowK = 0.9; });
+  const opal = glow('opal', m => { m.color.set(0xf6f1e8); m.emissive.set(0xffd2a0); m.roughness = 0.25; m.userData.glowK = 1.2; });
+  const add = (geo, mat, z, shadow = false) => { const o = new THREE.Mesh(geo, mat); o.position.copy(L(x, y, z)); o.castShadow = shadow; int_.add(o); return o; };
+  const lathe = (pts, mat, z, k = 1) => add(new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a * k, b * k)), 48), mat, z);
+  const rod = (z0, rr = 0.003, mat = metal) => add(new THREE.CylinderGeometry(rr, rr, Math.max(zc - z0, 0.01), 8), mat, (zc + z0) / 2);
+  const canopy = (dd = 0.1) => add(new THREE.CylinderGeometry(dd / 2, dd / 2, 0.03, 32), metal, zc - 0.015);
+  const cap = (rw, hh, z, mat = metal) => add(new THREE.CylinderGeometry(rw, rw * 1.1, hh, 24), mat, z + hh / 2);
+  let zl = zb + h / 2, top = zb + h;   // where the light point sits; top of the fitting under the cable
+  switch (p.shape) {
+    case 'disc': {   // flat alabaster disc on a black rod, a small black boss in the middle
+      const t = Math.min(h, 0.04);
+      add(new THREE.CylinderGeometry(r, r * 0.97, t, 64), stone, zb + t / 2);
+      add(new THREE.CylinderGeometry(0.025, 0.025, t + 0.004, 24), black, zb + t / 2);
+      top = zb + t; zl = zb + t; rod(top, 0.006); canopy(0.12); break;
+    }
+    case 'cylinder':   // alabaster drum with a narrow alabaster neck on top (cylinder listing)
+    case 'drumCap': {  // the same drum under a brass bullet cap (brass or timber cap listing)
+      const neck = p.shape === 'cylinder' ? Math.min(0.35 * h, 0.06) : Math.min(0.45 * h, 0.1), body = h - neck;
+      add(new THREE.CylinderGeometry(r, r, body, 64, 1, true), stone, zb + body / 2).material.side = THREE.DoubleSide;
+      add(new THREE.RingGeometry(0.03, r, 48), stone, zb + body).rotation.x = Math.PI / 2;
+      if (p.shape === 'cylinder') add(new THREE.CylinderGeometry(r * 0.45, r * 0.45, neck, 32), stone, zb + body + neck / 2);
+      else add(new THREE.CapsuleGeometry(Math.min(r * 0.35, 0.035), neck - 0.035, 6, 24), brass, zb + body + neck / 2);
+      zl = zb + body * 0.45; rod(top); canopy(); break;
+    }
+    case 'tube': {     // tall alabaster cylinder (many-shapes listing, the lantern style)
+      add(new THREE.CylinderGeometry(r, r, h, 48), stone, zb + h / 2);
+      cap(r * 0.6, 0.03, top, brass); rod(top + 0.03); canopy(); break;
+    }
+    case 'globe': {    // alabaster ball on a small black cap
+      add(new THREE.SphereGeometry(r, 48, 24), stone, zb + r);
+      top = zb + d; zl = zb + r; cap(0.02, 0.02, top - 0.006); rod(top + 0.014); canopy(); break;
+    }
+    case 'jelly': {    // clear glass dome over a cream glass inner dome, brass cap
+      const clear = std('mpClear', 0xffffff, { transparent: true, opacity: 0.18, roughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
+      const prof = k => [[0.0, 1], [0.35, 0.99], [0.7, 0.9], [0.92, 0.68], [1, 0.4], [0.97, 0.15], [0.86, 0]].map(([a, b]) => [a * r * k, b * h * k]);
+      const outer = lathe(prof(1), clear, zb); outer.renderOrder = 3;
+      lathe(prof(0.82), opal, zb + 0.012).material.side = THREE.DoubleSide;
+      cap(0.04, 0.012, top - 0.004, brass); rod(top + 0.008); canopy(); zl = zb + h * 0.45; break;
+    }
+    case 'saucer': {   // glossy white glass lens, wider than tall
+      const g = add(new THREE.SphereGeometry(0.5, 48, 24), opal, zb + h / 2); g.scale.set(d, h, d);
+      cap(0.035, 0.012, top - 0.004, steel); rod(top + 0.008); canopy(); break;
+    }
+    case 'pill': {     // soft white lozenge: rounded edge all round, flat-ish top and bottom
+      const rr = h / 2, pts = []; for (let i = 0; i <= 16; i++) { const a = -Math.PI / 2 + i / 16 * Math.PI; pts.push([r - rr + Math.cos(a) * rr, rr + Math.sin(a) * rr]); }
+      lathe([[0, 0], ...pts, [0, h]], opal, zb);
+      add(new THREE.CylinderGeometry(0.006, 0.006, 0.07, 12), steel, top + 0.035); rod(top + 0.07, 0.0015, steel); canopy(0.06); break;
+    }
+    case 'hat': {      // flattened opal oval under a wide shallow walnut hat on a short opal neck
+      const walnut = std('mpWalnut', 0x6b4128, { roughness: 0.6 });
+      const gh = h * 0.55, gw = d * 0.6, hatZ = zb + h - 0.03;
+      const g = add(new THREE.SphereGeometry(0.5, 48, 24), opal, zb + gh / 2); g.scale.set(gw, gh, gw);
+      add(new THREE.CylinderGeometry(gw * 0.25, gw * 0.28, hatZ - (zb + gh * 0.8), 32), opal, (hatZ + zb + gh * 0.8) / 2);
+      add(new THREE.CylinderGeometry(0.03, r, 0.03, 64), walnut, hatZ + 0.015, true);
+      cap(0.03, 0.02, top, steel); rod(top + 0.02); canopy(); zl = zb + gh / 2; break;
+    }
+    case 'mustard': {  // glossy mustard glass ring-dome with an opal globe dropping out of its open base
+      const mustard = std('mpMustard', 0xe6a722, { roughness: 0.15 });
+      const sh = h * 0.55, gr = d * 0.3, z0 = zb + h - sh;
+      lathe([[r * 0.62, 0], [r * 0.9, 0.02], [r, sh * 0.35], [r * 0.95, sh * 0.8], [r * 0.6, sh], [0.03, sh]], mustard, z0).material.side = THREE.DoubleSide;
+      add(new THREE.SphereGeometry(gr, 40, 20), opal, zb + gr);
+      cap(0.025, 0.03, top, steel); rod(top + 0.03); canopy(); zl = zb + gr; break;
+    }
+    case 'ribbed': {   // smoky ribbed glass globe on a brass rod, a warm bulb inside
+      const smoke = std('mpSmoke', 0xbcc3b2, { transparent: true, opacity: 0.3, roughness: 0.1, depthWrite: false, side: THREE.DoubleSide });
+      const geo = new THREE.SphereGeometry(r, 64, 32), pos = geo.attributes.position, v = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); const a = Math.atan2(v.z, v.x), k = 1 + 0.035 * Math.cos(a * 16) * Math.sqrt(Math.max(0, 1 - (v.y / r) ** 2)); pos.setXYZ(i, v.x * k, v.y, v.z * k); }
+      geo.computeVertexNormals(); add(geo, smoke, zb + r).renderOrder = 3;
+      add(new THREE.SphereGeometry(0.045, 20, 12), opal, zb + r);
+      add(new THREE.SphereGeometry(r * 0.5, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), brass, zb + d - 0.01).scale.y = 0.25;
+      top = zb + d; zl = zb + r; rod(top, 0.008, brass); canopy(); break;
+    }
+    default: {         // anything else: an opal oval at the listed size
+      const g = add(new THREE.SphereGeometry(0.5, 40, 24), opal, zb + h / 2); g.scale.set(d, h, d); rod(top); canopy();
+    }
+  }
+  BL.points.push({ room, layer, kind: 'omni', x, y, z: zl, lm });
+}
 // Pendant on a bedroom rose, bottom at 2.35, hung from a joist through the rose (never from the plaster). Styles
 // (Reno > Bedroom > Pendant), Lucci from Beacon Lighting, sizes from the listings:
 //   augustOval   August oval, chalk white + frosted opal glass, 400 wide x 240 high, ES lamp, 120 canopy ($289)
@@ -1543,6 +1648,7 @@ function bedGlow(layer) {
 //   globe        generic 400 opal globe
 // Lamps assumed: ~1,000 lm 2700 K dimmable E27 in the opal ones (glass light all round); ~900 lm GX53 in the Pipete.
 function bedPendant(int_, BL, room, x, y, zc, style = 'augustOval', zb = 2.35, layer = 'pendant') {
+  if (style && typeof style === 'object') return moodPendant(int_, BL, room, x, y, zc, style, zb, layer);   // Reno > Moodboard pendants
   const chalk = M.chalk || (M.chalk = new THREE.MeshStandardMaterial({ color: 0xece8df, roughness: 0.7 }));
   const canopy = (d) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(d / 2, d / 2, 0.035, 32), chalk); c.position.copy(L(x, y, zc - 0.0175)); int_.add(c); };
   const cord = (z0) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, zc - z0, 8), chalk); c.position.copy(L(x, y, (zc + z0) / 2)); c.castShadow = false; int_.add(c); };
@@ -1593,6 +1699,33 @@ function bedPendant(int_, BL, room, x, y, zc, style = 'augustOval', zb = 2.35, l
   const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.02, 24), chalk); collar.position.copy(L(x, y, zb + h - 0.005)); int_.add(collar);
   canopy(0.12); cord(zb + h + 0.005);
   BL.points.push({ room, layer, kind: 'omni', x, y, z: zcen, lm: 1000 });
+}
+// Made by Mayfair Amalfi 5-light pendant (Beacon SKU 050676, $1,895, client 2026-10-22): five Spanish alabaster pebbles
+// on fine cords under a 350 round aged-brass canopy. Pebble size isn't listed; ~150 wide x 115 high, scaled from the
+// product shot against the 350 canopy. Integrated LED, 3000-5000 K selectable (set to 3000, the warmest), dimmable,
+// 4.8 kg (joist fixing through the rose). The listing's cascade drops ~1.2 m (pebbles at ~0.9-2.1 m below the canopy);
+// under the 3.15 ceiling with the lowest at door-head height (2.1, Mint's hall rule) it is shortened to a ~0.6 m spiral.
+// Alabaster lets little light through: modelled at ~120 lm out per pebble (a glow, not the working light)
+function amalfiCluster(int_, BL, room, x, y, zc, layer = 'hallPendant') {
+  const brass = M.agedBrass || (M.agedBrass = new THREE.MeshStandardMaterial({ color: 0xa8854e, metalness: 0.55, roughness: 0.42 }));
+  const cordM = M.amalfiCord || (M.amalfiCord = new THREE.MeshStandardMaterial({ color: 0xb9b4aa, roughness: 0.6 }));
+  const key = 'amalfi_' + layer, stone = M[key] || (M[key] = (() => { const m = bedGlow(layer).clone(); const t = alabasterTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xffffff); m.emissive.set(0xffc58a); m.roughness = 0.7; m.userData.bedLamp = layer; m.userData.glowK = 0.9; return m; })());
+  // the canopy plate sits on the rose's centre boss (75 deep), covering its inner beaded ring; the outer one still shows
+  const zp = zc - 0.075 - 0.012;
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.012, 48), brass); plate.position.copy(L(x, y, zp + 0.006)); int_.add(plate);
+  // a soft rounded-triangle pebble: wide flat-ish base, easing to a blunt crown, squashed a little so each reads hand-cut
+  const prof = new THREE.CatmullRomCurve3([[0, 0], [0.05, 0.003], [0.07, 0.014], [0.075, 0.032], [0.068, 0.056], [0.05, 0.082], [0.028, 0.103], [0.01, 0.113], [0, 0.115]].map(([r, h]) => new THREE.Vector3(r, h, 0))).getPoints(24).map(p => new THREE.Vector2(Math.max(p.x, 0), p.y));
+  const geo = new THREE.LatheGeometry(prof, 32);
+  // five drops on a 140 ring (neighbours ~165 apart, clear of the 150 pebbles; 110 had them overlapping seen from
+  // below), spiralling down: bottoms 2.70 / 2.55 / 2.40 / 2.25 / 2.10
+  for (let i = 0; i < 5; i++) {
+    const a = i * 2 * Math.PI / 5 * 2, px = x + 0.14 * Math.cos(a), py = y + 0.14 * Math.sin(a), zb = 2.7 - 0.15 * i;
+    const p = new THREE.Mesh(geo, stone); p.position.copy(L(px, py, zb)); p.rotation.y = i * 1.3; p.scale.set(1, 1, 0.86 + 0.05 * (i % 3)); p.castShadow = false; int_.add(p);
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.025, 12), brass); grip.position.copy(L(px, py, zp - 0.0125)); int_.add(grip);
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, zp - 0.025 - (zb + 0.113), 6), cordM); cord.position.copy(L(px, py, (zp - 0.025 + zb + 0.113) / 2)); cord.castShadow = false; int_.add(cord);
+  }
+  // one source at the cluster's middle for the five (the shader's light slots are few): ~600 lm, all round
+  BL.points.push({ room, layer, kind: 'omni', x, y, z: 2.45, lm: 600 });
 }
 // Slender indoor tree (client reference photos 2026-10-21: a false aralia / Schefflera elegantissima standard): a thin,
 // slightly leaning trunk to ~2.1 m, three loose tiers of fine branches with drooping fans of narrow leaflets, in a
@@ -2266,7 +2399,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2479,6 +2612,11 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // adjustable spot; 'downlights' = the earlier flush row down the centre. (A picture-rail uplight was tried and dropped:
   // the hall has no rail and it added a line that isn't there.)
   spec.renovation.hall_lights = hallLights === 'downlights' ? 'downlights' : 'art';
+  // Amalfi alternative (Reno > Hall switch, client 2026-10-22): the Amalfi alabaster cluster on the entry rose and ceiling
+  // lights down the rest of the hall: 'small' small-aperture deep-recessed (three), 'recessed' 90 mm or 'tube' surface cylinders (four). Overrides the Lighting choice
+  // (the hall stays a shader-lit zone, as 'art')
+  spec.renovation.hall_amalfi = hallAmalfi ? (['recessed', 'tube'].includes(hallDl) ? hallDl : 'small') : false;
+  if (hallAmalfi) spec.renovation.hall_lights = 'art';
   // artwork (Reno > Hall > Artwork): 'v2' the proposed layout (ART-PLACEMENT.md Part D), 'hall' the earlier two hall
   // paintings only, 'none'
   spec.renovation.art = ['v2', 'hall', 'none'].includes(art) ? art : 'v2';
@@ -2494,6 +2632,9 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.lounge_fence = loungeFence === 'lattice' ? 'lattice' : 'screen';   // Reno > Lounge > Side fence
   spec.renovation.hall_pendant = ['pebble', 'augustOval', 'augustRound'].includes(hallPendant) ? hallPendant : 'pebble';
   spec.renovation.pendant_style = ['augustOval', 'augustRound', 'pipete', 'globe'].includes(pendant) ? pendant : 'augustOval';
+  // Reno > Moodboard pendants (switch): the picked moodboard pendant hangs in the bedrooms and down the hall at once
+  const moodP = moodPendants && spec.renovation.mood_pendants?.items?.[moodPendant];
+  if (moodP) spec.renovation.pendant_style = spec.renovation.hall_pendant = { id: moodPendant, ...moodP };
   // bedroom 3's robe (the full south wall, drawn from fixed numbers before) joins the same treatment as the front two
   spec.fixtures.robe_bed3 = { x0: 1.43, x1: 4.67, y0: 14.31, y1: 14.89, z1: 2.55 };
   for (const k of ['robe_front', 'robe_bed2']) spec.fixtures[k].z1 = 2.55;
@@ -3031,7 +3172,39 @@ export function buildHouse(spec) {
       const yHall = (ha.y0 + ha.y1) / 2;
       // three in all: the entry's, mid-hall, and mid-extension (with the door-sized opening the extension is its own
       // space; tried with two and it fell dim, the kitchen's light doesn't carry that far)
-      hallPendant(yHall); hallPendant((spec.renovation.bedroom3.door_y1 + ext.y1) / 2);
+      if (spec.renovation.hall_amalfi) {
+        // Amalfi alternative: the cluster hangs on the entry rose (roses loop); the rest of the run gets ceiling lights
+        // on the centreline, 2700 K, CRI 90+, a 36-degree beam (at 3.15 m: a ~2 m pool; the notes' 10-24 for high
+        // ceilings would leave 1.2 m spots in a 1.19 hall, over 40 glares), on the hall's trailing-edge dimmer.
+        //  'small' (recommended, review 2026-10-22): small-aperture deep-recessed low-glare, 55 cut-out / 70 face, LED
+        //    ~40 up a white reflector (not seen down the hall's axis from ~2 m), IC-4, ~400 lm. THREE, placed on what
+        //    needs light, not on a grid: (1) where the entry narrows into the hall, between the Amalfi and the
+        //    painting (the cluster's glow is too soft to carry past the front bedroom door); (2) at the painting, the
+        //    adjustable twin tilted ~20 degrees onto it (a 30-degree aim would need it 0.92 off the wall, 0.27 from
+        //    the other; the pool also covers bedroom 2's door); (3) past the arch, 250 beyond bedroom 3's door, so its
+        //    threshold and the arch's far side are lit and the arch reads framed from the front door. The extension's
+        //    far end takes the kitchen's spill. ~1,200 lm + the Amalfi over ~12.6 m2: ~40 lux between pools (AS/NZS
+        //    1680's corridor level) and ~130 under them, about 3:1, inside the notes' 10:1
+        //  'recessed' / 'tube' (the first try): four 90 mm or 65 x 120 surface fittings, ~450 lm, two in the extension
+        const kind = spec.renovation.hall_amalfi, rose = F.ceiling_roses.find(r => r.room === 'Entry');
+        const white = M.chalk || (M.chalk = new THREE.MeshStandardMaterial({ color: 0xece8df, roughness: 0.7 }));
+        const dl = (y, ax = 0, lm = 450) => {
+          if (kind === 'tube') {
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.0325, 0.0325, 0.12, 32, 1, true), white); body.material.side = THREE.DoubleSide; body.position.copy(L(cx, y, zc - 0.06)); int_.add(body);
+            const lens = new THREE.Mesh(new THREE.CircleGeometry(0.022, 24), bedGlow('hallDl')); lens.rotation.x = Math.PI / 2; lens.position.copy(L(cx, y, zc - 0.09)); int_.add(lens);
+          } else if (kind === 'small') {
+            // 70 face ring, a 55 white reflector, the LED's lens in the middle. The ceiling is a solid slab (no hole), so
+            // the reflector and lens are drawn at the ceiling plane: a 40 mm-deep throat above it would be hidden
+            const refl = M.dlRefl || (M.dlRefl = new THREE.MeshStandardMaterial({ color: 0xd9d6cf, roughness: 0.35, metalness: 0.2 }));
+            const disc = (r0, r1, mat, dz) => { const m = new THREE.Mesh(r0 ? new THREE.RingGeometry(r0, r1, 32) : new THREE.CircleGeometry(r1, 32), mat); m.rotation.x = Math.PI / 2; m.position.copy(L(cx, y, zc - dz)); m.castShadow = false; int_.add(m); };
+            disc(0.0275, 0.035, white, 0.003); disc(0.017, 0.0275, refl, 0.004); disc(0, 0.017, bedGlow('hallDl'), 0.005);
+          } else { const f = dlFitting(); f.position.copy(L(cx, y, zc - 0.004)); int_.add(f); }
+          BL.points.push({ room: 'Hall', layer: 'hallDl', kind: 'wash', x: cx, y, z: zc - 0.03, ax, ay: 0, lm });
+        };
+        const art = spec.renovation.art !== 'none', aim = art ? -(cx - wx) / (zc - 0.03 - 1.5) : 0;
+        if (kind === 'small') { dl((rose.y + yHall) / 2, 0, 400); dl(yHall, aim, 400); dl(spec.renovation.bedroom3.door_y1 + 0.25, 0, 400); }
+        else { dl((rose.y + yHall) / 2); dl(yHall, aim); for (const [, y] of dlGrid(ext, 1.6)) dl(y); }
+      } else { hallPendant(yHall); hallPendant((spec.renovation.bedroom3.door_y1 + ext.y1) / 2); }
       if (spec.renovation.art === 'hall') {   // the earlier pair; the proposed layout (art 'v2') hangs its own below
       const frameM = M.artFrame || (M.artFrame = new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.6 }));
       const w = 0.9, h = 1.1, za = 1.55, yc = yHall;                                                // centred on the hall pendant
@@ -5134,6 +5307,7 @@ export function buildHouse(spec) {
     // downlights like the kitchen's, one per 1.7 m or so each way, evenly spread
     // hall: the entry rose gets its pendant back (the hall's feature, as in the reference Page project): an August oval to
     // match the bedrooms, bottom at 2.1, level with the door heads (Mint's hall rule)
+    if (rm.name === 'Entry' && spec.renovation.hall_amalfi) { amalfiCluster(int_, BL, 'Hall', cr.x, cr.y, zc); continue; }
     if (rm.name === 'Entry' && spec.renovation.hall_lights === 'art') { bedPendant(int_, BL, 'Hall', cr.x, cr.y, zc, spec.renovation.hall_pendant, 2.1, 'hallPendant'); continue; }
     // bedroom 3: the default scheme in every version (pendant on its rose + robe strips) except the old downlight grid
     if (rm.name === 'Bedroom 3' && spec.renovation.bed_lights !== 'downlights') { bedPendant(int_, BL, rm.name, cr.x, cr.y, zc, spec.renovation.pendant_style); continue; }

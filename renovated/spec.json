@@ -797,7 +797,10 @@
    "y": 29.05,
    "h": 2.7,
    "r": 0.62,
-   "bed": { "x0": 5.7, "y0": 28.15 },
+   "bed": {
+    "x0": 5.7,
+    "y0": 28.15
+   },
    "_note": "lemon tree in the rear bed, near but not in the south-west corner: trunk about 0.7 m in from the west fence and 0.55 m out from the rear fence, under the second lattice panel; about 2.7 m tall and 2.6 m across, canopy leaning east into the yard and pruned flat against both fences (listing photo facing south; close-up photo 'south east neighbour.MP'). The bed bulges out round it (the real brick edge curves out there); 'bed' is that bump-out's corner, clear of the outdoor-dining chairs"
   },
   "yucca": {
@@ -886,12 +889,39 @@
    "h": 0.1
   },
   "outdoor_lounge": {
-   "sofa": { "x": 4.4, "y": 28.19, "w": 2.33, "d": 0.84, "h": 0.81 },
-   "armchairs": [ { "x": 3.25, "y": 27.05, "straight": true }, { "x": 5.55, "y": 26.75 } ],
-   "armchair": { "w": 0.83, "d": 0.84, "h": 0.81 },
-   "table": { "x": 4.4, "y": 27.2, "w": 0.9, "d": 0.5, "h": 0.4 },
+   "sofa": {
+    "x": 4.4,
+    "y": 28.19,
+    "w": 2.33,
+    "d": 0.84,
+    "h": 0.81
+   },
+   "armchairs": [
+    {
+     "x": 3.25,
+     "y": 27.05,
+     "straight": true
+    },
+    {
+     "x": 5.55,
+     "y": 26.75
+    }
+   ],
+   "armchair": {
+    "w": 0.83,
+    "d": 0.84,
+    "h": 0.81
+   },
+   "table": {
+    "x": 4.4,
+    "y": 27.2,
+    "w": 0.9,
+    "d": 0.5,
+    "h": 0.4
+   },
    "_note": "teak outdoor lounge (reference screenshots 2026-09-27): three-seat sofa 2330 x 840 x 810 backing onto the rear bed and facing the house, two 830 x 840 x 810 armchairs, the east one square to the table ('straight': facing it across the yard) and the west one angled in, a small slatted teak coffee table between; open teak frames, off-white cushions. About 0.85 m clear in front of the lounge sliders"
-  } },
+  }
+ },
  "kitchen_south_wall": {
   "x0": 0.115,
   "x1": 2.95,
@@ -903,15 +933,104 @@
  "renovation": {
   "back_doors": {
    "_note": "Rear lounge door options (Reno > Lounge > Back doors), sizes as listed by the sellers 2026-10-09. Back wall is 3.78 inside (x 2.25 to 6.03); each set is centred on it except the current one. h = overall frame height above the finished floor.",
-   "current": { "label": "Current: 4-panel slider 3350 x 2200", "from": 2.55, "w": 3.35, "h": 2.2, "kind": "sliding", "leaves": 4, "frame": "whiteAlu" },
-   "french": { "label": "White French doors 3245 x 2410", "w": 3.245, "h": 2.41, "kind": "french", "leaves": 4, "frame": "whiteTimber", "swing": -1, "_note": "painted timber: a fixed glass sidelight each side of a pair of double doors, four equal leaves; assumed to open outward" },
-   "slider": { "label": "White slider 3600 x 2100", "w": 3.6, "h": 2.1, "kind": "sliding", "leaves": 2, "frame": "whiteAlu", "_note": "white aluminium, assumed two panels (one fixed, one sliding); its flyscreen is not modelled" },
-   "black": { "label": "Black panels, 3 of 4 (1070 x 2340 each)", "w": 3.23, "h": 2.414, "kind": "sliding", "leaves": 3, "frame": "alu", "_note": "four 1070 x 2340 black aluminium panels; all four side by side need about 4.2 m, so only three fit the 3.78 back wall: fixed, sliding, fixed (3 x 1070 less two 40 interlocks, plus the 50 frame)" },
-   "blackStack": { "label": "Black panels, 3 of 4, stacker", "w": 3.23, "h": 2.414, "kind": "sliding", "leaves": 3, "stack": "end", "frame": "alu", "_note": "the same three panels in a 3-track stacker frame (the panels need a new frame): right panel fixed (right from inside, the side-door end), the other two slide back behind it, leaving about 2.1 m clear" },
-   "cas": { "label": "CAS Comet stacker 2565 x 2070 (quote)", "url": "https://www.facebook.com/share/1FEizcY3nG/", "w": 2.565, "h": 2.07, "kind": "sliding", "leaves": 3, "stack": true, "frame": "alu", "_note": "quote item 003 (2026-10-09): CAS Comet Stacker Door, 2070 H x 2565 W, three panels, Black Satin (GN150A), 6.38 clear laminate. As drawn, the left panel (seen from inside) is fixed and the other two stack behind it, leaving about 1.6 m clear" },
-   "monument": { "label": "Monument stacker 2430 x 2220 (Marketplace)", "url": "https://www.facebook.com/share/1HAxGYNvhA/", "store": "Marketplace, Campbellfield", "price": "A$2,100", "w": 2.43, "h": 2.22, "kind": "sliding", "leaves": 3, "stack": true, "screens": true, "frame": "monument", "_note": "Marketplace, Campbellfield, A$2,100 (2026-10-09; about 6 months old): Monument aluminium 3-track stacker, 2430 W x 2220 H, timber reveals, keyed. One fixed glass panel and two sliding, each sliding one with a Crimsafe-style security mesh screen outside it. From inside the fixed panel is on the left (the screens go outside, so its handing can't be swapped); about 1.5 m clear when open" },
-   "timber": { "label": "Timber slider 3490 x 2100 (Marketplace)", "url": "https://www.facebook.com/share/1C73JGPMet/", "store": "Marketplace, Melbourne", "price": "A$800 (was A$900)", "w": 3.49, "h": 2.1, "kind": "sliding", "leaves": 3, "screens": true, "frame": "twoTone", "_note": "Marketplace, Melbourne, A$800 (was A$900), 2026-10-09: painted timber sliding doors, 3490 W x 2100 H outside, three 1050 x 2030 panels, the centre one sliding over either fixed side panel; white inside, Ace of Spades (near-black) outside; fly screen door included (shown outside the slider). About 1.0 m clear when open" },
-   "rylock": { "label": "Rylock black slider 2690 x 1930 (Marketplace)", "url": "https://www.facebook.com/marketplace/item/1421710463478842/", "store": "Marketplace, Campbellfield", "price": "A$2,100", "w": 2.69, "h": 1.93, "kind": "sliding", "leaves": 2, "screens": true, "frame": "alu", "_note": "Marketplace, Campbellfield, A$2,100 (listed about 2026-09-29, 2 months old): Rylock heavy-duty custom aluminium sliding door, black, double glazed, 2690 W x 1930 H, timber reveals, fly screen, keyed. Panel count not stated: assumed two (one fixed, one sliding, about 1.3 m clear), fly screen outside the sliding one. 1930 high is lower than the other sets; the head over it needs packing or a lintel change" }
+   "current": {
+    "label": "Current: 4-panel slider 3350 x 2200",
+    "from": 2.55,
+    "w": 3.35,
+    "h": 2.2,
+    "kind": "sliding",
+    "leaves": 4,
+    "frame": "whiteAlu"
+   },
+   "french": {
+    "label": "White French doors 3245 x 2410",
+    "w": 3.245,
+    "h": 2.41,
+    "kind": "french",
+    "leaves": 4,
+    "frame": "whiteTimber",
+    "swing": -1,
+    "_note": "painted timber: a fixed glass sidelight each side of a pair of double doors, four equal leaves; assumed to open outward"
+   },
+   "slider": {
+    "label": "White slider 3600 x 2100",
+    "w": 3.6,
+    "h": 2.1,
+    "kind": "sliding",
+    "leaves": 2,
+    "frame": "whiteAlu",
+    "_note": "white aluminium, assumed two panels (one fixed, one sliding); its flyscreen is not modelled"
+   },
+   "black": {
+    "label": "Black panels, 3 of 4 (1070 x 2340 each)",
+    "w": 3.23,
+    "h": 2.414,
+    "kind": "sliding",
+    "leaves": 3,
+    "frame": "alu",
+    "_note": "four 1070 x 2340 black aluminium panels; all four side by side need about 4.2 m, so only three fit the 3.78 back wall: fixed, sliding, fixed (3 x 1070 less two 40 interlocks, plus the 50 frame)"
+   },
+   "blackStack": {
+    "label": "Black panels, 3 of 4, stacker",
+    "w": 3.23,
+    "h": 2.414,
+    "kind": "sliding",
+    "leaves": 3,
+    "stack": "end",
+    "frame": "alu",
+    "_note": "the same three panels in a 3-track stacker frame (the panels need a new frame): right panel fixed (right from inside, the side-door end), the other two slide back behind it, leaving about 2.1 m clear"
+   },
+   "cas": {
+    "label": "CAS Comet stacker 2565 x 2070 (quote)",
+    "url": "https://www.facebook.com/share/1FEizcY3nG/",
+    "w": 2.565,
+    "h": 2.07,
+    "kind": "sliding",
+    "leaves": 3,
+    "stack": true,
+    "frame": "alu",
+    "_note": "quote item 003 (2026-10-09): CAS Comet Stacker Door, 2070 H x 2565 W, three panels, Black Satin (GN150A), 6.38 clear laminate. As drawn, the left panel (seen from inside) is fixed and the other two stack behind it, leaving about 1.6 m clear"
+   },
+   "monument": {
+    "label": "Monument stacker 2430 x 2220 (Marketplace)",
+    "url": "https://www.facebook.com/share/1HAxGYNvhA/",
+    "store": "Marketplace, Campbellfield",
+    "price": "A$2,100",
+    "w": 2.43,
+    "h": 2.22,
+    "kind": "sliding",
+    "leaves": 3,
+    "stack": true,
+    "screens": true,
+    "frame": "monument",
+    "_note": "Marketplace, Campbellfield, A$2,100 (2026-10-09; about 6 months old): Monument aluminium 3-track stacker, 2430 W x 2220 H, timber reveals, keyed. One fixed glass panel and two sliding, each sliding one with a Crimsafe-style security mesh screen outside it. From inside the fixed panel is on the left (the screens go outside, so its handing can't be swapped); about 1.5 m clear when open"
+   },
+   "timber": {
+    "label": "Timber slider 3490 x 2100 (Marketplace)",
+    "url": "https://www.facebook.com/share/1C73JGPMet/",
+    "store": "Marketplace, Melbourne",
+    "price": "A$800 (was A$900)",
+    "w": 3.49,
+    "h": 2.1,
+    "kind": "sliding",
+    "leaves": 3,
+    "screens": true,
+    "frame": "twoTone",
+    "_note": "Marketplace, Melbourne, A$800 (was A$900), 2026-10-09: painted timber sliding doors, 3490 W x 2100 H outside, three 1050 x 2030 panels, the centre one sliding over either fixed side panel; white inside, Ace of Spades (near-black) outside; fly screen door included (shown outside the slider). About 1.0 m clear when open"
+   },
+   "rylock": {
+    "label": "Rylock black slider 2690 x 1930 (Marketplace)",
+    "url": "https://www.facebook.com/marketplace/item/1421710463478842/",
+    "store": "Marketplace, Campbellfield",
+    "price": "A$2,100",
+    "w": 2.69,
+    "h": 1.93,
+    "kind": "sliding",
+    "leaves": 2,
+    "screens": true,
+    "frame": "alu",
+    "_note": "Marketplace, Campbellfield, A$2,100 (listed about 2026-09-29, 2 months old): Rylock heavy-duty custom aluminium sliding door, black, double glazed, 2690 W x 1930 H, timber reveals, fly screen, keyed. Panel count not stated: assumed two (one fixed, one sliding, about 1.3 m clear), fly screen outside the sliding one. 1930 high is lower than the other sets; the head over it needs packing or a lintel change"
+   }
   },
   "bedroom3": {
    "door_y0": 11.85,
@@ -1256,6 +1375,143 @@
      "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-1.jpg",
      "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-2.jpg"
     ]
+   }
+  },
+  "mood_pendants": {
+   "_note": "Moodboard pendants (Reno > Bedroom / Hall > Moodboard pendants): the pendants on the moodboard Lighting tab (../../moodboard/lighting.json, sizes from the Alibaba listings). d_mm = shade width, h_mm = fitting height without the cable. Photos in assets/pendants/.",
+   "items": {
+    "1601871296307": {
+     "name": "Alabaster disc on a rod",
+     "price": "$29.85–182.08",
+     "shape": "disc",
+     "d_mm": 500,
+     "h_mm": 80,
+     "cable_mm": null,
+     "metal": "black",
+     "lm": 1000,
+     "url": "https://www.alibaba.com/product-detail/Modern-Minimalist-Natural-Spanish-Alabaster-Round_1601871296307.html",
+     "size_note": "Modelled at D500; also D300, D400, D600, D650, D800. Size is an estimate, check with the supplier"
+    },
+    "1601527550757": {
+     "name": "ZeroUNO alabaster drum, gold cap",
+     "price": "$29.40–81.72",
+     "shape": "drumCap",
+     "d_mm": 210,
+     "h_mm": 170,
+     "cable_mm": 2000,
+     "metal": "brass",
+     "lm": 800,
+     "url": "https://www.alibaba.com/product-detail/ZeroUNO-Alabaster-strong-Pendant-strong-strong_1601527550757.html",
+     "size_note": "Modelled at A drum; also B globe 120, C globe 150, D globe 180, E cylinder with ball, F capsule, G tulip, K ribbed cylinder"
+    },
+    "1601441330638": {
+     "name": "ZeroUNO alabaster cylinder",
+     "price": "$57.23–75.93",
+     "shape": "cylinder",
+     "d_mm": 165,
+     "h_mm": 165,
+     "cable_mm": 2000,
+     "metal": "black",
+     "lm": 800,
+     "url": "https://www.alibaba.com/product-detail/ZeroUNO-Alabaster-strong-Pendant-strong-strong_1601441330638.html",
+     "size_note": "Modelled at L 16.5 x 16.5 cm; also M 14 x 14 cm"
+    },
+    "1601442560930": {
+     "name": "ZeroUNO alabaster globe",
+     "price": "$52.91–107.11",
+     "shape": "globe",
+     "d_mm": 150,
+     "h_mm": 150,
+     "cable_mm": 2000,
+     "metal": "black",
+     "lm": 700,
+     "url": "https://www.alibaba.com/product-detail/ZeroUNO-Alabaster-strong-Pendant-strong-strong_1601442560930.html",
+     "size_note": "Modelled at L 15 cm; also S 10 cm, M 12 cm"
+    },
+    "1601717350584": {
+     "name": "Clear and cream jelly glass",
+     "price": "$29.59",
+     "shape": "jelly",
+     "d_mm": 250,
+     "h_mm": 140,
+     "cable_mm": null,
+     "metal": "brass",
+     "lm": 900,
+     "url": "https://www.alibaba.com/product-detail/Nordic-Modern-Clear-Cream-Jelly-Glass_1601717350584.html",
+     "size_note": "Modelled at D250"
+    },
+    "1601595127579": {
+     "name": "Glossy white glass lens",
+     "price": "$67.62",
+     "shape": "saucer",
+     "d_mm": 250,
+     "h_mm": 130,
+     "cable_mm": 1000,
+     "metal": "steel",
+     "lm": 800,
+     "url": "https://www.alibaba.com/product-detail/Hot-Sell-Discounted-Minimalist-Pendant-Lamp_1601595127579.html",
+     "size_note": "Modelled at D250"
+    },
+    "1601757052146": {
+     "name": "Walnut hat over opal glass",
+     "price": "$63.31–66.19",
+     "shape": "hat",
+     "d_mm": 200,
+     "h_mm": 100,
+     "cable_mm": null,
+     "metal": "steel",
+     "lm": 700,
+     "url": "https://www.alibaba.com/product-detail/Rustic-Style-Walnutcolor-Lron-Glass-Chandelier_1601757052146.html",
+     "size_note": "Modelled at D200"
+    },
+    "1601625675795": {
+     "name": "Mustard glass over a globe",
+     "price": "$90.65",
+     "shape": "mustard",
+     "d_mm": 270,
+     "h_mm": 210,
+     "cable_mm": null,
+     "metal": "steel",
+     "lm": 800,
+     "url": "https://www.alibaba.com/product-detail/Nordic-Minimalist-Oval-Glass-Pendant-Light_1601625675795.html",
+     "size_note": "Modelled at D270"
+    },
+    "1601362640370": {
+     "name": "Ribbed smoky globe, brass rod",
+     "price": "$286.34",
+     "shape": "ribbed",
+     "d_mm": 250,
+     "h_mm": 280,
+     "cable_mm": null,
+     "metal": "brass",
+     "lm": 600,
+     "url": "https://www.alibaba.com/product-detail/YH-Nordic-Traditional-Classic-Home-Indoor_1601362640370.html",
+     "size_note": "Modelled at globe. Size is an estimate, check with the supplier"
+    },
+    "1601717267855": {
+     "name": "White LED pebble",
+     "price": "$44.41",
+     "shape": "pill",
+     "d_mm": 350,
+     "h_mm": 160,
+     "cable_mm": 1500,
+     "metal": "steel",
+     "lm": 1200,
+     "url": "https://www.alibaba.com/product-detail/Modern-Minimalist-White-LED-Pendant-Light_1601717267855.html",
+     "size_note": "Modelled at D350 (listing); also D200 (diagram). Size is an estimate, check with the supplier"
+    },
+    "1601523251213": {
+     "name": "ZeroUNO drum, brass bullet cap",
+     "price": "$27.14–59.20",
+     "shape": "drumCap",
+     "d_mm": 120,
+     "h_mm": 170,
+     "cable_mm": 2000,
+     "metal": "brass",
+     "lm": 800,
+     "url": "https://www.alibaba.com/product-detail/ZeroUNO-Alabaster-strong-Pendant-strong-strong_1601523251213.html",
+     "size_note": "Modelled at C brass cap drum; also A capsule, B globe 150, D brass cap square, E timber cap drum, F timber cap square, G globe 120, H globe 100"
+    }
    }
   }
  }

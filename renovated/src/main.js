@@ -12,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 3, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1, baySeat: 'on' };
+const RENO_DEFAULT = { curtains: true, shutters: true, kitchenV: 5, defaultsV: 3, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'matched', diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 3, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', hallAmalfi: false, hallDl: 'small', klLights: 'designed', art: 'v2', artV: 1, decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1, baySeat: 'on', moodPendants: false, moodPendant: '' };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -408,9 +408,11 @@ function skyMaterial(src) {
           int room = -1;
           for ( int r = 0; r < 8; r ++ ) { vec4 b = bedRm[ r ]; if ( Q.x >= b.x && Q.x <= b.z && Q.y >= b.y && Q.y <= b.w ) room = int( bedZone[ r ] + 0.5 ); }
           if ( room < 0 ) for ( int r = 0; r < 8; r ++ ) { vec4 b = bedRm[ r ]; if ( P.x >= b.x - 0.08 && P.x <= b.z + 0.08 && P.y >= b.y - 0.08 && P.y <= b.w + 0.08 ) room = int( bedZone[ r ] + 0.5 ); }   // rect 3 (hall) is zone 2 with the entry; rect 4 is bedroom 3
-          if ( room < 0 && P.y >= bedBayY.x - 0.02 && P.y < bedRm[ 0 ].y ) {        // the front bedroom's bay
-            float t = clamp( ( bedBayY.y - P.y ) / ( bedBayY.y - bedBayY.x ), 0.0, 1.0 );
-            if ( P.x >= mix( bedBay.x, bedBay.z, t ) - 0.02 && P.x <= mix( bedBay.y, bedBay.w, t ) + 0.02 ) room = 0;
+          // the front bedroom's bay: tested at the point in front (Q), like the rooms; testing behind the surface (P) put
+          // the bay's outside faces in the bedroom, so they glowed with its lights at night
+          if ( room < 0 && Q.y >= bedBayY.x - 0.02 && Q.y < bedRm[ 0 ].y ) {
+            float t = clamp( ( bedBayY.y - Q.y ) / ( bedBayY.y - bedBayY.x ), 0.0, 1.0 );
+            if ( Q.x >= mix( bedBay.x, bedBay.z, t ) - 0.02 && Q.x <= mix( bedBay.y, bedBay.w, t ) + 0.02 ) room = 0;
           }
           // the hall's light carries a little way into the kitchen through the full-width opening at the hall's end, fading
           // over ~1.5 m, so there is no hard edge on the floor where the hall's zone stops
@@ -1169,7 +1171,7 @@ for (const [key, rangeId, numId] of RENO) {
 // front bedroom bed: none, queen or king
 // hall: open straight through (false), classic cased archway (true) or simple archway ('simple')
 const hallKey = v => v === 'simple' || v === 'door' || v === 'arch' ? v : v ? 'classic' : 'open';
-for (const [key, id] of [['skylight', 'renoSkylight'], ['openingRaise', 'renoOpening'], ['kitchenTall', 'renoTall'], ['noPantry', 'renoNoPantry'], ['bedside', 'renoBedside'], ['whiteWoodwork', 'renoWhite'], ['creamExterior', 'renoCream'], ['bayHood', 'renoBayHood'], ['porchScreen', 'renoScreen'], ['sidePavers', 'renoPavers'], ['glassWall', 'renoGlassWall'], ['curtains', 'renoCurtains'], ['shutters', 'renoShutters']]) {
+for (const [key, id] of [['skylight', 'renoSkylight'], ['hallAmalfi', 'renoAmalfi'], ['openingRaise', 'renoOpening'], ['kitchenTall', 'renoTall'], ['noPantry', 'renoNoPantry'], ['bedside', 'renoBedside'], ['whiteWoodwork', 'renoWhite'], ['creamExterior', 'renoCream'], ['bayHood', 'renoBayHood'], ['porchScreen', 'renoScreen'], ['sidePavers', 'renoPavers'], ['glassWall', 'renoGlassWall'], ['curtains', 'renoCurtains'], ['shutters', 'renoShutters']]) {
   $(id).checked = !!reno[key];
   $(id).addEventListener('change', () => {
     reno[key] = $(id).checked;
@@ -1179,6 +1181,12 @@ for (const [key, id] of [['skylight', 'renoSkylight'], ['openingRaise', 'renoOpe
 }
 // kitchen: fridge position and island
 const LAUNDRY_KEYS = ['pantry', 'bathCorner', 'bathCornerFold', 'bathCornerLow', 'bathCornerStore', 'bathBench', 'none'];
+// Moodboard pendants also sit at the bottom of the Pendant and Hall pendants dropdowns: picking one turns the switch
+// on (bedrooms and hall together); picking a Lucci one turns it off
+const MOOD = baseSpec.renovation.mood_pendants?.items || {};
+const moodOn = () => !!reno.moodPendants && !!MOOD[reno.moodPendant];
+const moodPick = v => { const id = v.startsWith('mood:') ? v.slice(5) : null; reno.moodPendants = !!id; if (id) reno.moodPendant = id; return !!id; };
+for (const k of ['pend', 'hpend']) document.querySelector(`select[data-pick="${k}"]`).insertAdjacentHTML('beforeend', `<optgroup label="Moodboard (bedrooms and hall)">${Object.entries(MOOD).map(([id, p]) => `<option value="mood:${id}">${p.name}, ${p.d_mm} x ${p.h_mm} (${p.price})</option>`).join('')}</optgroup>`);
 // every choice in the Reno sheet is a dropdown: [read the saved value, store a new one]
 const PICKS = {
   kstyle: [() => reno.kitchenStyle || 'white', v => { reno.kitchenStyle = v; }],
@@ -1194,9 +1202,10 @@ const PICKS = {
   laundry: [() => reno.laundry, v => { reno.laundry = v; }],
   fbed: [() => reno.frontBed, v => { reno.frontBed = v; }],
   blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
-  pend: [() => reno.pendant || 'augustOval', v => { reno.pendant = v; }],
+  pend: [() => moodOn() ? 'mood:' + reno.moodPendant : reno.pendant || 'augustOval', v => { if (!moodPick(v)) reno.pendant = v; }],
   hlight: [() => reno.hallLights === 'downlights' ? 'downlights' : 'art', v => { reno.hallLights = v; }],
-  hpend: [() => reno.hallPendant || 'pebble', v => { reno.hallPendant = v; }],
+  hdl: [() => ['recessed', 'tube'].includes(reno.hallDl) ? reno.hallDl : 'small', v => { reno.hallDl = v; }],
+  hpend: [() => moodOn() ? 'mood:' + reno.moodPendant : reno.hallPendant || 'pebble', v => { if (!moodPick(v)) reno.hallPendant = v; }],
   art: [() => reno.art || 'v2', v => { reno.art = v; }],
   decor: [() => reno.decor || 'styled', v => { reno.decor = v; }],
   yard: [() => reno.yard || 'deck', v => { reno.yard = v; }],
@@ -1215,6 +1224,8 @@ function renoSummary() {
   for (const [k, [get]] of Object.entries(PICKS)) pick(k).value = get();
   // the IKEA kitchen has its own integrated fridge and full-height units; the pantry spot goes with the pantry wall
   const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
+  // the Amalfi switch overrides the hall's Lighting and pendant choices; its own picker only counts while it's on
+  pick('hlight').disabled = pick('hpend').disabled = !!reno.hallAmalfi; pick('hdl').disabled = !reno.hallAmalfi;
   pick('fridge').disabled = ikea; $('renoTall').disabled = ikea;
   pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
   pick('fridge').querySelector('[value=pantry]').disabled = reno.noPantry;
@@ -1227,6 +1238,27 @@ function renoSummary() {
   const bd = cat.back_doors?.[reno.backDoors || 'current'];
   $('renoBdNote').textContent = bd?._note || '';
   $('renoBdLink').hidden = !bd?.url; if (bd?.url) $('renoBdLink').href = bd.url;   // the seller's listing, when we have it
+  syncMood();
+}
+// Moodboard pendants: one switch (on the Bedroom and Hall tabs, kept in step) hangs the picked pendant from the
+// moodboard's Lighting tab in the bedrooms and down the hall at once; each card shows its photo, size and price
+const mm = p => `Ø ${p.d_mm} × ${p.h_mm} mm`;
+document.querySelectorAll('[data-mood]').forEach((box, i) => {
+  box.innerHTML = `<label class="sw"><span>Moodboard pendants (bedrooms and hall)</span><input type="checkbox" data-mood-on><span class="tk"></span></label>
+    <div class="mood-list" role="radiogroup" aria-label="Moodboard pendant">${Object.entries(MOOD).map(([id, p]) => `
+      <button type="button" class="mcard" role="radio" data-mood-id="${id}" title="${p.size_note || ''}"><img src="./assets/pendants/${id}.jpg" alt="" loading="lazy"><span class="mt"><b>${p.name}</b><span class="ms">${mm(p)}</span><span class="mp">${p.price}</span></span></button>`).join('')}</div>`;
+  box.querySelector('[data-mood-on]').addEventListener('change', e => {
+    reno.moodPendants = e.target.checked;
+    if (reno.moodPendants && !MOOD[reno.moodPendant]) reno.moodPendant = Object.keys(MOOD)[0] || '';
+    saveReno(); renoSummary(); rebuild();
+  });
+  box.querySelectorAll('[data-mood-id]').forEach(b => b.addEventListener('click', () => { reno.moodPendant = b.dataset.moodId; saveReno(); renoSummary(); rebuild(); }));
+});
+function syncMood() {
+  const on = moodOn();
+  document.querySelectorAll('[data-mood-on]').forEach(c => { c.checked = on; });
+  document.querySelectorAll('.mood-list').forEach(l => { l.hidden = !on; });
+  document.querySelectorAll('[data-mood-id]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.moodId === reno.moodPendant)));
 }
 if (!(reno.fridge in FRIDGE_SPOTS)) reno.fridge = 'none';
 $('renoIsland').checked = !!reno.island;
@@ -1237,9 +1269,9 @@ if (!['single', 'none'].includes(reno.kitchenDoor)) reno.kitchenDoor = 'double';
 $('renoIsland').addEventListener('change', () => { reno.island = $('renoIsland').checked; saveReno(); renoSummary(); rebuild(); });
 $('renoReset').addEventListener('click', () => {
   for (const [key] of RENO) setReno(key, RENO_DEFAULT[key] * 100, null, false);
-  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current', bedLights: RENO_DEFAULT.bedLights, pendant: RENO_DEFAULT.pendant, hallLights: RENO_DEFAULT.hallLights, art: RENO_DEFAULT.art, decor: RENO_DEFAULT.decor, yard: RENO_DEFAULT.yard });
-  $('renoSkylight').checked = reno.skylight; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise; reno.glassWall = RENO_DEFAULT.glassWall; $('renoGlassWall').checked = reno.glassWall;
-  $('renoIsland').checked = reno.island;
+  Object.assign(reno, { kitchenStyle: RENO_DEFAULT.kitchenStyle, kitchenTall: RENO_DEFAULT.kitchenTall, noPantry: RENO_DEFAULT.noPantry, frontBed: RENO_DEFAULT.frontBed, bedside: RENO_DEFAULT.bedside, tvUnit: RENO_DEFAULT.tvUnit, loungeStyle: RENO_DEFAULT.loungeStyle, coffeeTable: RENO_DEFAULT.coffeeTable, sideboard: RENO_DEFAULT.sideboard, diningTable: RENO_DEFAULT.diningTable, whiteWoodwork: RENO_DEFAULT.whiteWoodwork, creamExterior: RENO_DEFAULT.creamExterior, bayHood: RENO_DEFAULT.bayHood, porchScreen: RENO_DEFAULT.porchScreen, sidePavers: RENO_DEFAULT.sidePavers, skylight: RENO_DEFAULT.skylight, openingRaise: RENO_DEFAULT.openingRaise, fridge: RENO_DEFAULT.fridge, island: RENO_DEFAULT.island, hallDoorway: RENO_DEFAULT.hallDoorway, kitchenDoor: RENO_DEFAULT.kitchenDoor, laundry: RENO_DEFAULT.laundry, backDoors: 'current', bedLights: RENO_DEFAULT.bedLights, pendant: RENO_DEFAULT.pendant, hallLights: RENO_DEFAULT.hallLights, hallAmalfi: RENO_DEFAULT.hallAmalfi, art: RENO_DEFAULT.art, decor: RENO_DEFAULT.decor, yard: RENO_DEFAULT.yard });
+  $('renoSkylight').checked = reno.skylight; $('renoAmalfi').checked = !!reno.hallAmalfi; $('renoWhite').checked = reno.whiteWoodwork; $('renoCream').checked = reno.creamExterior; $('renoTall').checked = reno.kitchenTall; $('renoNoPantry').checked = reno.noPantry; $('renoBedside').checked = reno.bedside; $('renoBayHood').checked = reno.bayHood; $('renoScreen').checked = reno.porchScreen; $('renoPavers').checked = reno.sidePavers; reno.curtains = RENO_DEFAULT.curtains; $('renoCurtains').checked = reno.curtains; reno.shutters = RENO_DEFAULT.shutters; $('renoShutters').checked = reno.shutters; $('renoOpening').checked = reno.openingRaise; reno.glassWall = RENO_DEFAULT.glassWall; $('renoGlassWall').checked = reno.glassWall;
+  $('renoIsland').checked = reno.island; reno.moodPendants = false;
   saveReno(); renoSummary(); rebuild();
 });
 renoSummary();
