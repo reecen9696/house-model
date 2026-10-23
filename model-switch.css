@@ -19,3 +19,4 @@
 }
 .model-switch a[aria-current="page"] { background: #2f5d50; color: white; }
 .model-switch a:focus-visible { outline: 2px solid #2f5d50; outline-offset: 2px; }
+@media (max-width: 420px) { .model-switch a { padding: 10px 8px; } }   /* four links on a phone */
