@@ -10,7 +10,7 @@ const b = await chromium.launch({ headless: true, channel: 'chrome', args: ['--u
 for (const s of SHOTS) {
   if (only && !only.split(',').includes(s.id)) continue;
   const [w, h] = s.size;
-  const p = await b.newPage({ viewport: { width: w, height: h } });
+  const p = await b.newPage({ viewport: { width: w, height: h }, timezoneId: 'Australia/Melbourne' });
   p.on('pageerror', e => console.log('PAGEERR', e.message));
   await p.goto('http://127.0.0.1:8765/renovated/');
   await p.evaluate(() => { localStorage.clear(); });
@@ -19,22 +19,33 @@ for (const s of SHOTS) {
   const data = await p.evaluate(async ({ s, SCALE }) => {
     const A = window.__app, T = A.THREE, $ = id => document.getElementById(id);
     const t = $('time'); t.value = s.time ?? 21; t.dispatchEvent(new Event('input'));
+    if (!$('lights').checked) $('lights').click();         // every light on, as for a listing's dusk shoot
     // doors: open those nearest the given lot points
     for (const [x, y] of s.open || []) {
       let best = null, bd = 1e9; const v = new T.Vector3();
-      for (const d of A.doors) { d.getWorldPosition(v); const dd = Math.hypot(-v.x - x, v.z - y); if (dd < bd) { bd = dd; best = d; } }
+      for (const d of A.doors) { new T.Box3().setFromObject(d).getCenter(v); const dd = Math.hypot(-v.x - x, v.z - y); if (dd < bd) { bd = dd; best = d; } }
       if (best && bd < 1.2 && !best.userData.open) A.toggleDoor(best);
     }
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     await sleep(1500);
     A.view(s.pos, s.target);
     const cam = A.camera;
-    cam.fov = s.vfov; cam.near = 0.05; cam.updateProjectionMatrix();
+    // hfov (lens across the frame) or vfov; level shots give target the same height as pos
+    const vfov = s.hfov ? T.MathUtils.radToDeg(2 * Math.atan(Math.tan(T.MathUtils.degToRad(s.hfov) / 2) / (innerWidth / innerHeight))) : s.vfov;
+    cam.fov = vfov; cam.near = 0.05; cam.updateProjectionMatrix();
     await sleep(3500);                                   // doors swing, exposure settles, light pool re-aims
-    if (s.exposure) A.renderer.toneMappingExposure *= s.exposure;
+    
     A.renderer.setAnimationLoop(null);
     const W = innerWidth, H = innerHeight;
-    A.renderer.setPixelRatio(SCALE); A.renderer.setSize(W, H); cam.aspect = W / H; cam.fov = s.vfov; cam.updateProjectionMatrix();
+    A.renderer.setPixelRatio(SCALE); A.renderer.setSize(W, H); cam.aspect = W / H; cam.fov = vfov; cam.updateProjectionMatrix();
+    // shift (rising front, as a tilt-shift lens): the camera stays level so verticals stay vertical, and the frame
+    // slides up by shift x its height. Rendered as the top window of a taller level frame with the same focal length
+    if (s.shift) {
+      const f = (H / 2) / Math.tan(T.MathUtils.degToRad(vfov) / 2), FH = H * (1 + 2 * s.shift);
+      cam.fov = T.MathUtils.radToDeg(2 * Math.atan(FH / 2 / f)); cam.aspect = W / FH;
+      cam.setViewOffset(W, FH, 0, 0, W, H);
+    }
+    if (s.exposure) A.renderer.toneMappingExposure *= s.exposure;
     A.renderer.render(A.scene, cam);
     const src = A.renderer.domElement;
     if (!s.fisheye) return src.toDataURL('image/jpeg', 0.92);
@@ -42,7 +53,7 @@ for (const s of SHOTS) {
     const c0 = document.createElement('canvas'); c0.width = src.width; c0.height = src.height; c0.getContext('2d').drawImage(src, 0, 0);
     const sd = c0.getContext('2d').getImageData(0, 0, c0.width, c0.height).data;
     const SW = c0.width, SH = c0.height, cx = SW / 2, cy = SH / 2;
-    const fR = (SH / 2) / Math.tan(T.MathUtils.degToRad(s.vfov) / 2);           // rectilinear focal length, px
+    const fR = (SH / 2) / Math.tan(T.MathUtils.degToRad(vfov) / 2);           // rectilinear focal length, px
     const rMaxSrc = Math.hypot(cx, cy), thMax = Math.atan(rMaxSrc / fR);
     const OW = Math.round(SW * s.crop), OH = Math.round(SH * s.crop);
     const ocx = OW / 2, ocy = OH / 2;
