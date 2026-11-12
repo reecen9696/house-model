@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 
 export const L = (x, y, z) => new THREE.Vector3(-x, z, y);
 
@@ -2156,13 +2157,15 @@ const OWNED_ART = {
 // an owned piece from a photo (assets/art/<name>.jpg, perspective-corrected from the client's photos): canvas w x h,
 // in a float frame: a 'frame'-wide face, a dark 'gap' shadow line round the canvas, the canvas standing proud of the gap
 const artPhoto = n => M['art_' + n] || (M['art_' + n] = (() => { const t = new THREE.TextureLoader().load(`./assets/art/${n}.jpg`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; })());
-function hangOwned(group, axis, face, dir, c, zc, w, h, name, { frame = 0.02, gap = 0.008, depth = 0.05, white = true } = {}) {
-  const fm = white ? (M.artWhite || (M.artWhite = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.55 }))) : artOak();
+function hangOwned(group, axis, face, dir, c, zc, w, h, name, { frame = 0.02, gap = 0.008, depth = 0.05, white = true, walnut = false } = {}) {
+  const fm = walnut ? (M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: new THREE.Color(1.3, 1.3, 1.3) })))   // the kitchen's walnut
+    : white ? (M.artWhite || (M.artWhite = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.55 }))) : artOak();
   const ow = w + 2 * (frame + gap), oh = h + 2 * (frame + gap);
   // frame face (a box the full size), then the shadow gap and the canvas laid over it
   const f1 = face + dir * depth, lo = Math.min(face, f1), hi = Math.max(face, f1);
-  if (axis === 'x') box(group, lo, hi, c - ow / 2, c + ow / 2, zc - oh / 2, zc + oh / 2, fm);
-  else box(group, c - ow / 2, c + ow / 2, lo, hi, zc - oh / 2, zc + oh / 2, fm);
+  const fr = axis === 'x' ? box(group, lo, hi, c - ow / 2, c + ow / 2, zc - oh / 2, zc + oh / 2, fm)
+    : box(group, c - ow / 2, c + ow / 2, lo, hi, zc - oh / 2, zc + oh / 2, fm);
+  if (walnut) surfUV(fr, WALNUT_TILE);                                      // the veneer at the kitchen's grain scale
   wallFace(group, axis, f1 + dir * 0.001, dir, c, zc, w + 2 * gap, h + 2 * gap, M.artGap || (M.artGap = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 })));
   return wallFace(group, axis, f1 + dir * 0.002, dir, c, zc, w, h, (() => { const t = artPhoto(name); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.75, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.22 }); })());   // lifted as if lit by its own art light (client 2026-11-12: brighter); the prints are dark and read black under room light alone
 }
@@ -2273,30 +2276,53 @@ function bladePlant(g, x, y, z, h, r, n = 11, seed = 11) {
     m.position.set(Math.cos(az) * r * 0.4, 0, Math.sin(az) * r * 0.4); m.rotation.y = -az; m.castShadow = true; gr.add(m);
   }
 }
-// sitting greyhound in antique bronze, 200 H x 140 x 70 (the client's piece): upright chest, straight front legs, long
-// neck, a long narrow head held level, rose ears folded back, hind legs folded flat with the tail round them. Built
-// facing local +x, turned by rot about the vertical
-function greyhound(g, x, y, z, rot) {
-  const bz = M.bronzeDog || (M.bronzeDog = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 0.34, metalness: 0.8 }));
-  const d = new THREE.Group(); d.position.copy(L(x, y, z)); d.rotation.y = rot; g.add(d);
-  const blob = (px, py, pz, rx, ry, rz, tz = 0, ty = 0) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), bz); m.position.set(px, py, pz); m.scale.set(rx, ry, rz); m.rotation.set(0, ty, tz); m.castShadow = true; d.add(m); return m; };
-  const limb = (x0, y0, x1, y1, zz, r0, r1) => { const len = Math.hypot(x1 - x0, y1 - y0), m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, len, 12), bz); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, zz); m.rotation.z = -Math.atan2(x1 - x0, y1 - y0); m.castShadow = true; d.add(m); };
-  blob(-0.035, 0.044, 0, 0.04, 0.044, 0.031);                 // haunches on the ground
-  blob(-0.006, 0.085, 0, 0.028, 0.055, 0.025, -0.45);         // back and belly, rising to the chest
-  blob(0.02, 0.106, 0, 0.024, 0.032, 0.021);                  // deep chest
-  limb(0.02, 0.122, 0.031, 0.17, 0, 0.012, 0.0085);           // long neck
-  blob(0.035, 0.178, 0, 0.018, 0.0125, 0.0115);               // skull
-  blob(0.062, 0.1735, 0, 0.024, 0.0072, 0.0072, -0.12);       // long narrow muzzle
-  blob(0.085, 0.1705, 0, 0.0038, 0.0038, 0.0038);             // nose
+// sitting greyhound in antique bronze, 200 H x 140 x 70 (the client's piece, 2026-11-12): one smooth cast surface,
+// sculpted as a signed-distance field (round-cone limbs and ellipsoids, smoothly blended) and meshed once with marching
+// cubes. Upright deep chest and tucked waist, long arched neck, a long narrow head held level with rose ears folded
+// back, straight front legs, hind legs folded flat with the hocks behind, the tail laid round the side. Built facing
+// local +x, turned by rot about the vertical
+function greyhoundGeometry() {
+  if (M.greyhoundGeo) return M.greyhoundGeo;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), tmp = new THREE.Vector3(), ab = new THREE.Vector3();
+  const cone = (A, B, ra, rb) => p => { ab.subVectors(B, A); const t = Math.max(0, Math.min(1, tmp.subVectors(p, A).dot(ab) / ab.lengthSq())); return tmp.copy(A).addScaledVector(ab, t).distanceTo(p) - (ra + (rb - ra) * t); };
+  const ell = (C, rx, ry, rz) => p => { const k = Math.hypot((p.x - C.x) / rx, (p.y - C.y) / ry, (p.z - C.z) / rz); return (k - 1) * Math.min(rx, ry, rz); };
+  const chain = (pts, rs) => pts.slice(1).map((q, i) => cone(pts[i], q, rs[i], rs[i + 1]));
+  const P = [
+    ell(V(-0.036, 0.042, 0), 0.036, 0.042, 0.03),                                        // haunches
+    ...chain([V(-0.042, 0.05, 0), V(-0.02, 0.095, 0), V(0.008, 0.128, 0)], [0.028, 0.022, 0.021]),   // back, rising to the withers
+    ell(V(0.022, 0.1, 0), 0.022, 0.034, 0.02),                                           // deep chest
+    cone(V(-0.012, 0.05, 0), V(0.016, 0.075, 0), 0.016, 0.018),                          // tucked belly line
+    ...chain([V(0.016, 0.128, 0), V(0.03, 0.16, 0), V(0.038, 0.18, 0)], [0.016, 0.0115, 0.0105]),    // long neck
+    ell(V(0.041, 0.186, 0), 0.016, 0.0125, 0.0115),                                      // skull
+    cone(V(0.05, 0.184, 0), V(0.086, 0.176, 0), 0.0105, 0.005),                          // long narrow muzzle
+  ];
   for (const s of [-1, 1]) {
-    blob(0.024, 0.187, s * 0.008, 0.009, 0.0028, 0.006, 0.35, s * 0.5);   // rose ears folded back
-    limb(0.03, 0.1, 0.033, 0.008, s * 0.011, 0.0068, 0.0058);             // straight front legs
-    blob(0.038, 0.005, s * 0.011, 0.009, 0.005, 0.006);                   // front paws
-    blob(-0.004, 0.01, s * 0.024, 0.034, 0.008, 0.008);                   // folded hind legs along the ground
-    blob(0.029, 0.005, s * 0.024, 0.009, 0.005, 0.006);                   // hind paws
+    P.push(ell(V(0.029, 0.194, s * 0.009), 0.008, 0.0035, 0.006));                        // rose ears folded back
+    P.push(...chain([V(0.03, 0.11, s * 0.013), V(0.031, 0.08, s * 0.013), V(0.034, 0.02, s * 0.013), V(0.037, 0.008, s * 0.013)], [0.011, 0.0075, 0.0058, 0.0062]));   // front legs
+    P.push(ell(V(0.042, 0.0055, s * 0.013), 0.009, 0.0055, 0.0065));                      // front paws
+    P.push(...chain([V(-0.04, 0.035, s * 0.03), V(-0.052, 0.012, s * 0.03), V(-0.045, 0.007, s * 0.03), V(0.008, 0.0065, s * 0.03)], [0.013, 0.008, 0.007, 0.006]));   // folded hind legs, hocks behind
+    P.push(ell(V(0.014, 0.0055, s * 0.03), 0.009, 0.0055, 0.0065));                       // hind paws
   }
-  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.003, 6, 24, Math.PI), bz);   // tail laid round the side
-  tail.rotation.x = Math.PI / 2; tail.position.set(-0.035, 0.004, 0); tail.rotation.z = Math.PI / 2; tail.castShadow = true; d.add(tail);
+  P.push(...chain([V(-0.068, 0.01, 0), V(-0.062, 0.005, 0.03), V(-0.025, 0.004, 0.044), V(0.0, 0.004, 0.044)], [0.0055, 0.0045, 0.0038, 0.003]));   // tail round the side
+  const k = 0.006, smin = (a, b) => { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; };
+  const N = 72, half = N / 2, C = V(0.008, 0.1, 0), S = 0.115, zs = 0.82;                 // field cube: centre C, half-size S; zs narrows the body
+  const mc = new MarchingCubes(N, new THREE.MeshBasicMaterial(), false, false, 200000);
+  mc.isolation = 0; const p = new THREE.Vector3();
+  for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    p.set(C.x + (x - half) / half * S, C.y + (y - half) / half * S, (C.z + (z - half) / half * S) / zs);
+    let d = 1; for (const f of P) d = smin(d, f(p));
+    mc.field[x + y * N + z * N * N] = -d;
+  }
+  mc.update();
+  const n = mc.count, geo = new THREE.BufferGeometry();
+  const pos = mc.geometry.attributes.position.array.slice(0, n * 3), nor = mc.geometry.attributes.normal.array.slice(0, n * 3);
+  for (let i = 0; i < n; i++) { pos[3 * i] = C.x + pos[3 * i] * S; pos[3 * i + 1] = C.y + pos[3 * i + 1] * S; pos[3 * i + 2] = (C.z + pos[3 * i + 2] * S); }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  return (M.greyhoundGeo = geo);
+}
+function greyhound(g, x, y, z, rot) {
+  const bz = M.bronzeCast || (M.bronzeCast = new THREE.MeshStandardMaterial({ color: 0x715334, roughness: 0.3, metalness: 0.55 }));   // warm antique bronze, not black
+  const m = new THREE.Mesh(greyhoundGeometry(), bz); m.position.copy(L(x, y, z)); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; g.add(m);
 }
 // woven seagrass basket texture
 function seagrassTexture() {
@@ -3415,7 +3441,7 @@ export function buildHouse(spec) {
     const slot = (k, axis, face, dir, c, zc, standIn) => {
       const v = OW[k];
       if (v === 'none') return;
-      if (OWNED_ART[v]) { const a = OWNED_ART[v]; hangOwned(int_, axis, face, dir, c, zc, a.w, a.h, a.file, a.opt); }
+      if (OWNED_ART[v]) { const a = OWNED_ART[v]; hangOwned(int_, axis, face, dir, c, zc, a.w, a.h, a.file, k === 'back' ? { ...a.opt, walnut: true } : a.opt); }   // the back wall's frame in the kitchen walnut (client 2026-11-12)
       else standIn();
     };
     slot('back', 'y', ks, -1, hx, kd.floor + 1.5, () => hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'blush', 0.65 / 0.95), { depth: 0.045 }));
