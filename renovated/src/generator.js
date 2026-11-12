@@ -3441,7 +3441,7 @@ export function buildHouse(spec) {
     const slot = (k, axis, face, dir, c, zc, standIn) => {
       const v = OW[k];
       if (v === 'none') return;
-      if (OWNED_ART[v]) { const a = OWNED_ART[v]; hangOwned(int_, axis, face, dir, c, zc, a.w, a.h, a.file, k === 'back' || k === 'hall' ? { ...a.opt, walnut: true } : a.opt); }   // the back wall's and mid-hall frames in the kitchen walnut (client 2026-11-12)
+      if (OWNED_ART[v]) { const a = OWNED_ART[v]; hangOwned(int_, axis, face, dir, c, zc, a.w, a.h, a.file, { ...a.opt, walnut: true }); }   // all three hall frames in the kitchen walnut (client 2026-11-12)
       else standIn();
     };
     slot('back', 'y', ks, -1, hx, kd.floor + 1.5, () => hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'blush', 0.65 / 0.95), { depth: 0.045 }));
