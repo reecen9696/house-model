@@ -2164,7 +2164,7 @@ function hangOwned(group, axis, face, dir, c, zc, w, h, name, { frame = 0.02, ga
   if (axis === 'x') box(group, lo, hi, c - ow / 2, c + ow / 2, zc - oh / 2, zc + oh / 2, fm);
   else box(group, c - ow / 2, c + ow / 2, lo, hi, zc - oh / 2, zc + oh / 2, fm);
   wallFace(group, axis, f1 + dir * 0.001, dir, c, zc, w + 2 * gap, h + 2 * gap, M.artGap || (M.artGap = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 })));
-  return wallFace(group, axis, f1 + dir * 0.002, dir, c, zc, w, h, new THREE.MeshStandardMaterial({ map: artPhoto(name), roughness: 0.75 }));
+  return wallFace(group, axis, f1 + dir * 0.002, dir, c, zc, w, h, (() => { const t = artPhoto(name); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.75, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.22 }); })());   // lifted as if lit by its own art light (client 2026-11-12: brighter); the prints are dark and read black under room light alone
 }
 // arched mirror on a wall plane x = face, looking toward dir (lot x): a slim brushed-brass arch (15 mm face, 25 deep,
 // eased edges) round a real reflective glass (three's Reflector: the hall renders into it), after the floating-glass
