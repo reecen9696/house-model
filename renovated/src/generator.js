@@ -1969,6 +1969,60 @@ function rollerBlind(group, along, face, inward, a0, a1, zBot, { h = 0.08, drop 
   if (drop > 0) b(0.054, 0.06, u0 + 0.01, u1 - 0.01, zBot - drop, zBot, fabric);
   b(0.046, 0.068, u0 + 0.01, u1 - 0.01, zBot - drop - 0.015, zBot - drop, cass);           // bottom bar
 }
+// Marketplace curtain set (client 2026-11-11), shortened from its 3900 drop to floor-to-ceiling: Nettex Bali linen sheer in
+// Gardenia with inverted pleats, Hoad CMB-320 cotton blockout in Latte with an S-fold heading, on a double ceiling track.
+// The sheer runs on the window-side rail (at), the blockout on the room-side rail 100 in from it (inward: +1/-1 toward the
+// room), as in the listing photo. along: 'x' or 'y'. Spans are [a0, a1] along the track; anything under 600 wide is a gathered stack
+function listingCurtain(group, along, inward, at, u0, u1, floor, ceil, sheerSpans, blockoutSpans) {
+  const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
+  const sheer = M.listingSheer || (M.listingSheer = new THREE.MeshStandardMaterial({ color: 0xf1eadc, roughness: 1, transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false, vertexColors: true }));
+  const heading = M.listingHead || (M.listingHead = new THREE.MeshStandardMaterial({ color: 0xf1eadc, roughness: 1, transparent: true, opacity: 0.93, side: THREE.DoubleSide, depthWrite: false, vertexColors: true }));
+  const blockout = M.listingBlockout || (M.listingBlockout = new THREE.MeshStandardMaterial({ color: 0xc4b6a2, roughness: 0.88, side: THREE.DoubleSide, vertexColors: true }));
+  const railS = at, railB = at + inward * 0.1, zT = ceil - 0.024, zB = floor + 0.012;      // fabric hangs just under the track
+  const tb = (p0, p1, q0, q1, z0, z1, m) => along === 'x' ? box(group, p0, p1, q0, q1, z0, z1, m) : box(group, q0, q1, p0, p1, z0, z1, m);
+  for (const r of [railB, railS]) {
+    tb(u0, u1, r - 0.016, r + 0.016, ceil - 0.022, ceil, track);
+    for (const e of [u0, u1 - 0.012]) tb(e, e + 0.012, r - 0.019, r + 0.019, ceil - 0.026, ceil, track);   // end caps
+  }
+  const q0 = Math.min(railB, railS) - 0.016, q1 = Math.max(railB, railS) + 0.016;
+  for (let u = u0 + 0.25; u < u1; u += 0.5) tb(u - 0.02, u + 0.02, q0, q1, ceil - 0.006, ceil, track);   // brackets tying the two rails
+  const sheet = (a0, a1, plane, z0, z1, rows, mat, off, step, shadow, amp, ao) => {       // ao: how dark the fold troughs go
+    const n = Math.ceil((a1 - a0) / step), pos = [], idx = [], col = [];
+    for (let i = 0; i <= n; i++) {
+      const u = a0 + (a1 - a0) * i / n, s = u - a0;
+      for (let r = 0; r <= rows; r++) {
+        const z = z0 + (z1 - z0) * r / rows, p = plane + off(s, z), v = along === 'x' ? L(u, p, z) : L(p, u, z);
+        pos.push(v.x, v.y, v.z);
+        const t = Math.max(-1, Math.min(1, inward * off(s, z) / amp)), c = 1 - ao * (1 - t) / 2; col.push(c, c, c);
+        if (i && r) { const k = i * (rows + 1) + r, kp = k - (rows + 1); idx.push(kp - 1, k - 1, kp, k - 1, k, kp); }
+      }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.castShadow = shadow; m.receiveShadow = true; if (mat.transparent) m.renderOrder = 2; group.add(m);
+  };
+  // S-fold: even, rounded waves from top to hem, opening out a touch toward the floor
+  const sFold = (pitch, amp) => (s, z) => {
+    const d = (zT - z) / (zT - zB), w = Math.sin(2 * Math.PI * s / pitch);
+    return amp * Math.sign(w) * Math.pow(Math.abs(w), 0.75) * (1 + 0.12 * d) + 0.003 * Math.sin(s * 11 + z * 1.3) * d;
+  };
+  // inverted pleat: a flat heading with a narrow tuck at each pleat, relaxing into soft uneven folds over the top 850
+  const pleat = (pitch, amp) => (s, z) => {
+    const d = Math.min(1, (zT - z) / 0.85), e = d * d * (3 - 2 * d), ph = s / pitch - Math.floor(s / pitch) - 0.5;
+    const top = -inward * 0.016 * Math.exp(-Math.pow(ph / 0.07, 2));
+    const soft = amp * (0.75 * Math.sin(2 * Math.PI * s / pitch) + 0.25 * Math.sin(2 * Math.PI * s / (pitch * 0.43) + 1.1)) + 0.004 * Math.sin(s * 6 + z * 1.7) * d;
+    return top * (1 - e) + soft * e;
+  };
+  for (const [a0, a1] of blockoutSpans) {
+    const drawn = a1 - a0 > 0.6, pitch = drawn ? 0.14 : 0.04;
+    sheet(a0, a1, railB, zB, zT, 30, blockout, sFold(pitch, 0.04), Math.min(0.005, pitch / 14), true, 0.04, 0.5);
+  }
+  for (const [a0, a1] of sheerSpans) {
+    const drawn = a1 - a0 > 0.6, pitch = drawn ? 0.2 : 0.055, amp = drawn ? 0.035 : 0.045, off = pleat(pitch, amp), step = Math.min(0.005, pitch / 14);
+    sheet(a0, a1, railS, zB, zT - 0.1, 40, sheer, off, step, false, amp, 0.3);
+    sheet(a0, a1, railS, zB, zB + 0.08, 3, sheer, off, step, false, amp, 0.3);                        // the 80 hem: a doubled band
+    sheet(a0, a1, railS, zT - 0.1, zT, 6, heading, off, step, false, amp, 0.3);                       // heading
+  }
+}
 // The kitchen's ceiling grid: columns at the buffet's front edge, the sink bench's front edge and midway between; rows
 // 0.8 apart centred on the table (the sink and table pairs on the first two, the buffet pair a row on, over the buffet)
 function kitchenGrid(spec) {
@@ -2088,6 +2142,30 @@ function hangArt(group, axis, face, dir, c, zc, w, h, map, { depth = 0.04, frame
   }
   return wallFace(group, axis, front, dir, c, zc + (mat ? mat * 0.04 : 0), iw, ih, new THREE.MeshStandardMaterial({ map, roughness: 0.85 }));
 }
+// the client's own pieces (photos in assets/art; canvas sizes w x h in metres, frame options for hangOwned)
+//  - dachshund-dancer: 28 x 40 in (711 x 1016) print, slim white float frame with a black edge (as listed)
+//  - thierry-b-2003: Thierry B., 2003, acrylic drip abstract, 1320 square canvas (measured), in a new white timber
+//    float frame (~10 shadow gap + 30 face, ~1400 overall). Photo has a sun glare patch lower left.
+//  - sarah-brooke: Middle of Nowhere / Sarah Brooke hand-painted abstract, ~1200 wide (measured) x ~1500 (assumed,
+//    the standard 120 x 150), its slim white float frame
+const OWNED_ART = {
+  dancer: { file: 'dachshund-dancer', w: 0.711, h: 1.016, opt: { frame: 0.018, gap: 0.006, depth: 0.04 } },
+  thierry: { file: 'thierry-b-2003', w: 1.32, h: 1.32, opt: { frame: 0.03, gap: 0.01, depth: 0.05 } },
+  brooke: { file: 'sarah-brooke-blue', w: 1.2, h: 1.5, opt: { frame: 0.012, gap: 0.006, depth: 0.045 } },
+};
+// an owned piece from a photo (assets/art/<name>.jpg, perspective-corrected from the client's photos): canvas w x h,
+// in a float frame: a 'frame'-wide face, a dark 'gap' shadow line round the canvas, the canvas standing proud of the gap
+const artPhoto = n => M['art_' + n] || (M['art_' + n] = (() => { const t = new THREE.TextureLoader().load(`./assets/art/${n}.jpg`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; })());
+function hangOwned(group, axis, face, dir, c, zc, w, h, name, { frame = 0.02, gap = 0.008, depth = 0.05, white = true } = {}) {
+  const fm = white ? (M.artWhite || (M.artWhite = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.55 }))) : artOak();
+  const ow = w + 2 * (frame + gap), oh = h + 2 * (frame + gap);
+  // frame face (a box the full size), then the shadow gap and the canvas laid over it
+  const f1 = face + dir * depth, lo = Math.min(face, f1), hi = Math.max(face, f1);
+  if (axis === 'x') box(group, lo, hi, c - ow / 2, c + ow / 2, zc - oh / 2, zc + oh / 2, fm);
+  else box(group, c - ow / 2, c + ow / 2, lo, hi, zc - oh / 2, zc + oh / 2, fm);
+  wallFace(group, axis, f1 + dir * 0.001, dir, c, zc, w + 2 * gap, h + 2 * gap, M.artGap || (M.artGap = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 })));
+  return wallFace(group, axis, f1 + dir * 0.002, dir, c, zc, w, h, new THREE.MeshStandardMaterial({ map: artPhoto(name), roughness: 0.75 }));
+}
 // arched mirror on a wall plane x = face, looking toward dir (lot x): a slim brushed-brass arch (15 mm face, 25 deep,
 // eased edges) round a real reflective glass (three's Reflector: the hall renders into it), after the floating-glass
 // brass arches (Rooms To Go Nelle, Rejuvenation's arched brass mirror) and Freedom's arch-with-a-stone-shelf entry mirror
@@ -2119,6 +2197,106 @@ function plantPot(g, x, y, z, r, h, mat) {
   const soil = new THREE.Mesh(new THREE.CylinderGeometry(r - 0.015, r - 0.015, 0.01, 24), decMat('soil', 0x3b2f25, { roughness: 1 }));
   soil.position.copy(L(x, y, z + h - 0.035)); g.add(soil);
   const gr = new THREE.Group(); gr.position.copy(L(x, y, z + h - 0.03)); g.add(gr); return gr;
+}
+// a closed vessel turned from a radius profile R(h) (0..H), then pushed in and out by disp(h, angle, r) for ribs or
+// flutes; the mouth turns in to an inner wall of radius rIn, 60 deep
+function fluteVessel(g, x, y, z, H, R, disp, rIn, mat, lipToo = false) {
+  const pts = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 70; i++) { const h = H * i / 70; pts.push(new THREE.Vector2(R(h), h)); }
+  pts.push(new THREE.Vector2(rIn, H), new THREE.Vector2(rIn, H - 0.06), new THREE.Vector2(0, H - 0.06));
+  const geo = new THREE.LatheGeometry(pts, 96), p = geo.attributes.position, nOuter = 71;
+  for (let i = 0; i < p.count; i++) {
+    const vx = p.getX(i), vy = p.getY(i), vz = p.getZ(i), r = Math.hypot(vx, vz);
+    if (r < 1e-6) continue;
+    const j = i % pts.length; if (j === 0 || j > (lipToo ? nOuter + 2 : nOuter)) continue;                     // the lathe lays points out profile-first
+    const a = Math.atan2(vz, vx), r2 = j > nOuter ? r * disp(H, a, 1) : disp(vy, a, r); p.setX(i, vx * r2 / r); p.setZ(i, vz * r2 / r);
+  }
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, mat); m.position.copy(L(x, y, z)); m.castShadow = m.receiveShadow = true; g.add(m); return m;
+}
+// onyx / alabaster: honey cream with soft wandering veins
+function onyxTexture() {
+  if (M.alabasterTex) return M.alabasterTex;
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), rnd = seeded(7);
+  const grd = g.createLinearGradient(0, 0, 256, 256); grd.addColorStop(0, '#f1e7cf'); grd.addColorStop(0.5, '#e9dbb8'); grd.addColorStop(1, '#f3ead6');
+  g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 14; i++) {
+    g.strokeStyle = rnd() > 0.5 ? 'rgba(201,170,112,0.35)' : 'rgba(255,252,240,0.5)'; g.lineWidth = 1 + rnd() * 5;
+    g.beginPath(); let yy = rnd() * 256; g.moveTo(0, yy); for (let xx = 0; xx <= 256; xx += 16) { yy += (rnd() - 0.5) * 14; g.lineTo(xx, yy + Math.sin(xx / 40 + i) * 6); } g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (M.alabasterTex = t);
+}
+function alabasterAshtray(g, x, y, z, s, h, rot = 0) {
+  const mat = M.onyxTray || (M.onyxTray = new THREE.MeshPhysicalMaterial({ map: onyxTexture(), roughness: 0.28, clearcoat: 0.4, sheen: 0.3, sheenColor: new THREE.Color(0xfff4d8), emissive: 0x2a2110, emissiveIntensity: 0.25 }));
+  const gr = new THREE.Group(); gr.position.copy(L(x, y, z)); gr.rotation.y = rot; g.add(gr);
+  const R = s * 0.36, sq = new THREE.Shape(), hs = s / 2, cr = 0.012;
+  sq.moveTo(-hs + cr, -hs); sq.lineTo(hs - cr, -hs); sq.quadraticCurveTo(hs, -hs, hs, -hs + cr); sq.lineTo(hs, hs - cr); sq.quadraticCurveTo(hs, hs, hs - cr, hs);
+  sq.lineTo(-hs + cr, hs); sq.quadraticCurveTo(-hs, hs, -hs, hs - cr); sq.lineTo(-hs, -hs + cr); sq.quadraticCurveTo(-hs, -hs, -hs + cr, -hs);
+  const hole = new THREE.Path(); hole.absarc(0, 0, R, 0, Math.PI * 2, true); sq.holes.push(hole);
+  const rd = 0.009, ex = { bevelEnabled: false, curveSegments: 40 };   // no bevels: one flush block, the sides straight from the sideboard to the rim
+  const rim = new THREE.Mesh(new THREE.ExtrudeGeometry(sq, { depth: h * 0.55 - rd, ...ex }), mat);   // the ring up to the rests' floor
+  rim.rotation.x = -Math.PI / 2; rim.position.y = h * 0.45; rim.castShadow = rim.receiveShadow = true; gr.add(rim);
+  // four raised corners; the 16 mm gaps between them, mid-side, are the recessed cigarette rests
+  const w = 0.008, ri = Math.sqrt(R * R - w * w), a1 = Math.atan2(w, ri);
+  for (let k = 0; k < 4; k++) {
+    const q = new THREE.Shape(); q.moveTo(w, hs); q.lineTo(hs - cr, hs); q.quadraticCurveTo(hs, hs, hs, hs - cr); q.lineTo(hs, w); q.lineTo(ri, w); q.absarc(0, 0, R, a1, Math.PI / 2 - a1, false); q.lineTo(w, hs);
+    const geo = new THREE.ExtrudeGeometry(q, { depth: rd, ...ex }); geo.rotateZ(k * Math.PI / 2);
+    const c = new THREE.Mesh(geo, mat); c.rotation.x = -Math.PI / 2; c.position.y = h - rd; c.castShadow = c.receiveShadow = true; gr.add(c);
+  }
+  const solid = new THREE.Shape(sq.getPoints(12));                       // the solid base, the same rounded outline
+  const base = new THREE.Mesh(new THREE.ExtrudeGeometry(solid, { depth: h * 0.45, ...ex }), mat);
+  base.rotation.x = -Math.PI / 2; base.castShadow = base.receiveShadow = true; gr.add(base);
+  const dish = new THREE.Mesh(new THREE.LatheGeometry([[0, h * 0.45], [R * 0.6, h * 0.47], [R * 0.92, h * 0.62], [R, h - rd]].map(([a, b]) => new THREE.Vector2(a, b)), 48), mat);
+  dish.receiveShadow = true; gr.add(dish);
+}
+// a leafy plant with no pot of its own, for a vase: n long strappy leaves that rise from a soil disc of radius r at z and
+// arch over, the tips flopping down past the lip (client 2026-11-12: floppier). Each leaf is a creased ribbon along a
+// curve whose angle from vertical grows toward the tip; h is about the tallest arch
+function bladePlant(g, x, y, z, h, r, n = 11, seed = 11) {
+  const rnd = seeded(seed), leafM = decMat('archLeaf', 0x3f5f37, { roughness: 0.55, side: THREE.DoubleSide });
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.004, 24), decMat('soil', 0x3b2f25, { roughness: 1 })); soil.position.copy(L(x, y, z)); g.add(soil);
+  const gr = new THREE.Group(); gr.position.copy(L(x, y, z)); g.add(gr);
+  const S = 14;
+  for (let i = 0; i < n; i++) {
+    const az = i / n * Math.PI * 2 + rnd() * 0.5, toWall = Math.max(0, Math.cos(az));   // local +x is lot -x: the wall behind
+    const len = h * (0.9 + rnd() * 0.8) * (1 - 0.55 * toWall), w = 0.022 + rnd() * 0.012, a0 = 0.15 + rnd() * 0.35, bend = 1.5 + rnd() * 1.1;
+    const pos = [], idx = []; let px = 0, py = 0;
+    for (let k = 0; k <= S; k++) {
+      const t = k / S, th = a0 + bend * Math.pow(t, 1.6), ww = w * Math.sin(Math.PI * Math.min(1, 0.12 + t * 0.95)) * (1 - t * 0.35);
+      if (k) { const ds = len / S; px += Math.sin(th) * ds; py += Math.cos(th) * ds; }
+      const cr = ww * 0.35;                                                   // midrib crease: the centre stands proud
+      pos.push(px, py, -ww / 2, px - Math.cos(th) * cr * 0.4, py + Math.sin(th) * cr * 0.4, 0, px, py, ww / 2);
+      if (k) { const o = (k - 1) * 3; idx.push(o, o + 3, o + 1, o + 1, o + 3, o + 4, o + 1, o + 4, o + 2, o + 2, o + 4, o + 5); }
+    }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, leafM);
+    m.position.set(Math.cos(az) * r * 0.4, 0, Math.sin(az) * r * 0.4); m.rotation.y = -az; m.castShadow = true; gr.add(m);
+  }
+}
+// sitting greyhound in antique bronze, 200 H x 140 x 70 (the client's piece): upright chest, straight front legs, long
+// neck, a long narrow head held level, rose ears folded back, hind legs folded flat with the tail round them. Built
+// facing local +x, turned by rot about the vertical
+function greyhound(g, x, y, z, rot) {
+  const bz = M.bronzeDog || (M.bronzeDog = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 0.34, metalness: 0.8 }));
+  const d = new THREE.Group(); d.position.copy(L(x, y, z)); d.rotation.y = rot; g.add(d);
+  const blob = (px, py, pz, rx, ry, rz, tz = 0, ty = 0) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), bz); m.position.set(px, py, pz); m.scale.set(rx, ry, rz); m.rotation.set(0, ty, tz); m.castShadow = true; d.add(m); return m; };
+  const limb = (x0, y0, x1, y1, zz, r0, r1) => { const len = Math.hypot(x1 - x0, y1 - y0), m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, len, 12), bz); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, zz); m.rotation.z = -Math.atan2(x1 - x0, y1 - y0); m.castShadow = true; d.add(m); };
+  blob(-0.035, 0.044, 0, 0.04, 0.044, 0.031);                 // haunches on the ground
+  blob(-0.006, 0.085, 0, 0.028, 0.055, 0.025, -0.45);         // back and belly, rising to the chest
+  blob(0.02, 0.106, 0, 0.024, 0.032, 0.021);                  // deep chest
+  limb(0.02, 0.122, 0.031, 0.17, 0, 0.012, 0.0085);           // long neck
+  blob(0.035, 0.178, 0, 0.018, 0.0125, 0.0115);               // skull
+  blob(0.062, 0.1735, 0, 0.024, 0.0072, 0.0072, -0.12);       // long narrow muzzle
+  blob(0.085, 0.1705, 0, 0.0038, 0.0038, 0.0038);             // nose
+  for (const s of [-1, 1]) {
+    blob(0.024, 0.187, s * 0.008, 0.009, 0.0028, 0.006, 0.35, s * 0.5);   // rose ears folded back
+    limb(0.03, 0.1, 0.033, 0.008, s * 0.011, 0.0068, 0.0058);             // straight front legs
+    blob(0.038, 0.005, s * 0.011, 0.009, 0.005, 0.006);                   // front paws
+    blob(-0.004, 0.01, s * 0.024, 0.034, 0.008, 0.008);                   // folded hind legs along the ground
+    blob(0.029, 0.005, s * 0.024, 0.009, 0.005, 0.006);                   // hind paws
+  }
+  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.003, 6, 24, Math.PI), bz);   // tail laid round the side
+  tail.rotation.x = Math.PI / 2; tail.position.set(-0.035, 0.004, 0); tail.rotation.z = Math.PI / 2; tail.castShadow = true; d.add(tail);
 }
 // woven seagrass basket texture
 function seagrassTexture() {
@@ -2399,7 +2577,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', klLights = 'designed', art = 'v2', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2543,6 +2721,8 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // tape photos; the module splits inside each run are read off the photos (see K.u in the build).
   if (kitchenStyle === 'gloss') Object.assign(K, { u: true, std: false, ikea: false, tall: false, run: [1.41, 4.69, 15.02, 15.62], return: [4.09, 4.69, 15.62, 18.02], uppers_z: [1.53, 2.23], uppers_depth: 0.33, sink_y: [16.05, 16.73] });
   spec.renovation.curtains = !!curtains;
+  spec.renovation.listing_curtains = !!listingCurtains;
+  spec.renovation.listing_blockout = !!listingBlockout;
   spec.renovation.shutters = !!shutters;
   const c = spec.roof.covered, lounge = spec.rooms.find(r => r.name === 'Lounge / living');
   c.z_top_east += roofRaise; c.z_top_west += roofRaise;
@@ -2620,6 +2800,8 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // artwork (Reno > Hall > Artwork): 'v2' the proposed layout (ART-PLACEMENT.md Part D), 'hall' the earlier two hall
   // paintings only, 'none'
   spec.renovation.art = ['v2', 'hall', 'none'].includes(art) ? art : 'v2';
+  const okArt = v => ['dancer', 'thierry', 'brooke', 'stand', 'none'].includes(v) ? v : null;
+  spec.renovation.owned_art = { back: okArt(artBack) || 'dancer', hall: okArt(artHall) || 'thierry', ext: okArt(artExt) || 'brooke' };
   // styling: plants, branches and surface objects (Reno > Hall > Styling): 'styled' (DECOR-STYLING.md Part D) or 'earlier'
   spec.renovation.decor = decor === 'earlier' ? 'earlier' : 'styled';
   // back yard (Reno > Outside > Back yard): 'deck' a timber deck level with the sliders, stepping down to the lawn and the
@@ -2995,7 +3177,7 @@ export function buildHouse(spec) {
   }
   // --- front bedroom: sheer curtains across the bay end (Reno sheet's sheer curtains), on a ceiling track 220 in from
   // the bay wall (clear of the cornice), wall to wall, OPEN: each side gathered into a ~450 stack beside the window
-  if (spec.renovation.curtains) {
+  if (spec.renovation.curtains && !spec.renovation.listing_curtains) {
     const fr = spec.rooms.find(r => r.name === 'Front bedroom'), zc = fr.floor + fr.ceil, y = fr.y0 + 0.22, x0 = fr.x0 + 0.12, x1 = fr.x1 - 0.12;
     const track = M.track || (M.track = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.5 }));
     const sheerMat = M.sheer || (M.sheer = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.84, side: THREE.DoubleSide, depthWrite: false }));
@@ -3042,7 +3224,7 @@ export function buildHouse(spec) {
     const KW50 = [0.316, 0.997, 0.227], KW35 = [0.316, 0.94, 0.224], KW25 = [0.294, 0.881, 0.194];
     const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2'), b3 = spec.rooms.find(r => r.name === 'Bedroom 3');
     split(fr.x1, frontBedY(spec), -1, 0, KW35, 2.65, 'Front bedroom');
-    const w1 = Win.W1_bed2; split(b2.x1, (w1.y1 + 0.07 + F.robe_bed2.y0) / 2, -1, 0, KW25, 2.65, 'Bedroom 2');
+    const w1 = Win.W1_bed2; split(b2.x1, (w1.y1 + 0.07 + F.robe_bed2.y0) / 2 + (spec.renovation.listing_curtains ? 0.12 : 0), -1, 0, KW25, 2.65, 'Bedroom 2');
     if (b3) { const w2 = Win.W2_living; split(b3.x1, (w2.y0 + w2.y1) / 2, -1, 0, KW25, w2.head + 0.075 + 0.08 + 0.05 + KW25[0], 'Bedroom 3'); }   // clear of the roller blind's cassette over the architrave
     { const kd = spec.rooms.find(r => r.name === 'Kitchen / dining'), w3 = Win.W3_kitchen;
       // a slim 50 mm roller blind cassette sits on the window's architrave (client); the head unit sits 10 above it, its top
@@ -3227,8 +3409,16 @@ export function buildHouse(spec) {
     const rm = n => spec.rooms.find(r => r.name === n), ks = spec.kitchen_south_wall.y0, F = spec.fixtures;
     // 1. the hero: kitchen south wall beside the bathroom door, on the front door's axis 14.7 m away. 700 x 1000
     //    canvas in an oak float frame, centre 1.50; lit by spill (the buffet downlight beside it and the table lights)
-    const kd = rm('Kitchen / dining'), hx = 0.59;
-    hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'blush', 0.65 / 0.95), { depth: 0.045 });
+    const kd = rm('Kitchen / dining'), hx = 0.59, OW = spec.renovation.owned_art;
+    // the three hall slots (Reno > Hall > Owned art, 2026-11-12): each takes one of the client's own pieces, the planned
+    // stand-in, or nothing. Back wall = the vista panel (0.95 usable: only the dancer print fits it properly)
+    const slot = (k, axis, face, dir, c, zc, standIn) => {
+      const v = OW[k];
+      if (v === 'none') return;
+      if (OWNED_ART[v]) { const a = OWNED_ART[v]; hangOwned(int_, axis, face, dir, c, zc, a.w, a.h, a.file, a.opt); }
+      else standIn();
+    };
+    slot('back', 'y', ks, -1, hx, kd.floor + 1.5, () => hangArt(int_, 'y', ks, -1, hx, kd.floor + 1.5, 0.7, 1.0, artTex(11, 'blush', 0.65 / 0.95), { depth: 0.045 }));
     {
       // no spot on the hero (client 2026-10-21: the scallop over the frame felt wrong). Per the lighting notes, art that
       // is part of the setting takes spill, and downlights belong over benches: the fitting serves the buffet instead.
@@ -3244,8 +3434,11 @@ export function buildHouse(spec) {
       }
     }
     // 2. mid-hall: one 700 x 900 original on the party wall, centred on the mid-hall pendant, which lights it; 35 deep
-    const ha = rm('Hall');
-    hangArt(int_, 'x', W.party_half, 1, (ha.y0 + ha.y1) / 2, ha.floor + 1.5, 0.7, 0.9, artTex(12, 'quiet', 0.65 / 0.85), { depth: 0.035 });
+    const ha = rm('Hall'), hy = (ha.y0 + ha.y1) / 2;
+    slot('hall', 'x', W.party_half, 1, hy, ha.floor + 1.5, () => hangArt(int_, 'x', W.party_half, 1, hy, ha.floor + 1.5, 0.7, 0.9, artTex(12, 'quiet', 0.65 / 0.85), { depth: 0.035 }));
+    // 2b. extension (past the arch), party wall, centred on the extension pendant's line: bare in the plan; an owned
+    //     piece when one is picked for it
+    { const ex = rm('Hall extension'), ey = (spec.renovation.bedroom3.door_y1 + ex.y1) / 2; slot('ext', 'x', W.party_half, 1, ey, ex.floor + 1.5, () => {}); }
     // 3. entry: a 600 x 1000 arched mirror (echoes the hall arch) on the west wall before the front bedroom door, centre
     //    1.55, over a 120-deep oak key ledge; the party wall stays clear so the hero reads from the door
     const en = rm('Entry');
@@ -3284,14 +3477,7 @@ export function buildHouse(spec) {
         }
       });
     }
-    // 5. sideboard: no art on it (client 2026-10-21: the leaned piece came out); the lamp at the north end (out of the
-    //    hero's sightline), a low olive bowl at the south end
-    if (spec.renovation.sideboard) {
-      const top = kd.floor + 0.86, wx = kd.x0 + 0.005;
-      const bowlM = M.artBowl || (M.artBowl = new THREE.MeshStandardMaterial({ color: 0x6b6b3a, roughness: 0.5 }));
-      const bowl = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.06, 0], [0.11, 0.035], [0.13, 0.085], [0.122, 0.088], [0.1, 0.045], [0.05, 0.02], [0, 0.02]].map(([a, b]) => new THREE.Vector2(a, b)), 32), bowlM);
-      bowl.position.copy(L(wx + 0.27, ks - 0.2, top)); bowl.castShadow = true; G.furniture.add(bowl);
-    }
+    // 5. sideboard: no art on it; its top is styled with the client's own pieces (decor block, 2026-11-12)
     // 6. front bedroom, the hall wall you see from the bed: a calm pair, 800 x 1000 each, 100 apart, centred on the
     //    bed's line, centre 1.50, hung flush on the wall from two D-rings each on plugged screws in the brick (client
     //    2026-10-21: no chains or cords from the picture rail in this room)
@@ -3340,25 +3526,41 @@ export function buildHouse(spec) {
       const lemon = decMat('lemon', 0xf2d23a, { roughness: 0.6 });
       [[0, 0, 0], [0.06, 0.03, 0], [-0.05, 0.04, 0], [0.01, -0.06, 0], [0.02, 0.01, 0.05]].forEach(([dx, dy, dz]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), lemon); l.scale.set(1, 0.85, 1.2); l.position.copy(L(4.39 + dx, 16.5 + dy, bz + 0.045 + dz)); l.castShadow = true; fu.add(l); });
     }
-    // buffet (sideboard, 1600 x 435, top 860): one group just north of centre (an oak-framed photo leaning on the wall,
-    // a small leafy houseplant set back against the wall beside it, two books in front of the plant), the middle-south
-    // clear under the hero's corner, and keys in the olive bowl at the south end (client 2026-10-21: no empty gap)
+    // buffet (sideboard, 1600 x 435, top 860), under the back-wall painting (client 2026-11-12, their own pieces; the
+    // photo, plant, books, olive bowl and keys came out). From the painting's end northward: the two vases side by side
+    // (tall ribbed with a leafy plant in the corner, wavy with an arching strappy-leaved plant), the bronze greyhound, then the
+    // vintage Italian alabaster ashtray (~270 square) with the keys in it, nearest the hall. The north ~600 stays clear.
     if (spec.renovation.sideboard) {
-      const sy0 = spec.kitchen_south_wall.y0 - 0.005 - 1.6, top = 0.86, wx = rm('Kitchen / dining').x0 + 0.005;
-      const ph = new THREE.Group(); ph.position.copy(L(wx + 0.06, sy0 + 0.55, top)); ph.rotation.z = -0.12; fu.add(ph);
-      box(ph, -0.02, 0, -0.1, 0.1, 0, 0.25, artOak());
-      wallFace(ph, 'x', 0.001, 1, 0, 0.125, 0.16, 0.21, new THREE.MeshStandardMaterial({ map: artTex(21, 'calm', 0.16 / 0.21), roughness: 0.8 }));
-      plantModel(fu, 'rhyzome', wx + 0.17, sy0 + 0.86, top, 0.45, 1.1, null, 0.32);
-      bookStack(fu, wx + 0.29, sy0 + 1.06, top, 0.16, 0.22, [[0.03, 0xd6b98f], [0.025, 0x2c3a52]], 0.25);   // set back beside the plant, clear of the front edge
-      if (spec.renovation.art === 'v2') {                                                      // keys in the olive bowl (centre wx + 0.27, ks - 0.2; floor 20 up)
-        const kx = wx + 0.27, ky = spec.kitchen_south_wall.y0 - 0.2, kz = top + 0.024;
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0018, 6, 20), artBrass()); ring.rotation.x = Math.PI / 2; ring.position.copy(L(kx, ky, kz)); fu.add(ring);
-        for (const [a, mat] of [[0.4, decMat('keySteel', 0xb9b6ae, { roughness: 0.35, metalness: 0.6 })], [-0.5, artBrass()]]) {
-          const key = new THREE.Group(); key.position.copy(L(kx, ky, kz - 0.0005)); key.rotation.y = a; fu.add(key);
-          const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.003, 16), mat); bow.position.set(0.022, 0, 0); key.add(bow);
-          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.003, 0.007), mat); blade.position.set(0.048, 0, 0); key.add(blade);
+      const ye = spec.kitchen_south_wall.y0 - 0.005, top = 0.86, wx = rm('Kitchen / dining').x0 + 0.005;
+      const cream = decMat('vaseCream', 0xefe8d6, { roughness: 0.92 });
+      // tall ribbed vase, 300 H x 180 dia: urn body, horizontal ribs, flared lip
+      fluteVessel(fu, wx + 0.115, ye - 0.13, top, 0.3, h => {
+        const t = h / 0.3; const body = t < 0.85 ? 0.062 + 0.028 * Math.sin(Math.min(t / 0.7, 1) * Math.PI / 2) - (t > 0.7 ? 0.035 * ((t - 0.7) / 0.15) ** 2 : 0) : 0.055 + 0.01 * ((t - 0.85) / 0.15);
+        return body;
+      }, (h, a, r) => r - (h > 0.015 && h < 0.255 ? 0.0028 * Math.abs(Math.sin(h / 0.3 * Math.PI * 17)) : 0), 0.049, cream);
+      plantModel(fu, 'rhyzome', wx + 0.115, ye - 0.13, top + 0.13, 0.52, 0.6, null, 0.32)
+        ?.traverse(m => { if (m.isMesh && m.material?.name === 'lambert3') m.visible = false; });   // the model's own black nursery pot hidden: the plant grows from the vase's soil
+      { const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.004, 28), decMat('soil', 0x3b2f25, { roughness: 1 })); soil.position.copy(L(wx + 0.115, ye - 0.13, top + 0.282)); fu.add(soil); }   // soil just under the lip
+      // textured wavy vase, 225 H x 185 dia: a rounded body with eight vertical flutes that snake as they rise
+      fluteVessel(fu, wx + 0.2, ye - 0.335, top, 0.225, h => {
+        const t = h / 0.225; return 0.044 + 0.05 * Math.pow(Math.sin(Math.PI * Math.min(1, t + 0.08)), 0.8);
+      }, (h, a, r) => r * (1 + 0.075 * Math.sin(6 * a + 1.3 * Math.sin(h / 0.225 * Math.PI * 2))), 0.036, cream, true);
+      // vintage Italian alabaster ashtray, ~270 square, 50 tall: a square block with a round dished well and a rest slot
+      // in each side, translucent honey-cream onyx with soft veins
+      // a leafy plant in the wavy vase: long strappy leaves arching over and flopping down past the lip
+      bladePlant(fu, wx + 0.2, ye - 0.335, top + 0.205, 0.29, 0.03, 15);
+      alabasterAshtray(fu, wx + 0.24, ye - 0.86, top, 0.235, 0.045, 0.38);   // turned ~22 degrees, casually; in front (toward the hall)
+      { // keys in its well: a brass ring, a steel and a brass key
+        const kx = wx + 0.24, ky = ye - 0.86, kz = top + 0.045 * 0.45 + 0.003;
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0018, 6, 20), artBrass()); ring.rotation.x = Math.PI / 2; ring.position.copy(L(kx + 0.01, ky + 0.012, kz)); fu.add(ring);
+        for (const [a, mat] of [[0.5, decMat('keySteel', 0xb9b6ae, { roughness: 0.35, metalness: 0.6 })], [-0.4, artBrass()]]) {
+          const key = new THREE.Group(); key.position.copy(L(kx + 0.01, ky + 0.012, kz + 0.0005)); key.rotation.y = a; fu.add(key);
+          const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.003, 16), mat); bow.position.set(0.024, 0, 0); key.add(bow);
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.003, 0.008), mat); blade.position.set(0.052, 0, 0); key.add(blade);
         }
       }
+      // bronze greyhound, 200 H x 140 x 70, sitting, turned to look up the hall
+      greyhound(fu, wx + 0.19, ye - 0.6, top, 2.35);   // behind the ashtray, between it and the vases
     }
     // dining table: one low ochre-glazed bowl, under 30 cm, so you see across the table
     const Dn = spec.renovation.dining;
@@ -4348,8 +4550,13 @@ export function buildHouse(spec) {
   // over a thin brass line. Pushed into the south-east corner against the bath wall; the bathroom door (x 1.15) is clear.
   // --- matched sideboard, same size and place as the Portobello: sand-oak carcase on a set-back plinth, four fluted
   // doors (push to open, no handles), a 30 mm top in the kitchen benchtop stone, the house plant on its south end
-  if (spec.renovation.sideboard === 'matched') {
-    const fu = G.furniture, K = spec.rooms.find(r => r.name === 'Kitchen / dining'), MX = matched();
+  // 'walnut' (client 2026-11-12): the same fluted buffet in the kitchen's own lacquered walnut veneer, top included
+  if (['matched', 'walnut'].includes(spec.renovation.sideboard)) {
+    const fu = G.furniture, K = spec.rooms.find(r => r.name === 'Kitchen / dining'), nKids = fu.children.length;
+    const wn = M.wnWalnut || (M.wnWalnut = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: 0.42, color: new THREE.Color(1.3, 1.3, 1.3) }));
+    const MX = spec.renovation.sideboard === 'walnut'
+      ? { oak: wn, stone: wn, groove: M.walnutGroove || (M.walnutGroove = new THREE.MeshStandardMaterial({ color: 0x2e1d13, roughness: 0.7 })) }
+      : matched();
     const w = 1.6, d = 0.435, h = 0.86, wx = K.x0 + 0.005, y0 = spec.kitchen_south_wall.y0 - 0.005 - w, fx = wx + d, cx = wx + d / 2;
     const zb = 0.09, zt = h - 0.03;
     box(fu, wx + 0.03, fx - 0.06, y0 + 0.04, y0 + w - 0.04, 0, zb, MX.groove);                 // plinth, set back
@@ -4367,6 +4574,7 @@ export function buildHouse(spec) {
       }
     }
     if (spec.renovation.art !== 'v2') plantModel(fu, 'rhyzome', cx + 0.05, spec.renovation.kl_lights === 'grid' ? y0 + w - 0.25 : y0 + 0.25, h, 0.75, 0.4);   // house plant on the south end (the north end when the lamp takes the south)
+    if (MX.oak === wn) { fu.updateMatrixWorld(true); for (const o of fu.children.slice(nKids)) if (o.isMesh && o.material === wn) surfUV(o, WALNUT_TILE); }   // the veneer at the kitchen's scale
   }
   if (spec.renovation.sideboard === 'portobello') {
     const fu = G.furniture, K = spec.rooms.find(r => r.name === 'Kitchen / dining');
@@ -4727,6 +4935,7 @@ export function buildHouse(spec) {
       const wn = Win[k], rm = spec.rooms.find(r => r.name === rn); if (!wn || !rm) continue;
       // roller blind, face-fixed on the wall above the window (client): an 80 x 80 cassette just over the architrave, the
       // fabric 100 wider than the window each side so it covers the architrave too, shown lowered a little
+      if (k === 'W1_bed2' && spec.renovation.listing_curtains) continue;                       // the Marketplace set replaces both here
       rollerBlind(int_, 'y', xi, -1, wn.y0, wn.y1, wn.head + 0.075);
       if (!spec.renovation.curtains) continue;
       const zc = rm.floor + rm.ceil, x = xi - 0.26, a0 = Math.max(rm.y0 + 0.02, wn.y0 - 0.2), a1 = Math.min(rm.y1 - 0.02, wn.y1 + 0.2);
@@ -4742,6 +4951,16 @@ export function buildHouse(spec) {
       };
       stack(a0, Math.min(a0 + 0.38, wn.y0 + 0.18)); stack(Math.max(a1 - 0.38, wn.y1 - 0.18), a1);
     }
+  }
+  // --- Marketplace curtains (client 2026-11-11): the 2000 set drawn fully across, centred on the front bay; the 1800 set
+  // on bedroom 2's west wall from the front corner, open, stacked either side of the window; its track sits 140 off the
+  // wall so the blockout stack clears the bedside (x to 4.40), and the split system moves 120 toward the robe to clear the stack
+  if (spec.renovation.listing_curtains) {
+    const fr = spec.rooms.find(r => r.name === 'Front bedroom'), b2 = spec.rooms.find(r => r.name === 'Bedroom 2');
+    const cx = (H.bay.x0 + H.bay.x1) / 2, x0 = cx - 1, x1 = cx + 1;
+    listingCurtain(int_, 'x', 1, fr.y0 + 0.21, x0, x1, fr.floor, fr.floor + fr.ceil, [[x0, x1]], spec.renovation.listing_blockout ? [[x0, x1]] : [[x1 - 0.35, x1]]);
+    const y0 = b2.y0 + 0.02, y1 = y0 + 1.8, stacks = [[y0, y0 + 0.2], [y1 - 0.2, y1]];
+    listingCurtain(int_, 'y', -1, H.x_west_inner - 0.14, y0, y1, b2.floor, b2.floor + b2.ceil, stacks, stacks);
   }
   // --- light switches (2026-10-21; layout in SWITCHES.md). Latch side of each door, ~100 off the architrave, centre 1.05;
   // a rotary dimmer for each dimmed circuit, rockers for the rest. Plates live in G.switches so they can be found
