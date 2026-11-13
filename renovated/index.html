@@ -447,16 +447,22 @@ body.clean > *:not(canvas) { display: none !important; }
     </div>
     <div class="mood" data-mood></div>
     <div class="q">
-      <label class="sw"><span>Amalfi alabaster cluster at the front door</span><input type="checkbox" id="renoAmalfi"><span class="tk"></span></label>
+      <label class="sw"><span>Chandelier on the entry rose</span><input type="checkbox" id="renoAmalfi"><span class="tk"></span></label>
+      <span class="lab" id="renoEchandLab">Entry chandelier</span>
+      <select data-pick="echand" aria-labelledby="renoEchandLab">
+        <option value="amalfi">Amalfi alabaster cluster, 5 pebbles (Beacon, $1,895)</option>
+      </select>
+      <p class="note" id="renoEchandNote"></p>
+      <a class="listing" id="renoEchandLink" target="_blank" rel="noopener" hidden>Open listing ↗</a>
       <span class="lab" id="renoHallDlLab">Rest of the hall</span>
       <select data-pick="hdl" aria-labelledby="renoHallDlLab">
         <option value="small">Three small-aperture low-glare downlights, 55 mm (recommended)</option>
         <option value="recessed">Four 90 mm recessed downlights</option>
         <option value="tube">Four surface tubes, 65 x 120 white</option>
       </select>
-      <p class="note">Made by Mayfair Amalfi 5-light, Spanish alabaster + aged brass (Beacon 050676, $1,895, pre-order Nov): on the entry rose, its five pebbles spiralling from 2.7 down to 2.1 m (cords shortened from the listing's ~1.2 m drop). The mid-hall and extension pendants come out. Recommended: three 55 mm deep-recessed low-glare downlights (2700 K, CRI 90+, 36°, ~400 lm, IC-4) placed on what needs light: where the entry meets the hall, at the painting (adjustable, tilted onto it), and just past bedroom 3's door beyond the arch. Overrides Lighting and Hall pendants above.</p>
+      <p class="note">The chandelier hangs on the entry rose with its bottom at 2.1 m (door-head height); the Amalfi's five pebbles spiral from 2.7 down to 2.1 m. The mid-hall and extension pendants come out. Recommended: three 55 mm deep-recessed low-glare downlights (2700 K, CRI 90+, 36°, ~400 lm, IC-4) placed on what needs light: where the entry meets the hall, at the painting (adjustable, tilted onto it), and just past bedroom 3's door beyond the arch. Overrides Lighting and Hall pendants above.</p>
     </div>
-    <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="hallFront">Hall from the front door</button><button class="btn" type="button" data-bview="hallBack">Hall from the kitchen end</button></div>
+    <div class="grid3" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button" data-bview="hallFront">Hall from the front door</button><button class="btn" type="button" data-bview="hallBack">Hall from the kitchen end</button><button class="btn" type="button" data-bview="entryLight" style="grid-column: 1 / -1">Entry chandelier</button></div>
     <div class="q">
       <span class="lab" id="renoArtLab">Artwork (whole house)</span>
       <select data-pick="art" aria-labelledby="renoArtLab">

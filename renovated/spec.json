@@ -626,9 +626,10 @@
    {
     "room": "Entry",
     "x": 0.71,
-    "y": 5.6,
+    "y": 7.4,
     "dia": 0.5,
-    "light": "chandelier"
+    "light": "chandelier",
+    "_note": "y from the walkthrough video (17.6 s and 22.2 s frames, 2026-11-14): the rose is near the south end of the entry, about level with the floor vent at the wall step, 2.2-2.8 m in from the front wall. Was 5.6 (a guess). +-0.3, to be taped"
    },
    {
     "room": "Bedroom 2",
@@ -1375,6 +1376,63 @@
      "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-1.jpg",
      "reference-photos/furniture/dining-tables/tonstad/tonstad-showroom-2.jpg"
     ]
+   }
+  },
+  "entry_chandeliers": {
+   "_note": "Front door chandeliers (Reno > Hall > Front door chandelier): alternatives to the Amalfi cluster on the entry rose. d_mm x h_mm = the fitting without its cable or chain, from the listings. Lumens are not listed (assumed in generator.js entryChandelier).",
+   "items": {
+    "alabTier": {
+     "name": "Alabaster two-tier, brass",
+     "shape": "alabTier",
+     "d_mm": 450,
+     "h_mm": 200,
+     "store": "eBay",
+     "price": "see listing",
+     "url": "https://www.ebay.com.au/itm/317413317361",
+     "size_note": "Natural stone slabs on brass studs. 120 canopy, 1.2 m wires"
+    },
+    "alabTier60": {
+     "name": "Alabaster-look two-tier, brass",
+     "shape": "alabTier",
+     "d_mm": 600,
+     "h_mm": 220,
+     "store": "AliExpress",
+     "price": "$699 on sale (60 cm, 2026-11-14)",
+     "url": "https://www.aliexpress.com/item/1005010061249389.html",
+     "size_note": "Artificial marble. 12 x G9 lamps, max 5 W each (replaceable, included). Rated 220 V; CE/CCC only, no RCM. 1.2 m adjustable wires"
+    },
+    "capiz": {
+     "name": "Mira capiz shell 3-light",
+     "shape": "capiz",
+     "d_mm": 650,
+     "h_mm": 350,
+     "store": "Temple & Webster",
+     "price": "$299 (was $349)",
+     "url": "https://www.templeandwebster.com.au/Mira-Capiz-Shell-3-Light-Pendant-TMPL5982.html",
+     "size_note": "3.3 kg. 120 canopy, 1.2 m chain"
+    },
+    "sonnyAmber": {
+     "name": "Sonny 8-light glass, amber",
+     "shape": "sonny",
+     "glass": "amber",
+     "d_mm": 800,
+     "h_mm": 230,
+     "store": "Early Settler",
+     "price": "$699 (was $999)",
+     "url": "https://earlysettler.com.au/products/sonny-8-light-glass-chandelier-amber-80cm-package",
+     "size_note": "11.3 kg. 120 glass discs"
+    },
+    "sonnyMilk": {
+     "name": "Sonny 8-light glass, cloudy milk",
+     "shape": "sonny",
+     "glass": "milk",
+     "d_mm": 800,
+     "h_mm": 230,
+     "store": "Early Settler",
+     "price": "see listing",
+     "url": "https://earlysettler.com.au/products/sonny-8-light-glass-chandelier-cloudy-milk-80cm-package",
+     "size_note": "11.3 kg. 120 glass discs"
+    }
    }
   },
   "mood_pendants": {

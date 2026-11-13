@@ -1728,6 +1728,99 @@ function amalfiCluster(int_, BL, room, x, y, zc, layer = 'hallPendant') {
   // one source at the cluster's middle for the five (the shader's light slots are few): ~600 lm, all round
   BL.points.push({ room, layer, kind: 'omni', x, y, z: 2.45, lm: 600 });
 }
+// Front door chandeliers (Reno > Hall > Front door chandelier, client 2026-11-14): alternatives to the Amalfi on the
+// entry rose, one catalog entry each in spec.renovation.entry_chandeliers (sizes from the listings; d_mm x h_mm is the
+// fitting without its cable or chain). Bottom at 2.1 (door-head height, Mint's hall rule), like the Amalfi's lowest
+// pebble. The entry is 1.355 wide and the rose sits 0.595 off the party wall. Builds:
+//   alabTier  two stepped rings of flat alabaster slabs on brass studs, three wires to a 120 brass canopy (eBay)
+//   capiz     three tiers of capiz-shell rectangles under a gold ring, chain to a 120 canopy (Temple & Webster Mira)
+//   sonny     two rings of 120 glass discs on brass bands, rod + chain to a brass cup (Early Settler Sonny, p.glass)
+// Lumens are assumed (not listed): one all-round source each, on the hall pendants' dimmer
+function entryChandelier(int_, BL, room, x, y, zc, p, layer = 'hallPendant', zb = 2.1) {
+  const d = (p.d_mm || 450) / 1000, h = (p.h_mm || 200) / 1000, R = d / 2, C = L(x, y, 0);
+  const brass = M.agedBrass || (M.agedBrass = new THREE.MeshStandardMaterial({ color: 0xa8854e, metalness: 0.55, roughness: 0.42 }));
+  const glow = (k, set) => { const key = 'ec_' + k + '_' + layer; return M[key] || (M[key] = (() => { const m = bedGlow(layer).clone(); set(m); m.userData.bedLamp = layer; return m; })()); };
+  const at = (r, a, z) => new THREE.Vector3(C.x + r * Math.cos(a), z, C.z + r * Math.sin(a));
+  const add = (geo, mat, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(C.x, z, C.z); o.castShadow = false; int_.add(o); return o; };
+  const strut = (a, b, r = 0.0015, mat = brass) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, a.distanceTo(b), 6), mat); o.position.copy(a).add(b).multiplyScalar(0.5); o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); o.castShadow = false; int_.add(o); };
+  const dummy = new THREE.Object3D();
+  // pieces set round a ring, facing out: list of [radius, angle, z, tilt, scaleY]
+  const ringOf = (geo, mat, list) => {
+    const inst = new THREE.InstancedMesh(geo, mat, list.length);
+    list.forEach(([r, a, z, tilt = 0, sy = 1], i) => { dummy.position.copy(at(r, a, z)); dummy.rotation.set(0, 0, 0); dummy.rotateY(Math.PI / 2 - a); dummy.rotateX(tilt); dummy.scale.set(1, sy, 1); dummy.updateMatrix(); inst.setMatrixAt(i, dummy.matrix); });
+    inst.castShadow = false; inst.frustumCulled = false; int_.add(inst); return inst;
+  };
+  const bulbs = (n, r, z) => { for (let i = 0; i < n; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 8), bedGlow(layer)); b.position.copy(at(r, (i + 0.5) / n * Math.PI * 2, z)); b.castShadow = false; int_.add(b); } };
+  // the canopy sits on the rose's centre boss (75 deep), as the Amalfi's plate does
+  const zp = zc - 0.075, top = zb + h;
+  let sd = 5; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
+  let lm = p.lm || 800;
+  if (p.shape === 'alabTier') {
+    // upper ring: slabs 0.65 h high at the full width; lower ring: 0.75 of the width, hung behind the upper slabs and
+    // showing 0.35 h below them (listing: 450 x 200, 120 canopy, 1.2 m wires)
+    const stone = glow('alab', m => { const t = alabasterTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xffffff); m.emissive.set(0xffc58a); m.roughness = 0.75; m.side = THREE.DoubleSide; m.userData.glowK = 0.45; });
+    const tier = (r, z0, hh, n, studs) => {
+      const w = 2 * r * Math.tan(Math.PI / n) * 0.94, list = [], sl = [];
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; list.push([r, a, z0 + hh / 2]); sl.push([r + 0.006, a, z0 + hh - 0.018]); }
+      ringOf(new THREE.BoxGeometry(w, hh, 0.008), stone, list);
+      if (studs) ringOf(new THREE.SphereGeometry(0.006, 10, 8), brass, sl);
+      add(new THREE.CylinderGeometry(r - 0.006, r - 0.006, 0.012, 48, 1, true), brass, z0 + hh - 0.018);   // the brass band the slabs screw to
+    };
+    const hu = h * 0.65, rl = R * 0.75;
+    tier(R, top - hu, hu, 20, true); tier(rl, zb, h * 0.6, 16, false);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + 0.5; strut(at(R - 0.008, a, top - 0.018), at(0.04, a, zp - 0.03), 0.0008); }
+    strut(at(0, 0, top - 0.06), at(0, 0, zp - 0.03), 0.002, M.amalfiCord || (M.amalfiCord = new THREE.MeshStandardMaterial({ color: 0xb9b4aa, roughness: 0.6 })));
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 32), brass, zp - 0.015);
+    bulbs(4, rl * 0.6, top - hu * 0.5); lm = p.lm || 700;
+  } else if (p.shape === 'capiz') {
+    // gold ring at the full width; three tiers of shell rectangles (~45 x 62) on strands, each tier narrower and
+    // longer than the one outside it, so the fitting tapers to its 350 depth
+    const gold = M.ecGold || (M.ecGold = new THREE.MeshStandardMaterial({ color: 0xc9a660, metalness: 0.5, roughness: 0.4 }));
+    const shell = glow('capiz', m => { m.color.set(0xf5eddc); m.emissive.set(0xffd9a6); m.roughness = 0.3; m.side = THREE.DoubleSide; m.userData.glowK = 0.55; });
+    const ring = add(new THREE.TorusGeometry(R, 0.007, 8, 64), gold, top); ring.rotation.x = Math.PI / 2;
+    const sw = 0.045, sh = 0.062, list = [];
+    for (const [r, drop] of [[R - 0.01, 0.52 * h], [R * 0.74, 0.78 * h], [R * 0.48, h]]) {
+      const n = Math.round(2 * Math.PI * r / (sw * 1.08)), rows = Math.round(drop / (sh * 0.92));
+      for (let i = 0; i < n; i++) for (let k = 0; k < rows; k++) {
+        const z = top - (k + 0.5) * drop / rows - (i % 2) * 0.012 + rnd(-0.008, 0.008);
+        list.push([r + rnd(-0.006, 0.006), i / n * Math.PI * 2 + rnd(-0.01, 0.01), Math.max(z, zb + sh / 2), rnd(-0.12, 0.12), rnd(0.85, 1.1)]);
+      }
+      if (r < R - 0.02) { const rr = add(new THREE.TorusGeometry(r, 0.003, 6, 48), gold, top); rr.rotation.x = Math.PI / 2; }
+    }
+    ringOf(new THREE.PlaneGeometry(sw, sh), shell, list);
+    for (let i = 0; i < 4; i++) strut(at(R, i * Math.PI / 2, top), at(-R, i * Math.PI / 2, top), 0.003, gold);   // cross arms carrying the inner rings
+    // one chain down from the canopy, splitting into three to the ring
+    const zs = Math.min(top + 0.3 * d, zp - 0.1);
+    for (let i = 0; i < 3; i++) strut(at(R, i / 3 * Math.PI * 2 + 0.5, top), at(0, 0, zs), 0.003, gold);
+    strut(at(0, 0, zs), at(0, 0, zp - 0.02), 0.004, gold);
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 32), gold, zp - 0.01);
+    bulbs(3, 0.06, top - 0.5 * h); lm = p.lm || 1200;
+  } else {
+    // Sonny: upper ring of discs at the full 800, lower ring at 0.78 of it, half a disc lower; discs stand upright,
+    // faces out, overlapping their neighbours (shade size 120 x 120 x 20 in the listing)
+    const milk = p.glass !== 'amber';
+    const glass = glow('sonny_' + (milk ? 'milk' : 'amber'), m => {
+      m.color.set(milk ? 0xf4f2ec : 0xc98f72); m.emissive.set(milk ? 0xffdcb0 : 0xe08a52); m.roughness = 0.2; m.transparent = true; m.opacity = milk ? 0.9 : 0.62; m.depthWrite = false; m.side = THREE.DoubleSide; m.userData.glowK = milk ? 0.7 : 0.5;
+    });
+    const dr = 0.06, geo = new THREE.CylinderGeometry(dr, dr, 0.012, 28); geo.rotateX(Math.PI / 2);
+    const zu = top - dr, zl = zb + dr, studs = [];
+    for (const [r, z, off] of [[R - 0.01, zu, 0], [R * 0.78, zl, 0.5]]) {
+      const n = Math.round(2 * Math.PI * r / (dr * 1.7)), list = [];
+      for (let i = 0; i < n; i++) { const a = (i + off) / n * Math.PI * 2; list.push([r + (i % 2 ? 0.012 : 0), a, z]); studs.push([r + (i % 2 ? 0.02 : 0.008), a, z]); }
+      ringOf(geo, glass, list).renderOrder = 3;
+      add(new THREE.CylinderGeometry(r - 0.012, r - 0.012, 0.022, 64, 1, true), brass, z).material.side = THREE.DoubleSide;
+      for (let i = 0; i < 4; i++) strut(at(r - 0.012, i * Math.PI / 2 + off, z), at(0, 0, z), 0.004);
+    }
+    ringOf(new THREE.SphereGeometry(0.007, 10, 8), brass, studs);
+    // rod up from the hub, a ring, then chain to the cup on the rose
+    const zr = Math.min(top + 0.45, zp - 0.2);
+    strut(at(0, 0, zl), at(0, 0, zr), 0.007); const lk = add(new THREE.TorusGeometry(0.018, 0.003, 8, 20), brass, zr + 0.018); lk.rotation.y = 0.6;
+    strut(at(0, 0, zr + 0.036), at(0, 0, zp - 0.05), 0.004);
+    add(new THREE.CylinderGeometry(0.03, 0.06, 0.05, 32), brass, zp - 0.025);
+    bulbs(8, R * 0.55, (zu + zl) / 2); lm = p.lm || (milk ? 2000 : 1600);
+  }
+  BL.points.push({ room, layer, kind: 'omni', x, y, z: zb + h / 2, lm });
+}
 // Slender indoor tree (client reference photos 2026-10-21: a false aralia / Schefflera elegantissima standard): a thin,
 // slightly leaning trunk to ~2.1 m, three loose tiers of fine branches with drooping fans of narrow leaflets, in a
 // 460 grey stone pot. Leaves are one instanced mesh (one draw)
@@ -2603,7 +2696,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', entryChandelier = 'alabTier', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2823,6 +2916,8 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // (the hall stays a shader-lit zone, as 'art')
   spec.renovation.hall_amalfi = hallAmalfi ? (['recessed', 'tube'].includes(hallDl) ? hallDl : 'small') : false;
   if (hallAmalfi) spec.renovation.hall_lights = 'art';
+  // which fitting hangs on the entry rose while that switch is on: 'amalfi' or a key of renovation.entry_chandeliers
+  spec.renovation.entry_chandelier = spec.renovation.entry_chandeliers?.items?.[entryChandelier] ? entryChandelier : 'amalfi';
   // artwork (Reno > Hall > Artwork): 'v2' the proposed layout (ART-PLACEMENT.md Part D), 'hall' the earlier two hall
   // paintings only, 'none'
   spec.renovation.art = ['v2', 'hall', 'none'].includes(art) ? art : 'v2';
@@ -5552,7 +5647,11 @@ export function buildHouse(spec) {
     // downlights like the kitchen's, one per 1.7 m or so each way, evenly spread
     // hall: the entry rose gets its pendant back (the hall's feature, as in the reference Page project): an August oval to
     // match the bedrooms, bottom at 2.1, level with the door heads (Mint's hall rule)
-    if (rm.name === 'Entry' && spec.renovation.hall_amalfi) { amalfiCluster(int_, BL, 'Hall', cr.x, cr.y, zc); continue; }
+    if (rm.name === 'Entry' && spec.renovation.hall_amalfi) {
+      const ec = spec.renovation.entry_chandeliers?.items?.[spec.renovation.entry_chandelier];
+      if (ec) entryChandelier(int_, BL, 'Hall', cr.x, cr.y, zc, ec); else amalfiCluster(int_, BL, 'Hall', cr.x, cr.y, zc);
+      continue;
+    }
     if (rm.name === 'Entry' && spec.renovation.hall_lights === 'art') { bedPendant(int_, BL, 'Hall', cr.x, cr.y, zc, spec.renovation.hall_pendant, 2.1, 'hallPendant'); continue; }
     // bedroom 3: the default scheme in every version (pendant on its rose + robe strips) except the old downlight grid
     if (rm.name === 'Bedroom 3' && spec.renovation.bed_lights !== 'downlights') { bedPendant(int_, BL, rm.name, cr.x, cr.y, zc, spec.renovation.pendant_style); continue; }

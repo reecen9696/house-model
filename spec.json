@@ -606,9 +606,10 @@
    {
     "room": "Entry",
     "x": 0.71,
-    "y": 5.6,
+    "y": 7.4,
     "dia": 0.5,
-    "light": "chandelier"
+    "light": "chandelier",
+    "_note": "y from the walkthrough video (17.6 s and 22.2 s frames, 2026-11-14): the rose is near the south end of the entry, about level with the floor vent at the wall step, 2.2-2.8 m in from the front wall. Was 5.6 (a guess). +-0.3, to be taped"
    },
    {
     "room": "Bedroom 2",

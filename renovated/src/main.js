@@ -1198,6 +1198,10 @@ const MOOD = baseSpec.renovation.mood_pendants?.items || {};
 const moodOn = () => !!reno.moodPendants && !!MOOD[reno.moodPendant];
 const moodPick = v => { const id = v.startsWith('mood:') ? v.slice(5) : null; reno.moodPendants = !!id; if (id) reno.moodPendant = id; return !!id; };
 for (const k of ['pend', 'hpend']) document.querySelector(`select[data-pick="${k}"]`).insertAdjacentHTML('beforeend', `<optgroup label="Moodboard (bedrooms and hall)">${Object.entries(MOOD).map(([id, p]) => `<option value="mood:${id}">${p.name}, ${p.d_mm} x ${p.h_mm} (${p.price})</option>`).join('')}</optgroup>`);
+// front door chandeliers: the catalog's fittings join the Amalfi in the Hall tab's picker
+const ECHAND = baseSpec.renovation.entry_chandeliers?.items || {};
+const echand = () => reno.entryChandelier === 'amalfi' || ECHAND[reno.entryChandelier] ? reno.entryChandelier : 'alabTier';
+document.querySelector('select[data-pick="echand"]').insertAdjacentHTML('afterbegin', Object.entries(ECHAND).map(([id, p]) => `<option value="${id}">${p.name}, ${p.d_mm} x ${p.h_mm}</option>`).join(''));
 // every choice in the Reno sheet is a dropdown: [read the saved value, store a new one]
 const PICKS = {
   kstyle: [() => reno.kitchenStyle || 'white', v => { reno.kitchenStyle = v; }],
@@ -1215,6 +1219,7 @@ const PICKS = {
   blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
   pend: [() => moodOn() ? 'mood:' + reno.moodPendant : reno.pendant || 'augustOval', v => { if (!moodPick(v)) reno.pendant = v; }],
   hlight: [() => reno.hallLights === 'downlights' ? 'downlights' : 'art', v => { reno.hallLights = v; }],
+  echand: [echand, v => { reno.entryChandelier = v; }],
   hdl: [() => ['recessed', 'tube'].includes(reno.hallDl) ? reno.hallDl : 'small', v => { reno.hallDl = v; }],
   hpend: [() => moodOn() ? 'mood:' + reno.moodPendant : reno.hallPendant || 'pebble', v => { if (!moodPick(v)) reno.hallPendant = v; }],
   art: [() => reno.art || 'v2', v => { reno.art = v; }],
@@ -1239,7 +1244,10 @@ function renoSummary() {
   // the IKEA kitchen has its own integrated fridge and full-height units; the pantry spot goes with the pantry wall
   const ikea = ['ikea', 'walnut', 'cream', 'std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // built-in fridge: the IKEA layout and its standard-size L
   // the Amalfi switch overrides the hall's Lighting and pendant choices; its own picker only counts while it's on
-  pick('hlight').disabled = pick('hpend').disabled = !!reno.hallAmalfi; pick('hdl').disabled = !reno.hallAmalfi;
+  pick('hlight').disabled = pick('hpend').disabled = !!reno.hallAmalfi; pick('hdl').disabled = pick('echand').disabled = !reno.hallAmalfi;
+  const ec = ECHAND[echand()];
+  $('renoEchandNote').textContent = ec ? [ec.store, ec.price, `Ø ${ec.d_mm} × ${ec.h_mm} mm`, ec.size_note].filter(Boolean).join(' · ') : 'Made by Mayfair Amalfi 5-light, Spanish alabaster + aged brass · Beacon 050676 · $1,895';
+  $('renoEchandLink').hidden = !ec?.url; if (ec?.url) $('renoEchandLink').href = ec.url;
   pick('fridge').disabled = ikea; $('renoTall').disabled = ikea;
   pick('kdoor').disabled = ['std', 'stdWhite', 'secondhand', 'gloss', 'glossL', 'glossOak'].includes(reno.kitchenStyle);   // the standard L keeps the window over its sink
   pick('fridge').querySelector('[value=pantry]').disabled = reno.noPantry;
@@ -1325,7 +1333,7 @@ document.querySelectorAll('[data-bscene]').forEach(b => b.addEventListener('clic
 }));
 // stand in a bedroom (Walk): front bedroom from the bay corner by the hall wall, facing the bed and the robe; bedroom 2
 // in the window corner beside the bed, facing the robe across the room (the view from the bed, standing); frontBed: beside the front bed's head, facing the wall the bed faces
-const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 }, kitchenEnd: { x: 3.9, y: 16.0, tx: 0.45, ty: 19.0, pitch: 0.12 } };
+const BED_VIEWS = { front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, entryLight: { x: 0.7, y: 10.2, tx: 0.7, ty: 4.6, pitch: 0.3 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 }, kitchenEnd: { x: 3.9, y: 16.0, tx: 0.45, ty: 19.0, pitch: 0.12 } };
 document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click', () => {
   const v = BED_VIEWS[b.dataset.bview];
   if (!walk.on) setWalk(true); else window.closeSheets?.();
