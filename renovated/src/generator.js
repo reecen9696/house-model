@@ -1734,6 +1734,8 @@ function amalfiCluster(int_, BL, room, x, y, zc, layer = 'hallPendant') {
 // pebble. The entry is 1.355 wide and the rose sits 0.595 off the party wall. Builds:
 //   alabTier  two stepped rings of flat alabaster slabs on brass studs, three wires to a 120 brass canopy (eBay)
 //   capiz     three tiers of capiz-shell rectangles under a gold ring, chain to a 120 canopy (Temple & Webster Mira)
+//   slabDrum  one ring of tall slabs on a brass rod; ring: flat lit band on three wires; tubeRing: round tube on a
+//             black three-arm frame (AliExpress, all imitation marble)
 //   sonny     two rings of 120 glass discs on brass bands, rod + chain to a brass cup (Early Settler Sonny, p.glass)
 // Lumens are assumed (not listed): one all-round source each, on the hall pendants' dimmer
 function entryChandelier(int_, BL, room, x, y, zc, p, layer = 'hallPendant', zb = 2.1) {
@@ -1755,23 +1757,51 @@ function entryChandelier(int_, BL, room, x, y, zc, p, layer = 'hallPendant', zb 
   const zp = zc - 0.075, top = zb + h;
   let sd = 5; const rnd = (a = 0, b = 1) => { sd = (sd * 9301 + 49297) % 233280; return a + (b - a) * sd / 233280; };
   let lm = p.lm || 800;
+  const stone = glow('alab', m => { const t = alabasterTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xffffff); m.emissive.set(0xffc58a); m.roughness = 0.75; m.side = THREE.DoubleSide; m.userData.glowK = 0.45; });
+  const tier = (r, z0, hh, n, studs) => {
+    const w = 2 * r * Math.tan(Math.PI / n) * 0.94, list = [], sl = [];
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; list.push([r, a, z0 + hh / 2]); sl.push([r + 0.006, a, z0 + hh - 0.018]); }
+    ringOf(new THREE.BoxGeometry(w, hh, 0.008), stone, list);
+    if (studs) ringOf(new THREE.SphereGeometry(0.006, 10, 8), brass, sl);
+    add(new THREE.CylinderGeometry(r - 0.006, r - 0.006, 0.012, 48, 1, true), brass, z0 + hh - 0.018);   // the brass band the slabs screw to
+  };
   if (p.shape === 'alabTier') {
     // upper ring: slabs 0.65 h high at the full width; lower ring: 0.75 of the width, hung behind the upper slabs and
     // showing 0.35 h below them (listing: 450 x 200, 120 canopy, 1.2 m wires)
-    const stone = glow('alab', m => { const t = alabasterTexture(); m.map = t; m.emissiveMap = t; m.color.set(0xffffff); m.emissive.set(0xffc58a); m.roughness = 0.75; m.side = THREE.DoubleSide; m.userData.glowK = 0.45; });
-    const tier = (r, z0, hh, n, studs) => {
-      const w = 2 * r * Math.tan(Math.PI / n) * 0.94, list = [], sl = [];
-      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; list.push([r, a, z0 + hh / 2]); sl.push([r + 0.006, a, z0 + hh - 0.018]); }
-      ringOf(new THREE.BoxGeometry(w, hh, 0.008), stone, list);
-      if (studs) ringOf(new THREE.SphereGeometry(0.006, 10, 8), brass, sl);
-      add(new THREE.CylinderGeometry(r - 0.006, r - 0.006, 0.012, 48, 1, true), brass, z0 + hh - 0.018);   // the brass band the slabs screw to
-    };
     const hu = h * 0.65, rl = R * 0.75;
     tier(R, top - hu, hu, 20, true); tier(rl, zb, h * 0.6, 16, false);
     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + 0.5; strut(at(R - 0.008, a, top - 0.018), at(0.04, a, zp - 0.03), 0.0008); }
     strut(at(0, 0, top - 0.06), at(0, 0, zp - 0.03), 0.002, M.amalfiCord || (M.amalfiCord = new THREE.MeshStandardMaterial({ color: 0xb9b4aa, roughness: 0.6 })));
     add(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 32), brass, zp - 0.015);
     bulbs(4, rl * 0.6, top - hu * 0.5); lm = p.lm || 700;
+  } else if (p.shape === 'slabDrum') {
+    // one ring of tall slabs on brass studs, hung on a brass rod (listing: 900 x 380)
+    tier(R, zb, h, 26, true);
+    for (let i = 0; i < 3; i++) strut(at(R - 0.006, i / 3 * Math.PI * 2, top - 0.018), at(0, 0, top - 0.018), 0.004);
+    strut(at(0, 0, top - 0.018), at(0, 0, zp - 0.02), 0.008);
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 32), brass, zp - 0.01);
+    bulbs(6, R * 0.5, zb + h * 0.5); lm = p.lm || 1500;
+  } else if (p.shape === 'ring' || p.shape === 'tubeRing') {
+    // 'ring': a flat band of imitation marble, 110 wide, lit from inside, on three wires to a 180 brass plate (1000 x 70);
+    // 'tubeRing': a 60 round tube on a black three-arm frame that hooks under it, one rod to a 150 black canopy (950 x 300)
+    const tube = p.shape === 'tubeRing', black = M.ecBlack || (M.ecBlack = new THREE.MeshStandardMaterial({ color: 0x1c1b1a, metalness: 0.4, roughness: 0.5 }));
+    if (tube) {
+      const tr = 0.03, rr = R - tr, hub = at(0, 0, top - 0.03);
+      const t = add(new THREE.TorusGeometry(rr, tr, 16, 96), stone, zb + tr); t.rotation.x = Math.PI / 2;
+      for (let i = 0; i < 3; i++) {
+        const a = i / 3 * Math.PI * 2 + 0.5, o = at(R + 0.006, a, zb + tr + 0.02), u = at(rr, a, zb - 0.005);
+        strut(hub, o, 0.005, black); strut(o, at(R + 0.006, a, zb + 0.01), 0.005, black); strut(at(R + 0.006, a, zb + 0.01), u, 0.005, black);
+      }
+      strut(hub, at(0, 0, zp - 0.03), 0.005, black);
+      add(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 32), black, zp - 0.015);
+      lm = p.lm || 2000;
+    } else {
+      const ri = R - Math.min(0.11, R * 0.3), cr = (p.canopy_mm || 180) / 2000;
+      add(new THREE.LatheGeometry([[ri, 0], [R, 0], [R, h], [ri, h], [ri, 0]].map(([a, b]) => new THREE.Vector2(a, b)), 96), stone, zb);
+      for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + 0.5; strut(at((R + ri) / 2, a, top), at(cr * 0.65, a, zp - 0.02), 0.0008); }
+      add(new THREE.CylinderGeometry(cr, cr, 0.02, 32), brass, zp - 0.01);
+      lm = p.lm || 2500 * Math.min(1, d);
+    }
   } else if (p.shape === 'capiz') {
     // gold ring at the full width; three tiers of shell rectangles (~45 x 62) on strands, each tier narrower and
     // longer than the one outside it, so the fitting tapers to its 350 depth
@@ -2679,6 +2709,53 @@ function planSlab(parent, cx, cy, w, d, r, z0, z1, mat) {
   const m = new THREE.Mesh(geo, mat); m.position.copy(L(cx, cy, z0)); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
 }
 
+// Fluted walnut TV unit with a ceramic top (client photos 2026-11-16): 2000 x 360 x 360, MDF in a dark walnut finish,
+// vertical reeds all round, the back straight and the two front corners rounded to ~300 (top view), a travertine-look
+// ceramic top inset in a 15 walnut rim, a shadow-line finger pull under the top, four flush doors across the flat front,
+// a small recessed plinth. Wall-hung (it floats in the listing photo). wallX = the wall's face (lot x); face +1 when the
+// unit projects to +x (west), -1 to -x; cy = its centre along the wall; zb = the underside
+const TVU_M = {};
+function flutedTvUnit(parent, wallX, face, cy, zb) {
+  const W = 2.0, D = 0.36, H = 0.36, R = 0.3, rim = 0.015;
+  const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const reed = TVU_M.reed || (TVU_M.reed = new THREE.MeshStandardMaterial({ roughness: 0.6, map: tex(32, 8, g => {
+    const gr = g.createLinearGradient(0, 0, 32, 0); gr.addColorStop(0, '#1f1612'); gr.addColorStop(0.3, '#3d2d24'); gr.addColorStop(0.55, '#4a382d'); gr.addColorStop(0.85, '#33251e'); gr.addColorStop(1, '#1c1410');
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 8); }) }));
+  reed.map.repeat.set(75, 1);                                                    // a reed every ~13 mm
+  const wal = TVU_M.wal || (TVU_M.wal = new THREE.MeshStandardMaterial({ color: 0x3a2a21, roughness: 0.55 }));
+  const dark = TVU_M.dark || (TVU_M.dark = new THREE.MeshStandardMaterial({ color: 0x140e0b, roughness: 0.8 }));
+  const cer = TVU_M.cer || (TVU_M.cer = new THREE.MeshStandardMaterial({ roughness: 0.35, map: tex(512, 128, g => {
+    g.fillStyle = '#e6dcc8'; g.fillRect(0, 0, 512, 128);
+    let sd = 3; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 70; i++) { g.strokeStyle = `rgba(${170 + rnd() * 40},${150 + rnd() * 35},${115 + rnd() * 30},${0.06 + rnd() * 0.12})`; g.lineWidth = 0.5 + rnd() * 2;
+      let x = -20, y = rnd() * 128; g.beginPath(); g.moveTo(x, y); while (x < 532) { x += 20 + rnd() * 40; y += (rnd() - 0.5) * 4; g.lineTo(x, y); } g.stroke(); } }) }));
+  cer.map.repeat.set(0.5, 2); cer.map.offset.set(0.5, 0);   // cap UVs are in metres from the centre: one tile across the 2 m, no seam                                                    // the travertine bands run along the top
+  // plan outline in a local frame: u along the wall (-W/2..W/2), v out from the wall (0 back .. D front)
+  const outline = (inset) => {
+    const s = new THREE.Shape(), hw = W / 2 - inset, d0 = inset, d1 = D - inset, r = Math.max(R - inset, 0.01);
+    s.moveTo(-hw, d0); s.lineTo(hw, d0); s.lineTo(hw, d1 - r); s.absarc(hw - r, d1 - r, r, 0, Math.PI / 2); s.lineTo(-hw + r, d1); s.absarc(-hw + r, d1 - r, r, Math.PI / 2, Math.PI); s.lineTo(-hw, d0);
+    return s;
+  };
+  const grp = new THREE.Group();
+  const slab = (inset, z0, z1, mat) => {
+    const geo = new THREE.ExtrudeGeometry(outline(inset), { depth: z1 - z0, bevelEnabled: false, curveSegments: 20 });
+    geo.rotateX(Math.PI / 2); geo.translate(0, z1, 0);                           // shape (u, v) -> (x = u, z = v), extruded down from z1 to z0
+    const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; grp.add(m); return m;
+  };
+  slab(0.025, zb, zb + 0.02, dark);                                              // recessed plinth
+  slab(0, zb + 0.02, zb + H - 0.025, reed);                                      // the reeded body
+  slab(0, zb + H - 0.025, zb + H - 0.002, wal);                                  // walnut rim
+  slab(rim, zb + H - 0.004, zb + H, cer);                                        // ceramic top, inset in the rim
+  const fl = (u0, u1, v0, v1, z0, z1, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, z1 - z0, v1 - v0), mat); m.position.set((u0 + u1) / 2, (z0 + z1) / 2, (v0 + v1) / 2); grp.add(m); };
+  const fu0 = -W / 2 + R + 0.02, fu1 = W / 2 - R - 0.02;
+  fl(fu0, fu1, D - 0.004, D + 0.001, zb + H - 0.06, zb + H - 0.04, dark);       // finger-pull shadow line under the top
+  for (let i = 0; i <= 4; i++) { const u = fu0 + i * (fu1 - fu0) / 4; fl(u - 0.0015, u + 0.0015, D - 0.002, D + 0.002, zb + 0.035, zb + H - 0.065, dark); }   // door joints
+  // local (x = u, z = v) -> lot: v out from the wall along lot x (toward face), u along lot y
+  grp.rotation.y = face > 0 ? -Math.PI / 2 : Math.PI / 2;
+  grp.position.copy(L(wallX, cy, 0));
+  parent.add(grp);
+  return grp;
+}
 // Fridge positions offered in the Reno sheet. Boxes are the fridge itself (lot frame), 'face' the side its doors are on.
 const steelMat = () => M.steel || (M.steel = new THREE.MeshStandardMaterial({ color: 0xc4c8cb, roughness: 0.3, metalness: 0.55 }));
 
@@ -2696,7 +2773,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', entryChandelier = 'alabTier', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', moodPendants = false, moodPendant = '' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', entryChandelier = 'alabTier', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', frontBath = 'current', moodPendants = false, moodPendant = '' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2878,7 +2955,7 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   // cased opening with no door; 'simple' / true = wider archways; false = open right through
   spec.renovation.hall_doorway = ['simple', 'door', 'arch'].includes(hallDoorway) ? hallDoorway : !!hallDoorway;
   spec.renovation.no_pantry = !!noPantry;
-  spec.renovation.tv_unit = ['rimowar', 'capello', 'archie'].includes(tvUnit) ? tvUnit : 'white';
+  spec.renovation.tv_unit = ['rimowar', 'capello', 'archie', 'fluted'].includes(tvUnit) ? tvUnit : 'white';
   spec.renovation.coffee_table = ['monolith', 'matched'].includes(coffeeTable) ? coffeeTable : 'round';
   spec.renovation.sideboard = sideboard === true ? 'portobello' : sideboard || null;
   spec.renovation.lounge_style = ['walnut', 'fireplace'].includes(loungeStyle) ? 'walnut' : 'standard';   // 'fireplace' was the first name
@@ -2930,6 +3007,16 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
   spec.renovation.yard = yard === 'tiles' ? 'tiles' : 'deck';
   // front bedroom window seat in the bay (Reno > Bedroom > Bay window seat, client 2026-10-21)
   spec.renovation.bay_seat = baySeat !== 'off';
+  // front bathroom (Reno > Laundry > Front bathroom vanity): 'timberline' trials the second-hand Timberline SilkSurface
+  // Carrara top (1500 x 460 x 20, undermount basin) on a 1500 wall-hung timber vanity along the party wall from the
+  // door wall. That leaves 700 for the shower at the south end (was 880), so the shower shrinks to 700 x 885.
+  spec.renovation.front_bath = frontBath === 'timberline' ? 'timberline' : 'current';
+  if (frontBath === 'timberline') {
+    const F = spec.fixtures, y0 = 18.98, y1 = y0 + 1.5;
+    F.vanity = { ...F.vanity, x0: 0.115, x1: 0.115 + 0.46, y0, y1, z1: 0.85 };
+    F.shower = { ...F.shower, y0: y1 };
+    const mc = (y0 + y1) / 2; F.mirror_cabinet = { ...F.mirror_cabinet, y0: mc - 0.6, y1: mc + 0.6 };
+  }
   // hall pendants: 'woven' (natural rattan bell, moodboard), or the bedrooms' August oval / round
   spec.renovation.kl_lights = klLights === 'grid' ? 'grid' : 'designed';
   spec.renovation.lounge_fence = loungeFence === 'lattice' ? 'lattice' : 'screen';   // Reno > Lounge > Side fence
@@ -5215,6 +5302,8 @@ export function buildHouse(spec) {
       for (const u of [-(w / 2 - r), w / 2 - r]) { const f = new THREE.Mesh(new THREE.CylinderGeometry(r - 0.01, r - 0.01, 0.12, 32), trav); f.position.copy(L(cx, tvC + u, fz + 0.06)); f.castShadow = true; fu.add(f); }
       const s0 = tvC - (w / 2 - r), s1 = tvC + (w / 2 - r), dw = (s1 - s0) / 4;
       for (let i = 0; i <= 4; i++) box(fu, fx, fx + 0.002, s0 + i * dw - 0.002, s0 + i * dw + 0.002, fz + 0.14, fz + 0.56, M.frameA);   // door joints
+    } else if (tvu === 'fluted') {
+      flutedTvUnit(fu, wallX + 0.005, 1, tvC, fz + 0.15);                                     // wall-hung, 150 clear under it
     } else if (tvu === 'archie') {
       // Archie (spec.renovation.tv_units.archie), 2000 x 400 x 460: cream fluted body with half-round ends, a thin white
       // marble-look sintered stone top, a recessed taupe plinth, four doors across the front
@@ -5421,9 +5510,33 @@ export function buildHouse(spec) {
   box(int_, SW.x1 - 0.015, SW.x1 + 0.015, SW.y0, SW.y1 - 0.01, SW.z1 - 0.03, SW.z1, M.metal);
   box(int_, SW.x0 + 0.01, SW.x1 - 0.01, SW.y0 + 0.01, SW.y1 - 0.02, 0.002, 0.08, M.appliance);   // shower tray
   // vanity with laminate top and inset basin, mirror cabinet above, exhaust fan
+  if (spec.renovation.front_bath === 'timberline') {
+    // Timberline 1500 x 460 x 20 Carrara top with an undermount basin, on a wall-hung timber vanity (drawers left and
+    // right of a pair of doors under the basin), 300 off the floor
+    const V = F.vanity, tz = V.z1, t0 = tz - 0.02, cz = 0.3;
+    const carrara = M.carrara || (M.carrara = new THREE.MeshStandardMaterial({ color: 0xeeeeeb, roughness: 0.25 }));
+    const timber = M.vanityTimber || (M.vanityTimber = new THREE.MeshStandardMaterial({ color: 0x4e3526, roughness: 0.6 }));
+    const groove = M.walnutGroove || (M.walnutGroove = new THREE.MeshStandardMaterial({ color: 0x2e1d13, roughness: 0.7 }));
+    box(int_, V.x0, V.x1 - 0.02, V.y0, V.y1, cz, t0 - 0.01, timber);                                       // carcass, fronts 20 back from the stone edge
+    box(int_, V.x0, V.x1 - 0.03, V.y0, V.y1, t0 - 0.01, t0, groove);                                       // dark shadow line under the top
+    const bm = (V.y0 + V.y1) / 2, bw = 0.5, bd = 0.34, bx0 = V.x0 + 0.06, bx1 = bx0 + bd, by0 = bm - bw / 2, by1 = bm + bw / 2;
+    for (const y of [V.y0 + 0.45, by0 + 0.02, bm, by1 - 0.02, V.y1 - 0.45])                                 // front splits: drawer stacks either side, doors under the basin
+      box(int_, V.x1 - 0.022, V.x1 - 0.019, y - 0.002, y + 0.002, cz, t0 - 0.01, groove);
+    for (const y0 of [V.y0, V.y1 - 0.45]) box(int_, V.x1 - 0.022, V.x1 - 0.019, y0, y0 + 0.45, cz + 0.27, cz + 0.275, groove);
+    // stone top in four pieces round the basin cut-out, then the basin below it
+    box(int_, V.x0, V.x1, V.y0, by0, t0, tz, carrara); box(int_, V.x0, V.x1, by1, V.y1, t0, tz, carrara);
+    box(int_, V.x0, bx0, by0, by1, t0, tz, carrara); box(int_, bx1, V.x1, by0, by1, t0, tz, carrara);
+    box(int_, bx0, bx1, by0, by1, t0 - 0.16, t0 - 0.15, M.appliance);                                          // basin floor
+    box(int_, bx0, bx1, by0, by0 + 0.01, t0 - 0.16, t0, M.appliance); box(int_, bx0, bx1, by1 - 0.01, by1, t0 - 0.16, t0, M.appliance);
+    box(int_, bx0, bx0 + 0.01, by0, by1, t0 - 0.16, t0, M.appliance); box(int_, bx1 - 0.01, bx1, by0, by1, t0 - 0.16, t0, M.appliance);
+    // wall mixer and spout over the basin
+    box(int_, W.party_half + 0.012, W.party_half + 0.03, bm - 0.03, bm + 0.03, tz + 0.2, tz + 0.26, M.metal);
+    box(int_, W.party_half + 0.012, bx0 + 0.1, bm - 0.012, bm + 0.012, tz + 0.18, tz + 0.2, M.metal);
+  } else {
   box(int_, F.vanity.x0, F.vanity.x1, F.vanity.y0, F.vanity.y1, 0, F.vanity.z1 - 0.03, M.white);
   box(int_, F.vanity.x0, F.vanity.x1 + 0.02, F.vanity.y0, F.vanity.y1, F.vanity.z1 - 0.03, F.vanity.z1, M.vanityTop);
   box(int_, F.vanity.x0 + 0.06, F.vanity.x1 - 0.06, F.vanity.y0 + 0.35, F.vanity.y0 + 0.8, F.vanity.z1, F.vanity.z1 + 0.004, M.appliance);
+  }
   box(int_, F.mirror_cabinet.x0, F.mirror_cabinet.x1, F.mirror_cabinet.y0, F.mirror_cabinet.y1, F.mirror_cabinet.z0, F.mirror_cabinet.z1, M.metal);
   const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 20), M.appliance); fan.position.copy(L(F.exhaust_fan.x, F.exhaust_fan.y, 2.79)); int_.add(fan);
   // bathroom tiles: whole east (party) wall and the shower's walls

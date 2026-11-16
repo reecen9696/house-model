@@ -1,6 +1,7 @@
 // Builds the house from spec.json. Pure geometry: no camera, lights or UI here.
 // Lot frame (x west, y south, z up) -> three.js (X = -x, Y = z, Z = y). Right-handed.
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export const L = (x, y, z) => new THREE.Vector3(-x, z, y);
 
@@ -473,6 +474,170 @@ function inRoom(x, y, z) {
   return ROOMS.some(r => r.ceil != null && x >= r.x0 - 0.02 && x <= r.x1 + 0.02 && y >= r.y0 - 0.02 && y <= r.y1 + 0.02 && z >= r.floor - 0.5 && z <= r.floor + r.ceil + 0.3);
 }
 
+// Fluted walnut TV unit with a ceramic top (client photos 2026-11-16): 2000 x 360 x 360, MDF in a dark walnut finish,
+// vertical reeds all round, the back straight and the two front corners rounded to ~300 (top view), a travertine-look
+// ceramic top inset in a 15 walnut rim, a shadow-line finger pull under the top, four flush doors across the flat front,
+// a small recessed plinth. Wall-hung (it floats in the listing photo). wallX = the wall's face (lot x); face +1 when the
+// unit projects to +x (west), -1 to -x; cy = its centre along the wall; zb = the underside
+const TVU_M = {};
+function flutedTvUnit(parent, wallX, face, cy, zb) {
+  const W = 2.0, D = 0.36, H = 0.36, R = 0.3, rim = 0.015;
+  const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const reed = TVU_M.reed || (TVU_M.reed = new THREE.MeshStandardMaterial({ roughness: 0.6, map: tex(32, 8, g => {
+    const gr = g.createLinearGradient(0, 0, 32, 0); gr.addColorStop(0, '#1f1612'); gr.addColorStop(0.3, '#3d2d24'); gr.addColorStop(0.55, '#4a382d'); gr.addColorStop(0.85, '#33251e'); gr.addColorStop(1, '#1c1410');
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 8); }) }));
+  reed.map.repeat.set(75, 1);                                                    // a reed every ~13 mm
+  const wal = TVU_M.wal || (TVU_M.wal = new THREE.MeshStandardMaterial({ color: 0x3a2a21, roughness: 0.55 }));
+  const dark = TVU_M.dark || (TVU_M.dark = new THREE.MeshStandardMaterial({ color: 0x140e0b, roughness: 0.8 }));
+  const cer = TVU_M.cer || (TVU_M.cer = new THREE.MeshStandardMaterial({ roughness: 0.35, map: tex(512, 128, g => {
+    g.fillStyle = '#e6dcc8'; g.fillRect(0, 0, 512, 128);
+    let sd = 3; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 70; i++) { g.strokeStyle = `rgba(${170 + rnd() * 40},${150 + rnd() * 35},${115 + rnd() * 30},${0.06 + rnd() * 0.12})`; g.lineWidth = 0.5 + rnd() * 2;
+      let x = -20, y = rnd() * 128; g.beginPath(); g.moveTo(x, y); while (x < 532) { x += 20 + rnd() * 40; y += (rnd() - 0.5) * 4; g.lineTo(x, y); } g.stroke(); } }) }));
+  cer.map.repeat.set(0.5, 2); cer.map.offset.set(0.5, 0);   // cap UVs are in metres from the centre: one tile across the 2 m, no seam                                                    // the travertine bands run along the top
+  // plan outline in a local frame: u along the wall (-W/2..W/2), v out from the wall (0 back .. D front)
+  const outline = (inset) => {
+    const s = new THREE.Shape(), hw = W / 2 - inset, d0 = inset, d1 = D - inset, r = Math.max(R - inset, 0.01);
+    s.moveTo(-hw, d0); s.lineTo(hw, d0); s.lineTo(hw, d1 - r); s.absarc(hw - r, d1 - r, r, 0, Math.PI / 2); s.lineTo(-hw + r, d1); s.absarc(-hw + r, d1 - r, r, Math.PI / 2, Math.PI); s.lineTo(-hw, d0);
+    return s;
+  };
+  const grp = new THREE.Group();
+  const slab = (inset, z0, z1, mat) => {
+    const geo = new THREE.ExtrudeGeometry(outline(inset), { depth: z1 - z0, bevelEnabled: false, curveSegments: 20 });
+    geo.rotateX(Math.PI / 2); geo.translate(0, z1, 0);                           // shape (u, v) -> (x = u, z = v), extruded down from z1 to z0
+    const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; grp.add(m); return m;
+  };
+  slab(0.025, zb, zb + 0.02, dark);                                              // recessed plinth
+  slab(0, zb + 0.02, zb + H - 0.025, reed);                                      // the reeded body
+  slab(0, zb + H - 0.025, zb + H - 0.002, wal);                                  // walnut rim
+  slab(rim, zb + H - 0.004, zb + H, cer);                                        // ceramic top, inset in the rim
+  const fl = (u0, u1, v0, v1, z0, z1, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, z1 - z0, v1 - v0), mat); m.position.set((u0 + u1) / 2, (z0 + z1) / 2, (v0 + v1) / 2); grp.add(m); };
+  const fu0 = -W / 2 + R + 0.02, fu1 = W / 2 - R - 0.02;
+  fl(fu0, fu1, D - 0.004, D + 0.001, zb + H - 0.06, zb + H - 0.04, dark);       // finger-pull shadow line under the top
+  for (let i = 0; i <= 4; i++) { const u = fu0 + i * (fu1 - fu0) / 4; fl(u - 0.0015, u + 0.0015, D - 0.002, D + 0.002, zb + 0.035, zb + H - 0.065, dark); }   // door joints
+  // local (x = u, z = v) -> lot: v out from the wall along lot x (toward face), u along lot y
+  grp.rotation.y = face > 0 ? -Math.PI / 2 : Math.PI / 2;
+  grp.position.copy(L(wallX, cy, 0));
+  parent.add(grp);
+  return grp;
+}
+// Mid-century walnut TV unit with three drawers (client listing 2026-11-16): 1800 L x 400 D x 425 H, walnut-look
+// laminate. A 25 top overhanging the carcass a little all round, three flush drawer fronts (25 / 30 / 45 % of the run,
+// as in the listing photo) with scooped finger pulls under the top on the two outer ones, a recessed apron, and four
+// tapered legs splayed out toward the ends. Optional `tv` (diagonal in inches) stands a flat-panel TV on two blade feet.
+// Same local frame as flutedTvUnit: u along the wall, v out from it; face +1 projects to +x (west), -1 to -x
+// P: {wall_x, face, y} for a wall running along y, or {wall_y, face, x} for one along x (face +1 = projects to +y)
+function drawerTvUnit(parent, P, tv = 0) {
+  const W = 1.8, D = 0.4, H = 0.425, top = 0.025, legH = 0.1, oh = 0.012;
+  const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const grain = TVU_M.grain || (TVU_M.grain = tex(512, 64, g => {
+    g.fillStyle = '#6e5241'; g.fillRect(0, 0, 512, 64);
+    let sd = 11; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 60; i++) { const d = rnd(); g.strokeStyle = d < 0.5 ? `rgba(40,26,18,${0.06 + rnd() * 0.16})` : `rgba(120,92,70,${0.08 + rnd() * 0.15})`; g.lineWidth = 0.5 + rnd() * 2.5;
+      let x = -10, y = rnd() * 64; g.beginPath(); g.moveTo(x, y); while (x < 522) { x += 15 + rnd() * 35; y += (rnd() - 0.5) * 3; g.lineTo(x, y); } g.stroke(); } }));
+  const walMat = (rx, ry) => { const m = new THREE.MeshStandardMaterial({ roughness: 0.5, map: grain.clone() }); m.map.needsUpdate = true; m.map.repeat.set(rx, ry); return m; };
+  const topM = TVU_M.dTop || (TVU_M.dTop = walMat(1, 6));
+  const bodyM = TVU_M.dBody || (TVU_M.dBody = walMat(1, 1.5));
+  const dark = TVU_M.dark || (TVU_M.dark = new THREE.MeshStandardMaterial({ color: 0x140e0b, roughness: 0.8 }));
+  const grp = new THREE.Group();
+  // box in the local frame: u along the wall, v out from it, z up
+  const bx = (u0, u1, v0, v1, z0, z1, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, z1 - z0, v1 - v0), mat); m.position.set((u0 + u1) / 2, (z0 + z1) / 2, (v0 + v1) / 2); m.castShadow = m.receiveShadow = true; grp.add(m); return m; };
+  const hw = W / 2, cz0 = legH + 0.03, cz1 = H - top;
+  bx(-hw, hw, 0, D, cz1, H, topM);                                                        // top
+  bx(-hw + oh, hw - oh, oh, D - oh, cz0, cz1, bodyM);                                    // carcass
+  bx(-hw + 0.1, hw - 0.1, 0.03, D - 0.05, legH, cz0, bodyM);                              // recessed apron
+  // drawer fronts: 3 mm joints, scooped pulls on the outer two
+  const splits = [-hw + oh, -hw + oh + (W - 2 * oh) * 0.25, -hw + oh + (W - 2 * oh) * 0.55, hw - oh];
+  for (let i = 1; i < 3; i++) bx(splits[i] - 0.0015, splits[i] + 0.0015, D - oh - 0.002, D - oh + 0.002, cz0 + 0.005, cz1, dark);
+  bx(-hw + oh, hw - oh, D - oh - 0.002, D - oh + 0.002, cz1 - 0.003, cz1, dark);         // shadow under the top
+  for (const [a, b] of [[splits[0], splits[1]], [splits[2], splits[3]]]) {
+    const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, (b - a) * 0.75, 12, 1, false, 0, Math.PI), dark);
+    pull.rotation.z = Math.PI / 2; pull.position.set((a + b) / 2, cz1 - 0.004, D - oh); grp.add(pull);
+  }
+  // tapered legs, splayed ~12 deg out toward the ends
+  const legGeo = new THREE.CylinderGeometry(0.016, 0.024, legH / Math.cos(0.21) + 0.02, 4); legGeo.rotateY(Math.PI / 4);
+  for (const su of [-1, 1]) for (const v of [0.07, D - 0.07]) {
+    const leg = new THREE.Mesh(legGeo, bodyM); leg.rotation.z = su * 0.21; leg.position.set(su * (hw - 0.19), legH / 2 + 0.01, v); leg.castShadow = true; grp.add(leg);
+  }
+  if (tv) {
+    // flat panel, 16:9: a 75" is 1.66 x 0.93 of picture; 8 bezel, 30 deep at the edge, a fatter 60 back in the lower middle
+    const dg = tv * 0.0254, sw = dg * 16 / Math.hypot(16, 9), sh = dg * 9 / Math.hypot(16, 9), bz = 0.008;
+    const shell = TVU_M.tvShell || (TVU_M.tvShell = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.45, metalness: 0.3 }));
+    const glass = TVU_M.tvGlass || (TVU_M.tvGlass = new THREE.MeshStandardMaterial({ color: 0x07080b, roughness: 0.08, metalness: 0.2 }));
+    const vC = D * 0.45, z0 = H + 0.075;
+    for (const su of [-1, 1]) {                                                           // blade feet near the ends
+      bx(su * sw * 0.38 - 0.012, su * sw * 0.38 + 0.012, vC - 0.13, vC + 0.11, H, H + 0.006, shell);
+      bx(su * sw * 0.38 - 0.006, su * sw * 0.38 + 0.006, vC - 0.01, vC + 0.01, H, z0 + 0.08, shell);
+    }
+    bx(-sw / 2 - bz, sw / 2 + bz, vC - 0.015, vC + 0.015, z0, z0 + sh + 2 * bz, shell);    // panel
+    bx(-sw * 0.3, sw * 0.3, vC - 0.045, vC - 0.015, z0 + 0.05, z0 + sh * 0.55, shell);    // electronics bulge at the back
+    bx(-sw / 2, sw / 2, vC + 0.015, vC + 0.0165, z0 + bz, z0 + bz + sh, glass);            // screen
+  }
+  if (P.wall_y != null) { grp.rotation.y = P.face > 0 ? 0 : Math.PI; grp.position.copy(L(P.x, P.wall_y, 0)); }
+  else { grp.rotation.y = P.face > 0 ? -Math.PI / 2 : Math.PI / 2; grp.position.copy(L(P.wall_x, P.y, 0)); }
+  parent.add(grp);
+  return grp;
+}
+
+// King Living 1977 modular sofa in cream boucle (the renovated lounge's couch, spec there: renovation.lounge_furniture.couch):
+// straight modules in a run, backs to a wall. wallX = the wall face (lot x), face +1 = seats face +x; y0 = where the run
+// starts, modules listed in +y order. Sizes taped 16 Nov 2026 (runs 3.71 and 2.10, depth 900, chaise 1500 deep): chair 800, 2-seater 1570, chaise 840,
+// 900 deep otherwise, seat 420, back 710, back cushion 260
+// S: {axis: 'y', back_x, face, start, modules} = back on a line of constant x, seats facing +x (face 1) or -x, modules
+// laid in +y order from `start`; axis 'x' = back on a line of constant y (back_y), seats facing +-y, modules in +x order
+function couch1977(parent, S) {
+  const W = { chair: 0.80, double: 1.57, chaise: 0.84 }, dep = 0.90, chD = 1.50, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004;
+  const boucle = TVU_M.boucle || (TVU_M.boucle = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 1 }));
+  // block from depth d0..d1 out from the back line (toward the face) and a0..a1 along the run
+  const puff = (d0, d1, a0, a1, z0, z1, r) => {
+    const p0 = S.back + S.face * d0, p1 = S.back + S.face * d1, pa = Math.min(p0, p1), pb = Math.max(p0, p1);
+    const [x0, x1, y0, y1] = S.axis === 'y' ? [pa, pb, a0, a1] : [a0, a1, pa, pb];
+    const m = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, z1 - z0, y1 - y0, 4, Math.min(r, (x1 - x0) / 2, (z1 - z0) / 2, (y1 - y0) / 2)), boucle);
+    m.position.copy(L((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)); m.castShadow = m.receiveShadow = true; parent.add(m);
+  };
+  let a = S.start;
+  for (const k of S.modules) {
+    const w = W[k], d = k === 'chaise' ? chD : dep;
+    puff(0, d, a + g, a + w - g, 0.01, seat, 0.1);                                 // seat block
+    puff(0, bt, a + g, a + w - g, seat - 0.12, back, 0.12);                        // back cushion
+    a += w;
+  }
+}
+
+// The whole King Living 1977 sofa as an L: the curve module in the corner and an arm of straight modules each way.
+// back_x / back_y = the outer back lines (lot), sx / sy = which way each arm runs from the corner (+-1); the seats
+// face the same way (the x arm, backed on y = back_y, faces sy; the y arm faces sx). x_arm / y_arm list the modules
+// outward from the curve. Curve: 1300 x 1300, a quarter ring of outer radius 1.3 centred on its room-side corner
+function couchL(parent, S) {
+  const W = { chair: 0.80, double: 1.57, chaise: 0.84 }, dep = 0.90, chD = 1.50, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004, R = 1.3;
+  const boucle = TVU_M.boucle || (TVU_M.boucle = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 1 }));
+  const puff = (xa, xb, ya, yb, z0, z1, r) => {
+    const x0 = Math.min(xa, xb), x1 = Math.max(xa, xb), y0 = Math.min(ya, yb), y1 = Math.max(ya, yb);
+    const m = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, z1 - z0, y1 - y0, 4, Math.min(r, (x1 - x0) / 2, (z1 - z0) / 2, (y1 - y0) / 2)), boucle);
+    m.position.copy(L((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)); m.castShadow = m.receiveShadow = true; parent.add(m);
+  };
+  const { back_x: bx, back_y: by, sx, sy } = S;
+  let a = bx + sx * R;                                                            // x arm: backs on y = by, seats toward sy
+  for (const k of S.x_arm) { const w = W[k], d = k === 'chaise' ? chD : dep, a0 = a + sx * g, a1 = a + sx * (w - g);
+    puff(a0, a1, by, by + sy * d, 0.01, seat, 0.1); puff(a0, a1, by, by + sy * bt, seat - 0.12, back, 0.12); a += sx * w; }
+  a = by + sy * R;                                                                // y arm: backs on x = bx, seats toward sx
+  for (const k of S.y_arm) { const w = W[k], d = k === 'chaise' ? chD : dep, a0 = a + sy * g, a1 = a + sy * (w - g);
+    puff(bx, bx + sx * d, a0, a1, 0.01, seat, 0.1); puff(bx, bx + sx * bt, a0, a1, seat - 0.12, back, 0.12); a += sy * w; }
+  // curve: shape in lot (x, y) about the ring centre, extruded up, mapped (sx, sy, sz) -> three (-sx, sz, sy)
+  const cx = bx + sx * R, cy = by + sy * R, tx = Math.atan2(0, -sx), ty = Math.atan2(-sy, 0);
+  const dA = ((ty - tx + 3 * Math.PI) % (2 * Math.PI)) - Math.PI, cw = dA < 0, e = Math.sign(dA) * g / R;
+  const toThree = new THREE.Matrix4().set(-1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1);
+  const ring = (r0, r1, z0, z1, bev) => {
+    const s = new THREE.Shape(), q0 = r0 + bev, q1 = r1 - bev;
+    s.absarc(0, 0, q1, tx + e, ty - e, cw); s.absarc(0, 0, q0, ty - e, tx + e, !cw);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: z1 - z0 - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 4, curveSegments: 36 });
+    geo.translate(0, 0, z0 + bev); geo.applyMatrix4(toThree);
+    const m = new THREE.Mesh(geo, boucle); m.position.copy(L(cx, cy, 0)); m.castShadow = m.receiveShadow = true; parent.add(m);
+  };
+  ring(R - dep, R, 0.01, seat, 0.08);                                             // seat
+  ring(R - bt, R, seat - 0.12, back, 0.1);                                        // back
+}
+
 export function buildHouse(spec) {
   mats();
   ROOMS = spec.rooms.concat([{ name: 'bay', x0: spec.house.bay.x0, x1: spec.house.bay.x1, y0: spec.house.y_front_outer - spec.house.bay.projection, y1: spec.house.y_front_inner, floor: 0, ceil: spec.house.bay.wall_top }]);
@@ -699,6 +864,13 @@ export function buildHouse(spec) {
   box(int_, SH.x0, SH.x1, SH.y0, SH.y1, 2.6, 2.62, M.robe); box(int_, SH.x0, SH.x1, SH.y0, SH.y0 + 0.04, 2.62, 3.14, M.robe); // head with a cupboard face above
   for (const z of SH.levels) box(int_, SH.x0 + 0.02, SH.x1 - 0.02, SH.y0 + 0.05, SH.y1 - 0.02, z, z + 0.025, M.glass);        // glass shelves
   // living room console gas heater
+  // fluted walnut TV unit under the living room's west window (client 2026-11-16, spec.fixtures.tv_unit)
+  if (F.tv_unit && F.tv_unit.show !== false) flutedTvUnit(int_, F.tv_unit.wall_x, -1, F.tv_unit.y, F.tv_unit.z0);
+  // three-drawer walnut TV unit with a 75" TV (spec.fixtures.tv_unit_drawers), and the King Living sofa facing it
+  // two layouts in spec.fixtures.living_layouts; ?lounge=<name> on the URL picks one, else living_layouts.active
+  const LL = F.living_layouts, lay = LL && (LL[new URLSearchParams(globalThis.location?.search || '').get('lounge')] || LL[LL.active]);
+  if (lay?.tv_unit) drawerTvUnit(int_, lay.tv_unit, lay.tv_unit.tv_in || 0);
+  if (lay?.sofa) (lay.sofa.x_arm ? couchL : couch1977)(int_, lay.sofa);
   const WH = F.wall_heater; box(int_, WH.x0, WH.x1, WH.y0, WH.y1, WH.z0, WH.z1, M.trimDark); box(int_, WH.x0 - 0.005, WH.x0, WH.y0 + 0.05, WH.y1 - 0.05, WH.z0 + 0.1, WH.z1 - 0.1, M.grille);
   // ceiling roses and light fittings
   for (const cr of F.ceiling_roses) {

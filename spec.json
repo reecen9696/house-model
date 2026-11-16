@@ -595,6 +595,58 @@
    "z1": 0.7,
    "_note": "console gas heater on the living west wall"
   },
+  "tv_unit": {
+   "wall_x": 4.69,
+   "y": 12.67,
+   "z0": 0.07,
+   "_note": "Fluted walnut TV unit with a ceramic top, 2000 x 360 x 360 (client 2026-11-16), on the living room's west wall, centred under W2 (y 11.75-13.59). Wall-hung with 70 under it, so its top (430) clears the 450 sill; 230 clear of the gas heater (y 13.9). Hidden 2026-11-16: the three-drawer unit took its place",
+   "show": false
+  },
+  "living_layouts": {
+   "active": "north",
+   "_note": "Living room furniture (client 2026-11-16): the three-drawer walnut TV unit (1800 x 400 x 425, splayed legs) with a 75\" TV (1.66 x 0.93 picture) on it, and our King Living 1977 sofa (cream boucle; see the renovated spec). Add ?lounge=window or ?lounge=north to the URL to compare",
+   "window": {
+    "tv_unit": {
+     "wall_x": 4.69,
+     "face": -1,
+     "y": 12.98,
+     "tv_in": 75
+    },
+    "sofa": {
+     "axis": "y",
+     "back": 0.175,
+     "face": 1,
+     "start": 12.49,
+     "modules": [
+      "double",
+      "chaise"
+     ]
+    },
+    "_note": "Three-drawer walnut TV unit, 1800 x 400 x 425 on splayed legs (client listing 2026-11-16), freestanding against the living room's west wall at y 12.08-13.88. The client asked for it centred in the room (13.255), but that would put its south 255 over the console gas heater (13.9-14.65), so it is as far south as the heater allows (20 clear), 275 short of centre. Its top (425) is under the 450 sill. A 75\" TV (1.66 x 0.93 picture, top ~1.45) stands on it across the lower half of W2. Sofa on the east party wall facing it (2-seater, chaise at the south end, y 12.49-14.90 with the taped sizes), the north end ~0.9 short of the north wall to keep the hall doorway clear; the curve and chair do not fit. Eyes to screen ~3.85"
+   },
+   "north": {
+    "tv_unit": {
+     "wall_y": 11.6,
+     "face": 1,
+     "x": 2.68,
+     "tv_in": 75
+    },
+    "sofa": {
+     "back_x": 4.63,
+     "back_y": 14.31,
+     "sx": -1,
+     "sy": -1,
+     "x_arm": [
+      "double",
+      "chaise"
+     ],
+     "y_arm": [
+      "chair"
+     ]
+    },
+    "_note": "The whole King Living 1977 sofa as an L (client 2026-11-16): curve in the south-west, the 2-seater and chaise running east with their backs to the kitchen opening (back at y 14.31: a 0.60 walkway to the south wall, client: 'just enough for a person to walk through'; chaise end at x 0.92: 0.80 clear of the party wall for the hall-to-kitchen route), the single chair running north along the west wall under W2 (y 12.21-13.01, 0.61 short of the north wall). The gas heater is not used (client); the curve's round back passes ~0.16 from its corner. TV unit on the north wall at x 1.78-3.58, centred on the long arm's seats; the chaise foot is ~0.83 from it, the 2-seater ~1.35. Eyes to screen ~2.1 m (75\": THX ~2.3, SMPTE ~3.1)"
+   }
+  },
   "ceiling_roses": [
    {
     "room": "Living",

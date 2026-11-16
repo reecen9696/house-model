@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import SunCalc from 'suncalc';
 import { buildNeighbours } from '../context/neighbours.js';
-import { buildHouse, L } from './generator.js';
+import { buildHouse, L } from './generator.js?v=20261116b';
 
 const spec = await (await fetch('./spec.json')).json();
 
@@ -167,7 +167,10 @@ scene.updateMatrixWorld(true);
 const colliders = [];
 for (const grp of [G.exterior, G.interior, G.site]) grp.traverse(o => {
   if (!o.isMesh || o.userData.door || !o.geometry.parameters || o.geometry.type !== 'BoxGeometry') return;
-  const { width, height, depth } = o.geometry.parameters;
+  // half-extents from the real geometry: RoundedBoxGeometry reports type 'BoxGeometry' with 1 x 1 x 1 parameters
+  // (it is built as a unit box and then scaled), which made every sofa cushion a 1 m square block
+  if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+  const gb = o.geometry.boundingBox, width = gb.max.x - gb.min.x, depth = gb.max.z - gb.min.z;
   const bb = new THREE.Box3().setFromObject(o);
   colliders.push({ inv: o.matrixWorld.clone().invert(), hx: width / 2, hz: depth / 2, y0: bb.min.y, y1: bb.max.y, mesh: o, bb });
 });
@@ -265,6 +268,15 @@ function stepWalk() {
   // move along each axis separately so you slide along a wall instead of sticking to it
   const tryX = p.clone(); tryX.x += step.x; if (!blocked(tryX, floorAt(tryX))) p.x = tryX.x;
   const tryZ = p.clone(); tryZ.z += step.z; if (!blocked(tryZ, floorAt(tryZ))) p.z = tryZ.z;
+  // caught on a corner (a door trim, the end of a sofa back): ease sideways around it instead of stopping dead
+  const sl = step.length(), moved = Math.hypot(p.x - tryX.x + step.x, p.z - tryZ.z + step.z);
+  if (sl > 1e-4 && moved < sl * 0.3) {
+    const side = new THREE.Vector3(-step.z, 0, step.x).normalize();
+    for (const s of [1, -1, 2, -2]) {
+      const c = p.clone().addScaledVector(step, 0.5).addScaledVector(side, s * sl);
+      if (!blocked(c, floorAt(c))) { p.x = c.x; p.z = c.z; break; }
+    }
+  }
   camera.position.y = floorAt(p) + walk.eye;
   camera.rotation.set(walk.pitch, walk.yaw, 0, 'YXZ');
   walk.lastYaw = walk.yaw; walk.lastPitch = walk.pitch;
