@@ -581,12 +581,12 @@ function drawerTvUnit(parent, P, tv = 0) {
 
 // King Living 1977 modular sofa in cream boucle (the renovated lounge's couch, spec there: renovation.lounge_furniture.couch):
 // straight modules in a run, backs to a wall. wallX = the wall face (lot x), face +1 = seats face +x; y0 = where the run
-// starts, modules listed in +y order. Sizes taped 16 Nov 2026 (runs 3.71 and 2.10, depth 900, chaise 1500 deep): chair 800, 2-seater 1570, chaise 840,
-// 900 deep otherwise, seat 420, back 710, back cushion 260
+// starts, modules listed in +y order. Sizes from the King Living card (our sofa is Package 6: curve + 2-seater + chair, 2770 W): chair 840, 2-seater 1470,
+// chaise 840 x 1485 deep (not in Package 6), 960 deep otherwise, seat 420, back 710, back cushion 260
 // S: {axis: 'y', back_x, face, start, modules} = back on a line of constant x, seats facing +x (face 1) or -x, modules
 // laid in +y order from `start`; axis 'x' = back on a line of constant y (back_y), seats facing +-y, modules in +x order
 function couch1977(parent, S) {
-  const W = { chair: 0.80, double: 1.57, chaise: 0.84 }, dep = 0.90, chD = 1.50, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004;
+  const W = { chair: 0.84, double: 1.47, chaise: 0.84 }, dep = 0.96, chD = 1.485, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004;
   const boucle = TVU_M.boucle || (TVU_M.boucle = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 1 }));
   // block from depth d0..d1 out from the back line (toward the face) and a0..a1 along the run
   const puff = (d0, d1, a0, a1, z0, z1, r) => {
@@ -609,7 +609,7 @@ function couch1977(parent, S) {
 // face the same way (the x arm, backed on y = back_y, faces sy; the y arm faces sx). x_arm / y_arm list the modules
 // outward from the curve. Curve: 1300 x 1300, a quarter ring of outer radius 1.3 centred on its room-side corner
 function couchL(parent, S) {
-  const W = { chair: 0.80, double: 1.57, chaise: 0.84 }, dep = 0.90, chD = 1.50, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004, R = 1.3;
+  const W = { chair: 0.84, double: 1.47, chaise: 0.84 }, dep = 0.96, chD = 1.485, seat = 0.42, back = 0.71, bt = 0.26, g = 0.004, R = 1.3;
   const boucle = TVU_M.boucle || (TVU_M.boucle = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 1 }));
   const puff = (xa, xb, ya, yb, z0, z1, r) => {
     const x0 = Math.min(xa, xb), x1 = Math.max(xa, xb), y0 = Math.min(ya, yb), y1 = Math.max(ya, yb);

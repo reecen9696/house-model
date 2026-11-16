@@ -1195,18 +1195,17 @@
     "_note": "low white cabinet on the east wall, 1.8 long (three 600 drawers), centred under the TV (y 22.3), 0.6 short of bathroom 2's door"
    },
    "couch": {
-    "model": "King Living 1977 modular sofa, cream boucle (Leura S)",
+    "model": "King Living 1977 modular sofa, Package 6 (curve + 2-seater + chair, 2770 W), Leura S boucle",
     "wall_x": 6.03,
-    "south_y": 24.21,
-    "depth": 0.9,
-    "chaise_depth": 1.5,
+    "south_y": 24.11,
+    "depth": 0.96,
+    "chaise_depth": 1.485,
     "seat_h": 0.42,
     "back_h": 0.71,
     "back_t": 0.26,
-    "_note": "Four pieces: chaise and a 2-seater along the west wall under the windows, the curve module at the south end, then one straight chair along the south side facing north. Set 0.66 clear of the sliding doors; the chaise stops at y 20.5, clear of the side glass door's swing. Sizes taped 16 Nov 2026 (see _measured): chair 800x900, 2-seater 1570x900, chaise 840x1500, curve 1300x1300 (900 deep), seat 420, backrest 710.",
+    "_note": "Package 6 (client 2026-11-16, kingliving.com.au 1977-pkg-6-v3): the 2-seater along the west wall under the windows, the curve module at the south end, then the chair along the south side facing north. No chaise. Set 0.66 clear of the sliding doors; the 2-seater stops at y 21.34. Sizes from the King Living 1977 product card: chair 840x960, 2-seater 1470x960, curve 1300x1300 (960 deep), seat 420, backrest 710; curve + 2-seater = 2770, the package width.",
     "west": [
-     "double",
-     "chaise"
+     "double"
     ],
     "corner": "curve",
     "south": [
@@ -1214,11 +1213,10 @@
     ],
     "curve_r": 1.3,
     "widths": {
-     "chair": 0.8,
-     "double": 1.57,
+     "chair": 0.84,
+     "double": 1.47,
      "chaise": 0.84
-    },
-    "_measured": "Taped by the client 2026-11-16: long run (curve + 2-seater + chaise) 3.71, short run (curve + chair) 2.10, seat depth 0.90, chaise depth 1.50. Module splits are not taped: curve kept at 1.30 and chaise width at 0.84, so the chair is 0.80 and the 2-seater 1.57. south_y moved 24.11 -> 24.21 so the longer run still stops at y 20.5 (side door swing); slider clearance is now ~0.56"
+    }
    },
    "coffee_table": {
     "x": 4.0,
