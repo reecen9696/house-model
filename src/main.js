@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import SunCalc from 'suncalc';
 import { buildNeighbours } from '../context/neighbours.js';
-import { buildHouse, L } from './generator.js?v=20261116b';
+import { buildHouse, L, EKET, EKET_EXTRA } from './generator.js?v=20261118p';
 
 const spec = await (await fetch('./spec.json')).json();
 
@@ -131,6 +131,72 @@ const refreshSun = () => {
 bind('day', refreshSun); bind('time', refreshSun);
 document.querySelectorAll('[data-cut]').forEach(b => b.addEventListener('click', () => { $('cut').value = b.dataset.cut; $('cut').dispatchEvent(new Event('input')); }));
 
+// Living layouts and TV cabinet options (spec.fixtures.living_layouts, tv_cabinets.layouts): the generator builds a
+// group per layout (sofa + TV cabinets) and one per cabinet option; show one of each. ?lounge=<id> / ?tv=<id> pick on
+// load, else the last choice on this device, else the spec's active ones
+const LIV = G.interior.userData.living || {}, TVSPEC = spec.fixtures.tv_cabinets, LLS = spec.fixtures.living_layouts;
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const aud = n => '$' + n.toLocaleString('en-AU');
+const qs = new URLSearchParams(location.search);
+// parts list for an EKET option: the modules, plus a rail each (wall-hung) or a 4-pack of feet each, plus the worktops
+function eketParts(o) {
+  const X = EKET_EXTRA, n = {}; for (const k of o.modules) n[k] = (n[k] || 0) + 1;
+  const rows = Object.entries(n).map(([k, q]) => ({ q, name: EKET[k].name, cost: q * EKET[k].price }));
+  if (o.mount === 'wall') rows.push({ q: o.modules.length, name: 'Suspension rail', cost: o.modules.reduce((a, k) => a + X.rail[EKET[k].w], 0) });
+  else rows.push({ q: o.modules.length, name: X.feet.name, cost: o.modules.length * X.feet.price });
+  if (o.top) rows.push({ q: X.worktop.qty, name: X.worktop.name, cost: X.worktop.qty * X.worktop.price });
+  if (o.fittings) rows.push({ q: o.fittings, name: 'Connection fittings (203.346.20)', cost: o.fittings * 10 });
+  return rows;
+}
+let layNow = null;
+const tvOptionsFor = lid => [{ id: 'drawers', label: '3-drawer walnut', sub: 'Current freestanding unit, 1.8 m' }, ...(TVSPEC?.layouts?.[lid]?.options || []).filter(o => o.id !== 'drawers')].filter(o => LIV[lid]?.tv[o.id]);
+function setTv(id, remember = true) {
+  const TVC = LIV[layNow]?.tv || {};
+  if (!TVC[id]) return;
+  for (const [k, g] of Object.entries(TVC)) g.visible = k === id;
+  document.querySelectorAll('#tvOpts .tvopt').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === id)));
+  const o = tvOptionsFor(layNow).find(q => q.id === id);
+  if (o?.modules) {
+    const len = o.modules.reduce((a, k) => a + EKET[k].w, 0) + (o.top ? 0.056 : 0), hgt = o.mount === 'wall' ? 'hung 180 off the floor, top at 530' : o.top ? 'on feet, 400 high' : 'on feet, 372 high';
+    $('tvInfo').textContent = eketParts(o).map(r => `${r.q} × ${r.name}`).join(' · ') + `. ${len.toFixed(2)} m long, ${hgt}.`;
+  } else $('tvInfo').textContent = '1800 × 400 × 425 on splayed legs, freestanding.';
+  if (remember) store.set('tvCabinet.' + layNow, id);
+}
+function setLayout(lid, remember = true) {
+  if (!LIV[lid]) return;
+  layNow = lid;
+  for (const [k, l] of Object.entries(LIV)) l.group.visible = k === lid;
+  document.querySelectorAll('#layOpts input').forEach(i => { i.checked = i.value === lid; });
+  $('tvOpts').replaceChildren();
+  for (const o of tvOptionsFor(lid)) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tvopt'; b.dataset.id = o.id; b.setAttribute('role', 'radio');
+    const len = o.modules ? o.modules.reduce((a, k) => a + EKET[k].w, 0) + (o.top ? 0.056 : 0) : 1.8;
+    const cost = o.modules ? aud(eketParts(o).reduce((a, r) => a + r.cost, 0)) : 'have it';
+    const strip = o.modules ? `<span class="strip${o.top ? ' top' : ''}" aria-hidden="true">${o.modules.map(k => `<i class="${k}" style="width:${Math.round(EKET[k].w * 110) - 1}px"></i>`).join('')}</span>` : '';
+    b.innerHTML = `<span class="row"><b></b><span class="meta">${len.toFixed(2)} m · ${cost}</span></span>${strip}<span class="sub"></span>`;
+    b.querySelector('b').textContent = o.label; b.querySelector('.sub').textContent = o.sub || '';
+    b.addEventListener('click', () => setTv(o.id));
+    $('tvOpts').append(b);
+  }
+  const TVC = LIV[lid].tv, want = (remember ? null : qs.get('tv')) || store.get('tvCabinet.' + lid), act = TVSPEC?.layouts?.[lid]?.active;
+  setTv(TVC[want] ? want : TVC[act] ? act : 'drawers', false);
+  if (remember) store.set('livingLayout', lid);
+}
+const layIds = Object.keys(LIV);
+if (layIds.length) {
+  for (const lid of layIds) {
+    const l = document.createElement('label'); l.className = 'chip';
+    l.innerHTML = `<input type="radio" name="layout" value="${lid}"><span></span>`;
+    l.querySelector('span').textContent = LLS[lid]?.label || lid;
+    l.querySelector('input').addEventListener('change', () => setLayout(lid));
+    $('layOpts').append(l);
+  }
+  $('layOpts').hidden = layIds.length < 2;
+  const want = qs.get('lounge') || store.get('livingLayout');
+  setLayout(LIV[want] ? want : (LIV[G.interior.userData.livingActive] ? G.interior.userData.livingActive : layIds[0]), false);
+} else $('tvBtn').hidden = true;
+
 function fitCamera() {
   camera.aspect = innerWidth / innerHeight;
   if (camera.userData.walk) { camera.fov = walkFov(); camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); return; }
@@ -172,7 +238,8 @@ for (const grp of [G.exterior, G.interior, G.site]) grp.traverse(o => {
   if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
   const gb = o.geometry.boundingBox, width = gb.max.x - gb.min.x, depth = gb.max.z - gb.min.z;
   const bb = new THREE.Box3().setFromObject(o);
-  colliders.push({ inv: o.matrixWorld.clone().invert(), hx: width / 2, hz: depth / 2, y0: bb.min.y, y1: bb.max.y, mesh: o, bb });
+  const sw = []; for (let q = o; q; q = q.parent) if (q.userData.switchable) sw.push(q);   // in a living layout or TV cabinet option: only blocks while shown
+  colliders.push({ inv: o.matrixWorld.clone().invert(), hx: width / 2, hz: depth / 2, y0: bb.min.y, y1: bb.max.y, mesh: o, bb, sw });
 });
 const doorLeaves = [];
 for (const grp of [G.exterior, G.interior, G.site]) grp.traverse(o => { if (o.isMesh && o.userData.door) doorLeaves.push(o); });
@@ -180,7 +247,7 @@ const BODY_R = 0.18, tmp = new THREE.Vector3();
 function blocked(p, floorY) {
   const feet = floorY + 0.42, head = floorY + 1.7;          // steps up to 0.42 (the two back-door risers) can be climbed; sills and benches block
   for (const c of colliders) {
-    if (c.y1 <= feet || c.y0 >= head) continue;
+    if (c.y1 <= feet || c.y0 >= head || c.sw.some(q => !q.visible)) continue;
     tmp.copy(p).applyMatrix4(c.inv);
     // round body: distance from the body centre to the nearest point of the box footprint
     const dx = Math.max(Math.abs(tmp.x) - c.hx, 0), dz = Math.max(Math.abs(tmp.z) - c.hz, 0);
@@ -243,7 +310,12 @@ const lookEnd = e => { if (e.pointerId === walk.lookId) walk.lookId = null; };
 cv.addEventListener('pointerup', lookEnd); cv.addEventListener('pointercancel', lookEnd);
 // keyboard for desktop testing: WASD / arrows, Q/E height
 const keys = {};
-addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'm' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+    e.preventDefault(); document.body.classList.toggle('clean'); return;      // hide / show all on-screen controls (screen recording), as in the renovated model
+  }
+  keys[e.key.toLowerCase()] = true;
+});
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 function stepWalk() {
   // anything that set yaw/pitch directly (start of walk, tests) becomes the new target

@@ -12,7 +12,7 @@ const plantsReady = loadPlants();
 const baseSpec = await (await fetch('./spec.json')).json();
 // Reno settings (metres), remembered per browser
 const RENO_KEY = 'fern-reno-v3';
-const RENO_DEFAULT = { curtains: true, listingCurtains: true, listingBlockout: true, shutters: true, kitchenV: 5, defaultsV: 3, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'walnut', sideboardV: 2, diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 4, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', hallAmalfi: true, hallDl: 'small', klLights: 'designed', art: 'v2', artV: 2, artBack: 'dancer', artHall: 'thierry', artExt: 'brooke', decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1, baySeat: 'on', frontBath: 'current', moodPendants: false, moodPendant: '' };
+const RENO_DEFAULT = { curtains: true, listingCurtains: true, listingBlockout: true, shutters: true, kitchenV: 5, defaultsV: 3, loungeV: 3, roofRaise: 0.85, floorBuildup: 0.38, skylight: true, openingRaise: true, fridge: 'runEndPantry', island: false, hallDoorway: 'arch', kitchenDoor: 'none', laundry: 'bathCornerLow', laundryV: 1, kitchenTall: true, kitchenStyle: 'walnut', noPantry: true, frontBed: 'queen', bedside: true, room2: 'desk', tvUnit: 'white', loungeStyle: 'walnut', coffeeTable: 'matched', sideboard: 'walnut', sideboardV: 2, diningTable: 'matched', furnitureV: 1, whiteWoodwork: true, creamExterior: true, bayHood: false, porchScreen: false, sidePavers: false, glassWall: true, hallV: 4, bedLights: 'pendant', bedLightsV: 3, pendant: 'augustOval', hallLights: 'art', hallPendant: 'pebble', hallAmalfi: true, hallDl: 'small', klLights: 'designed', art: 'v2', artV: 2, artBack: 'dancer', artHall: 'thierry', artExt: 'brooke', decor: 'styled', decorV: 1, yard: 'deck', yardV: 1 , loungeFence: 'screen', loungeFenceV: 1, baySeat: 'on', frontBath: 'current', moodPendants: false, moodPendant: '' };
 let reno = { ...RENO_DEFAULT };
 let savedReno = null;
 try { savedReno = JSON.parse(localStorage.getItem(RENO_KEY)); Object.assign(reno, savedReno || {}); } catch {}
@@ -1204,6 +1204,8 @@ for (const k of ['pend', 'hpend']) document.querySelector(`select[data-pick="${k
 const ECHAND = baseSpec.renovation.entry_chandeliers?.items || {};
 const echand = () => reno.entryChandelier === 'amalfi' || ECHAND[reno.entryChandelier] ? reno.entryChandelier : 'alabTier';
 document.querySelector('select[data-pick="echand"]').insertAdjacentHTML('afterbegin', Object.entries(ECHAND).map(([id, p]) => `<option value="${id}">${p.name}, ${p.d_mm} x ${p.h_mm}</option>`).join(''));
+// bedroom 2: the saved study designs (spec.fixtures.study_designs) join the queen bed in its picker
+document.querySelector('select[data-pick="room2"]').insertAdjacentHTML('afterbegin', Object.entries(baseSpec.fixtures.study_designs.items).map(([id, d]) => `<option value="desk:${id}">Study, ${d.label}</option>`).join(''));
 // every choice in the Reno sheet is a dropdown: [read the saved value, store a new one]
 const PICKS = {
   kstyle: [() => reno.kitchenStyle || 'white', v => { reno.kitchenStyle = v; }],
@@ -1218,6 +1220,7 @@ const PICKS = {
   bd: [() => reno.backDoors || 'current', v => { reno.backDoors = v; }],
   laundry: [() => reno.laundry, v => { reno.laundry = v; }],
   fbed: [() => reno.frontBed, v => { reno.frontBed = v; }],
+  room2: [() => { const SD = baseSpec.fixtures.study_designs, r = reno.room2 || 'bed'; return r === 'desk' ? 'desk:' + SD.active : r.startsWith('desk:') && !SD.items[r.slice(5)] ? 'desk:' + SD.active : r; }, v => { reno.room2 = v; }],
   blight: [() => reno.bedLights || 'pendant', v => { reno.bedLights = v; }],
   pend: [() => moodOn() ? 'mood:' + reno.moodPendant : reno.pendant || 'augustOval', v => { if (!moodPick(v)) reno.pendant = v; }],
   hlight: [() => reno.hallLights === 'downlights' ? 'downlights' : 'art', v => { reno.hallLights = v; }],
@@ -1336,7 +1339,7 @@ document.querySelectorAll('[data-bscene]').forEach(b => b.addEventListener('clic
 }));
 // stand in a bedroom (Walk): front bedroom from the bay corner by the hall wall, facing the bed and the robe; bedroom 2
 // in the window corner beside the bed, facing the robe across the room (the view from the bed, standing); frontBed: beside the front bed's head, facing the wall the bed faces
-const BED_VIEWS = { frontBath: { x: 1.85, y: 19.12, tx: 0.3, ty: 20.75, pitch: -0.45 }, front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, entryLight: { x: 0.7, y: 10.2, tx: 0.7, ty: 4.6, pitch: 0.3 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 }, kitchenEnd: { x: 3.9, y: 16.0, tx: 0.45, ty: 19.0, pitch: 0.12 } };
+const BED_VIEWS = { frontBath: { x: 1.85, y: 19.12, tx: 0.3, ty: 20.75, pitch: -0.45 }, front: { x: 1.9, y: 3.6, tx: 4.69, ty: 7.6 }, frontBed: { x: 4.3, y: 6.95, tx: 1.58, ty: 5.0, pitch: 0.05 }, bed3: { x: 4.3, y: 11.9, tx: 1.8, ty: 14.6, pitch: 0.12 }, hallFront: { x: 0.7, y: 5.0, tx: 0.7, ty: 15, pitch: 0.12 }, hallBack: { x: 0.7, y: 14.6, tx: 0.7, ty: 4.6, pitch: 0.12 }, entryLight: { x: 0.7, y: 10.2, tx: 0.7, ty: 4.6, pitch: 0.3 }, frontPillow: { x: 4.3, y: 5.3, tx: 2.0, ty: 5.55, pitch: 0.85, eye: 0.85 }, frontSheer: { x: 2.3, y: 7.0, tx: 3.7, ty: 3.3, pitch: 0.12 }, bed2: { x: 4.4, y: 8.75, tx: 1.6, ty: 11.3, pitch: 0.15 }, desk2: { x: 2.0, y: 10.6, tx: 3.9, ty: 8.4, pitch: -0.35 }, kitchenEnd: { x: 3.9, y: 16.0, tx: 0.45, ty: 19.0, pitch: 0.12 } };
 document.querySelectorAll('[data-bview]').forEach(b => b.addEventListener('click', () => {
   const v = BED_VIEWS[b.dataset.bview];
   if (!walk.on) setWalk(true); else window.closeSheets?.();

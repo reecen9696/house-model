@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
+import { studyDesk } from '../../src/study-desk.js?v=20261118m';
 
 export const L = (x, y, z) => new THREE.Vector3(-x, z, y);
 
@@ -2773,7 +2774,7 @@ export const FRIDGE_SPOTS = {
   runEndPantry: { x0: 2.05, x1: 2.65, y0: 15.04, y1: 15.72, face: 'S', top: 2.25, single: true, pantry: [1.43, 2.03] },
 };
 
-export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', entryChandelier = 'alabTier', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', frontBath = 'current', moodPendants = false, moodPendant = '' } = {}) {
+export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = false, openingRaise = false, fridge = 'none', island = false, hallDoorway = true, kitchenDoor = 'double', laundry = 'none', kitchenTall = false, whiteWoodwork = false, creamExterior = false, bayHood = true, porchScreen = true, sidePavers = true, noPantry = false, frontBed = 'queen', bedside = true, tvUnit = 'white', coffeeTable = 'round', sideboard = false, kitchenStyle = 'white', diningTable = 'oak', curtains = false, listingCurtains = false, listingBlockout = true, shutters = true, bed2 = true, room2 = 'bed', study = true, loungeStyle = 'standard', glassWall = false, backDoors = 'current', bedLights = 'pendant', pendant = 'augustOval', hallLights = 'art', hallPendant = 'pebble', hallAmalfi = false, hallDl = 'small', entryChandelier = 'alabTier', klLights = 'designed', art = 'v2', artBack = 'dancer', artHall = 'thierry', artExt = 'brooke', decor = 'styled', yard = 'deck', loungeFence = 'screen', baySeat = 'on', frontBath = 'current', moodPendants = false, moodPendant = '' } = {}) {
   if (kitchenStyle === 'ikea' || kitchenStyle === 'walnut' || kitchenStyle === 'cream' || kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') fridge = 'none';                          // the fridge is built into the tall run
   if (kitchenStyle === 'std' || kitchenStyle === 'stdWhite' || kitchenStyle === 'secondhand' || kitchenStyle === 'gloss' || kitchenStyle === 'glossL' || kitchenStyle === 'glossOak') kitchenDoor = 'none';                    // the standard L keeps the sink under the original window
   // Reno 'remove pantry': the pantry and its recess come out, so the kitchen-lounge opening runs from the bathroom
@@ -2968,7 +2969,9 @@ export function applyReno(base, { roofRaise = 0, floorBuildup = 0, skylight = fa
       chairs: ext ? [[xm - 0.6, 'N'], [xm, 'N'], [xm + 0.6, 'N'], [xm - 0.6, 'S'], [xm, 'S'], [xm + 0.6, 'S']] : Dn.chairs });
   }
   spec.renovation.front_bed = frontBed === 'queen' || frontBed === 'king' ? { size: frontBed, bedside: !!bedside } : null;
-  spec.renovation.bed2 = bed2 ? { size: 'queen', bedside: true } : null;      // queen and bedside drawers in bedroom 2
+  spec.renovation.bed2 = bed2 && !String(room2).startsWith('desk') ? { size: 'queen', bedside: true } : null;   // queen and bedside drawers in bedroom 2
+  { const SD = spec.fixtures.study_designs, id = String(room2).startsWith('desk') ? String(room2).split(':')[1] : null;   // 'desk' = the active saved design, 'desk:<id>' = that one
+    spec.renovation.room2_desk = String(room2).startsWith('desk') && SD ? (SD.items[id] ? id : SD.active) : null; }
   spec.renovation.study = !!study;                                          // desk, monitor and office chair in bedroom 3
   // bedroom lighting (front bedroom and bedroom 2): 'downlights' = a flush grid like the other rooms; 'proposed' = a
   // pendant on the rose, a reading spot in the ceiling each side of the bed, an LED strip on top of the robe and a night
@@ -5035,6 +5038,8 @@ export function buildHouse(spec) {
   // A second, slightly smaller desk (1200 x 600) set the same way stands in the north-west corner against the north wall,
   // its west end 20 off the window wall: the window at your left, the door's swing along the other end of that wall.
   // (It sits in front of the bottom of the window's north end, so that shutter panel can't open fully past it.)
+  // bedroom 2 as a study instead (client 2026-11-18): EKBACKEN walnut desk under the window on EKET drawers, BILLY on the north wall
+  if (spec.renovation.room2_desk) studyDesk(G.furniture, spec.fixtures.study_designs.items[spec.renovation.room2_desk], spec.rooms.find(r => r.name === 'Bedroom 2').floor);
   if (spec.renovation.study) {
     const rm = spec.rooms.find(r => r.name === 'Bedroom 3');
     const yDoor = spec.renovation.bedroom3.door_y1, yRobe = 14.29;                                   // robe front (see the robe above)
@@ -5143,7 +5148,7 @@ export function buildHouse(spec) {
       const wn = Win[k], rm = spec.rooms.find(r => r.name === rn); if (!wn || !rm) continue;
       // roller blind, face-fixed on the wall above the window (client): an 80 x 80 cassette just over the architrave, the
       // fabric 100 wider than the window each side so it covers the architrave too, shown lowered a little
-      if (k === 'W1_bed2' && spec.renovation.listing_curtains) continue;                       // the Marketplace set replaces both here
+      if (k === 'W1_bed2' && spec.renovation.listing_curtains && (!spec.renovation.room2_desk || spec.fixtures.study_designs.items[spec.renovation.room2_desk].curtains)) continue;                       // the Marketplace set replaces both here
       rollerBlind(int_, 'y', xi, -1, wn.y0, wn.y1, wn.head + 0.075);
       if (!spec.renovation.curtains) continue;
       const zc = rm.floor + rm.ceil, x = xi - 0.26, a0 = Math.max(rm.y0 + 0.02, wn.y0 - 0.2), a1 = Math.min(rm.y1 - 0.02, wn.y1 + 0.2);
@@ -5157,6 +5162,7 @@ export function buildHouse(spec) {
         const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
         const m = new THREE.Mesh(geo, sheerMat); m.renderOrder = 2; m.castShadow = false; int_.add(m);
       };
+      if (k === 'W1_bed2' && spec.renovation.room2_desk) continue;                          // the desk runs under the window: blind only
       stack(a0, Math.min(a0 + 0.38, wn.y0 + 0.18)); stack(Math.max(a1 - 0.38, wn.y1 - 0.18), a1);
     }
   }
@@ -5168,7 +5174,7 @@ export function buildHouse(spec) {
     const cx = (H.bay.x0 + H.bay.x1) / 2, x0 = cx - 1, x1 = cx + 1;
     listingCurtain(int_, 'x', 1, fr.y0 + 0.21, x0, x1, fr.floor, fr.floor + fr.ceil, [[x0, x1]], spec.renovation.listing_blockout ? [[x0, x1]] : [[x1 - 0.35, x1]]);
     const y0 = b2.y0 + 0.02, y1 = y0 + 1.8, stacks = [[y0, y0 + 0.2], [y1 - 0.2, y1]];
-    listingCurtain(int_, 'y', -1, H.x_west_inner - 0.14, y0, y1, b2.floor, b2.floor + b2.ceil, stacks, stacks);
+    if (!spec.renovation.room2_desk || spec.fixtures.study_designs.items[spec.renovation.room2_desk].curtains) listingCurtain(int_, 'y', -1, H.x_west_inner - 0.14, y0, y1, b2.floor, b2.floor + b2.ceil, stacks, stacks);   // floor-length: over the desk only when the design stands it off the wall (study v4+)
   }
   // --- light switches (2026-10-21; layout in SWITCHES.md). Latch side of each door, ~100 off the architrave, centre 1.05;
   // a rotary dimmer for each dimmed circuit, rockers for the rest. Plates live in G.switches so they can be found

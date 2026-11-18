@@ -69,6 +69,23 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { #loading .spin { animation-duration: 2.5s; } }
   @media (prefers-reduced-motion: no-preference) { .sheet { animation: rise 0.16s ease-out; } @keyframes rise { from { opacity: 0; transform: translate(-50%, 8px); } } }
+  .tvopts { display: grid; gap: 8px; }
+  .tvopt { display: grid; gap: 6px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 0; background: var(--chip); }
+  .tvopt .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .tvopt b { font-size: 14px; font-weight: 600; }
+  .tvopt .meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tvopt .sub { font-size: 12.5px; color: var(--muted); }
+  .tvopt[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+  .tvopt[aria-checked="true"] .meta, .tvopt[aria-checked="true"] .sub { color: rgba(255,255,255,0.82); }
+  .strip { display: flex; align-items: flex-end; gap: 1px; height: 11px; box-sizing: content-box; }
+  .strip.top { height: 11px; padding-top: 3px; border: 3px solid #bfb8ad; border-bottom: 0; width: fit-content; min-width: 0; }
+  .strip i { flex: none; }
+  .strip i { display: block; height: 11px; background: #8a6446; border-radius: 1px; position: relative; }
+  .strip i.open, .strip i.wideOpen { background: transparent; box-shadow: inset 0 0 0 1.5px #8a6446; }
+  .strip i.drawers::after { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1px; background: rgba(0,0,0,0.35); }
+  .tvopt[aria-checked="true"] .strip i { background: #e8d3bd; }
+  .tvopt[aria-checked="true"] .strip i.open, .tvopt[aria-checked="true"] .strip i.wideOpen { background: transparent; box-shadow: inset 0 0 0 1.5px #e8d3bd; }
+body.clean > *:not(canvas) { display: none !important; }   /* M: hide every on-screen control (screen recording), as in the renovated model */
 </style>
 <script type="importmap">
 { "imports": {
@@ -113,6 +130,14 @@
   <div class="grid3"><button class="btn" type="button" data-cut="1.2">Floor plan</button><button class="btn" type="button" data-cut="2.6">Below ceiling</button><button class="btn" type="button" data-cut="6">Off</button></div>
 </section>
 
+<section class="sheet" id="sheet-tv" hidden>
+  <h2>Living layout</h2>
+  <div class="chips" id="layOpts" role="radiogroup" aria-label="Living layout"></div>
+  <h2>TV cabinet</h2>
+  <div class="tvopts" id="tvOpts" role="radiogroup" aria-label="TV cabinet"></div>
+  <p class="note" id="tvInfo"></p>
+</section>
+
 <nav id="bar" aria-label="Controls">
   <div class="grp">
     <button type="button" data-sheet="layers" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg>Layers</button>
@@ -120,6 +145,7 @@
   </div>
   <button type="button" id="walkBtn" aria-pressed="false" aria-label="Walk mode"><span class="fab" aria-hidden="true"><svg class="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"/><path d="M11 21l2-6-3-3 1-4 3 3 3 1M10 12l-2 3-3 1"/></svg><svg class="i-orbit" viewBox="0 0 24 24"><path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z"/><path d="M4 7.4l8 4.6 8-4.6M12 12v9.2"/></svg></span><span id="walkLabel">Walk</span></button>
   <div class="grp">
+    <button type="button" data-sheet="tv" id="tvBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="11" rx="1.5"/><path d="M2 19h20M5 19v2M19 19v2"/></svg>TV</button>
     <button type="button" data-sheet="cut" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M6 12V6h12v6M6 12v6h12v-6" stroke-dasharray="2 2.5"/></svg>Section</button>
   </div>
 </nav>
@@ -136,4 +162,4 @@
   }));
   window.closeSheets = () => tabs.forEach(t => { t.setAttribute('aria-pressed', 'false'); document.getElementById('sheet-' + t.dataset.sheet).hidden = true; });
 </script>
-<script type="module" src="./src/main.js?v=20261116b"></script>
+<script type="module" src="./src/main.js?v=20261118q"></script>

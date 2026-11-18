@@ -414,6 +414,361 @@
    "y1": 11.49,
    "z1": 3.14
   },
+  "living_rug": {
+   "_note": "Big cream rug in the living room (client 2026-11-18): 3500 x 2500 (a standard large size), plain cream, 15 thick with a bound edge, one per living layout so it follows the sofa. 'east' (sofa on the west wall, TV on the east wall): x 0.90-4.40, y 11.90-14.40; the front ~0.6-0.9 of the curve, 2-seater and chair stand on it, 0.39 clear of the TV cabinets' fronts (x ~0.51), 0.30 off the north wall and 0.51 off the south wall so the kitchen opening's walkway stays bare. 'north' (TV on the north wall): x 1.10-4.60, y 12.10-14.60; the whole L sits on it, 0.12 clear of the TV cabinets' fronts (y ~11.98), its south edge 0.29 into the 0.60 walkway behind the 2-seater",
+   "east": {
+    "x0": 0.9,
+    "x1": 4.4,
+    "y0": 11.9,
+    "y1": 14.4
+   },
+   "north": {
+    "x0": 1.1,
+    "x1": 4.6,
+    "y0": 12.1,
+    "y1": 14.6
+   }
+  },
+  "study_designs": {
+   "_note": "Saved designs for the bedroom 2 study (client 2026-11-18). Each item is a complete layout for src/study-desk.js; a saved item is not edited again, a change becomes a new item. Renovated viewer: Reno > Bedroom > Bedroom 2 lists them. Current-house viewer shows 'active', or ?study=<id> on the URL",
+   "active": "v5",
+   "items": {
+    "v1": {
+     "label": "L-desk v1: freestanding, drawers by the chaise",
+     "saved": "2026-11-18",
+     "_note": "Bedroom 2 study, L-shaped (client 2026-11-18, IKEA 'desk hack' reference). IKEA EKBACKEN brown walnut effect worktops, 28 thick, full 635 deep. West run under W1: 246 length (804.429.85, $179) cut to 2100, y 8.05-10.15, into the north-west corner; it stops 64 short of the swing of the robe's west door (656 wide, reaches y 10.214 opened flat to the wall). North run: 186 length (704.429.81, $149) cut to 1805, x 2.25-4.055, butted against the west run's front edge with three worktop connector bolts (routed under, 28 minimum thickness) plus biscuits. Supports: two EKET 2-drawer cabinets 70x35x35 (606.167.50) stacked at the far end of each run, standing on the floor without feet (fronts 10 behind the worktop edge); 42x19 cleats screwed to the west and north walls; one ADILS leg, black, 70 cm (002.179.76, $5) under the inside corner, which is otherwise 635 out from both walls with nothing under it (IKEA: legs no more than 80 cm apart where the worktop overhangs more than 25 cm). Top 728, leg room (floor to underside) 700, the ADILS's exact length. Knee space: 755 wide under the window (corner leg to drawers, y 8.685-9.44), 1.095 along the north wall (x 2.96-4.055). Without EKET feet so the top clears W1's architraves (~740). BILLY bookcase 80x28x202 (606.183.96) + height extension 80x28x35 (105.086.68), 237 high, brown walnut effect, at the east end of the north wall (x 1.43-2.23), the north run stopping 20 short of it; one shelf set level with the desk top UPDATE 2026-11-18 (client): the north run's EKET stack is removed (an ADILS leg under its end instead) and a King Living 1977 Sofa Chaise (kingliving.com.au 1977-chaise-v3, 860 W x 1480 D x 710 H, from $1,303, Leura S boucle to match the lounge couch) stands along the east wall between the BILLY and the door: x 1.43-2.29, y 8.37-9.85, back cushion at the door (south) end so you sit facing the desk and window. Fit: 1.557 between the BILLY's front (y 8.348) and the door's architrave (y 9.905), so 1.48 leaves ~20 at the bookcase and ~55 at the architrave. The north run now ends at x 2.32 (cut 1735 from the 186), 30 clear of the chaise. Renovated: the door is rehung on its south jamb and opens toward the robe, away from the chaise; the light switch (centre 1.05, y ~9.86) is above the 710 back. Current house: check which jamb the door hangs on; hinged on the north jamb its 800 leaf would sweep to y ~9.18 and hit the chaise. Clear floor from the chaise to the west run's front edge: 1.77 UPDATE 2 (client 2026-11-18): BILLY removed. The chaise moves into the north-east corner, back cushion against the north wall and the seat (legs) running toward the robes: x 1.43-2.29, y 8.07-9.55; 355 clear of the door's architrave (y 9.905). The north desk run still ends at x 2.32, 30 clear of the chaise's side UPDATE 3 (client 2026-11-18): the EKET drawer stack moves from the south end of the window run to the east end of the north run, beside the chaise: x 2.33-3.03, fronts facing south at y 8.675 (40 clear of the chaise's side). The window run's south end now stands on an ADILS leg under its front corner and the west-wall cleat runs its full length. Knee space: 1.44 under the window (corner leg to end leg, y 8.685-10.12), ~1.0 along the north wall (x 3.03-4.055) UPDATE 4 (client 2026-11-18): FREESTANDING, nothing fixed to the walls, and no leg at the inside corner (knee space). Supports: the EKET stack at the north run's east end, plus seven IKEA ADILS legs, black, 70 cm (002.179.76, $5 each; 40 dia, adjustable foot, 50 kg max load each; OLOV was rejected at 13 kg), each centred 50 in from the edges (the two front legs 85 in, behind the steel angle): (1) the outer (north-west) corner against both walls, x 4.64 y 8.10; (2) west run back, mid, x 4.64 y 9.10; (3) and (4) west run south end, back x 4.64 / front x 4.14, y 10.10; (5) north run back, x 3.55 y 8.10, and (6) its front, x 3.55 y 8.60, 500 east of the inside corner and clear of the knee space at the window; (7) north run back behind the EKET stack, x 2.37 y 8.10 (the stack is 350 deep and the top 635). Inside corner: 40x40x3 steel angle (Bunnings) screwed under both front edges, from the south-end leg round the corner to the EKET stack, mitred and joined with a flat steel L-plate, plus the three worktop connector bolts and biscuits in the butt joint; this carries the corner between leg (6) and leg (4) instead of a leg there. Spans: west front edge 1.42 m from the corner to leg (4) on the steel angle; back edges <= 1.0 m between legs; north front 0.5 m cantilever from leg (6) to the corner. The L shape itself stops side-to-side racking; screw the EKET carcass to the worktop. If the corner still bounces when leaned on, add an ADILS at the corner as the fallback UPDATE 5 (client 2026-11-18): no front leg on the north run either (leg 6 removed) so the chair can roll freely around the inside of the L. Six ADILS remain: outer corner, window-run back mid, window-run south end back and front, north-run back (x 3.55, against the wall), north-run back behind the EKET stack. The whole front edge now hangs between the EKET stack (x 3.03) and the window run's south-end front leg (y 10.10), 2.45 m around the corner. So the front steel is upgraded from 40x40 angle to 50x25x2.0 steel RHS (rectangular hollow section), set 30 in from the front edge, welded into one L at the inside corner (a steel fabricator, or bolt through a heavy internal corner bracket), screwed up into both worktops every ~150. Closed section because, with no corner leg, the frame must resist twist as well as bending; open angle would let the corner drop. The worktops tie the frame back to the four back legs, which take the twist. Expect the inside corner to be the springiest point; it should feel solid for normal use (laptop, monitor, arms), not for sitting on UPDATE 6 (client 2026-11-18): the leg behind the EKET stack is dropped. Two EKETs stacked are 700, the same as an ADILS, so the leg was not about height: it carried the 275 of worktop behind the 350-deep stack. The stack now sits 40 back from the front edge (drawers_inset 0.04), which leaves 245 behind it, inside IKEA's 250 overhang limit, with the carcass screwed up into the worktop; the drawer fronts get a 40 shadow line. Five ADILS remain: outer corner, window-run back mid, window-run south end back and front, north-run back at x 3.55",
+     "wall_x": 4.69,
+     "y0": 8.05,
+     "length": 2.1,
+     "depth": 0.635,
+     "north": {
+      "x_end": 2.32,
+      "drawers_x1": 3.03,
+      "drawers_inset": 0.04
+     },
+     "chair_y": 9.06,
+     "chaise": {
+      "x0": 1.43,
+      "y0": 8.07,
+      "back": "north"
+     },
+     "legs": [
+      [
+       4.64,
+       8.1
+      ],
+      [
+       4.64,
+       9.1
+      ],
+      [
+       4.64,
+       10.1
+      ],
+      [
+       4.14,
+       10.1
+      ],
+      [
+       3.55,
+       8.1
+      ]
+     ],
+     "front_angle": true
+    },
+    "v2": {
+     "label": "L-desk v2: two screens on the north run, wall units, cable trays",
+     "saved": "2026-11-18",
+     "_note": "v2 (2026-11-18, from the IKEA review): same freestanding L as v1 (walnut EKBACKEN, EKET drawers by the chaise, five ADILS, welded 50x25 RHS under the front edges). You sit at the north run facing the north wall: no screen glare from the west window (it is at your left), and W1's sill board (60 proud, ~40 over the top) no longer fights a monitor mount. Screens: IKEA STUBBERGET bracket for 2 monitors (606.282.15, $79; clamps 18-75 thick tops) clamped to the north run's back edge at x 3.54, right in front of the ADILS at x 3.55 (the stiffest point); two 27\" side by side, toed in, centres at z 1.01 (top ~1.20, seated eye height), faces ~0.30 off the wall, so ~0.65-0.70 to the eyes with the chair at y 9.05. The window run becomes clear table space (writing, laptop, printer). Cables: two IKEA SIGNUM horizontal cable trays 70 cm (silver, $15 each) under the north run's back edge, x 3.06-4.46, power board in them; leads drop behind the desk (it stands ~20 off the walls at the skirting). Storage: three IKEA EKET wall-mounted shelving units 35x25x35, brown walnut ($35 each), in a row on the north wall above the screens, x 3.015-4.065, bottom at 1.50 (300 over the screens' top). Check the power point position on the north-east wall before fixing",
+     "wall_x": 4.69,
+     "y0": 8.05,
+     "length": 2.1,
+     "depth": 0.635,
+     "north": {
+      "x_end": 2.32,
+      "drawers_x1": 3.03,
+      "drawers_inset": 0.04
+     },
+     "chaise": {
+      "x0": 1.43,
+      "y0": 8.07,
+      "back": "north"
+     },
+     "legs": [
+      [
+       4.64,
+       8.1
+      ],
+      [
+       4.64,
+       9.1
+      ],
+      [
+       4.64,
+       10.1
+      ],
+      [
+       4.14,
+       10.1
+      ],
+      [
+       3.55,
+       8.1
+      ]
+     ],
+     "front_angle": true,
+     "monitors": {
+      "x": 3.54,
+      "face_y": 0.3,
+      "centre_z": 1.01
+     },
+     "cable_trays": [
+      [
+       3.06,
+       3.76
+      ],
+      [
+       3.76,
+       4.46
+      ]
+     ],
+     "wall_units": {
+      "x0": 3.015,
+      "z0": 1.5,
+      "n": 3,
+      "type": "open"
+     },
+     "chair": {
+      "x": 3.54,
+      "y": 9.05,
+      "face": "north"
+     }
+    },
+    "v3": {
+     "label": "L-desk v3: two screens, Sarah Brooke painting above",
+     "saved": "2026-11-18",
+     "_note": "v3 (client 2026-11-18): v2 without the EKET wall units (nothing hung on the wall for storage). In their place the hall's Sarah Brooke 'Middle of Nowhere' (1200 x 1500 canvas, slim walnut float frame, ~1236 x 1536 overall) is copied in, centred over the screens at x 3.54: bottom of frame at 1.40 (~200 clear over the screens' top edge at ~1.20), centre 2.17, top 2.94 (~210 under the 3.15 ceiling). Hang it on two D-rings and a French cleat into the studs/brick; the monitor bracket stands clear of the wall (~300 to the screen faces). Everything else as v2: screens, SIGNUM cable trays, chair facing north. Note the model still shows the same painting in the hallway",
+     "wall_x": 4.69,
+     "y0": 8.05,
+     "length": 2.1,
+     "depth": 0.635,
+     "north": {
+      "x_end": 2.32,
+      "drawers_x1": 3.03,
+      "drawers_inset": 0.04
+     },
+     "chaise": {
+      "x0": 1.43,
+      "y0": 8.07,
+      "back": "north"
+     },
+     "legs": [
+      [
+       4.64,
+       8.1
+      ],
+      [
+       4.64,
+       9.1
+      ],
+      [
+       4.64,
+       10.1
+      ],
+      [
+       4.14,
+       10.1
+      ],
+      [
+       3.55,
+       8.1
+      ]
+     ],
+     "front_angle": true,
+     "monitors": {
+      "x": 3.54,
+      "face_y": 0.3,
+      "centre_z": 1.01
+     },
+     "cable_trays": [
+      [
+       3.06,
+       3.76
+      ],
+      [
+       3.76,
+       4.46
+      ]
+     ],
+     "chair": {
+      "x": 3.54,
+      "y": 9.05,
+      "face": "north"
+     },
+     "painting": {
+      "file": "sarah-brooke-blue",
+      "w": 1.2,
+      "h": 1.5,
+      "x": 3.54,
+      "zc": 2.17
+     }
+    },
+    "v4": {
+     "label": "L-desk v4: off the wall for the sheer + blockout curtains",
+     "saved": "2026-11-18",
+     "_note": "v4 (client 2026-11-18): the Marketplace sheer + blockout curtains back on W1 (double ceiling track 140 / 240 off the west wall, floor length, stacked either side of the window at y 8.07-8.27 and 9.67-9.87; the roller blind goes, the blockout replaces it). Their folds reach ~290 off the wall, so the window run now stands 320 off the wall (back edge x 4.37) and the curtains drop behind it to the floor; draw them across behind the desk. To keep knee room at the screens, the window run's 246 EKBACKEN is ripped from 635 to 500 deep (circular saw with a track, fine blade, laminate side down; seal the cut edge, it faces the curtains), front edge x 3.87. The north run stays full 635 deep against the north wall; knee space between the EKET stack (x 3.03) and the window run is 840 (was 1020), so screens, chair and painting move to x 3.45. Legs: back corner and back-mid/back-south on the window run move with it (x 4.32), south-end front at x 3.955; north-run back at 3.55 unchanged. Steel RHS under the front edges follows. Walkway behind: the gap is curtain space only, not for storage; keep cables off the floor (SIGNUM trays). Painting lowered (client): frame bottom at 0.95, ~220 above the desktop, centre 1.72, top 2.49; the screens stand ~300 in front of it, so its lower half sits behind them from the chair and reads anchored to the desk from the room. Chair mat: IKEA KOLON floor protector 120x100 (901.762.45, $29.99), clear, 1200 along the north run from just past the EKET fronts, slipping under the window run's overhang (no legs in the way)",
+     "wall_x": 4.37,
+     "y0": 8.05,
+     "length": 2.1,
+     "depth": 0.5,
+     "north": {
+      "x_end": 2.32,
+      "drawers_x1": 3.03,
+      "drawers_inset": 0.04
+     },
+     "chaise": {
+      "x0": 1.43,
+      "y0": 8.07,
+      "back": "north"
+     },
+     "legs": [
+      [
+       4.32,
+       8.1
+      ],
+      [
+       4.32,
+       9.1
+      ],
+      [
+       4.32,
+       10.1
+      ],
+      [
+       3.955,
+       10.1
+      ],
+      [
+       3.55,
+       8.1
+      ]
+     ],
+     "front_angle": true,
+     "monitors": {
+      "x": 3.45,
+      "face_y": 0.3,
+      "centre_z": 1.01
+     },
+     "cable_trays": [
+      [
+       2.95,
+       3.65
+      ],
+      [
+       3.65,
+       4.35
+      ]
+     ],
+     "chair": {
+      "x": 3.45,
+      "y": 9.05,
+      "face": "north"
+     },
+     "painting": {
+      "file": "sarah-brooke-blue",
+      "w": 1.2,
+      "h": 1.5,
+      "x": 3.45,
+      "zc": 1.72
+     },
+     "depth_north": 0.635,
+     "curtains": true,
+     "chair_mat": {
+      "x0": 2.85,
+      "x1": 4.05,
+      "y0": 8.66,
+      "y1": 9.66
+     }
+    },
+    "v5": {
+     "label": "L-desk v5: screens pushed back",
+     "saved": "2026-11-18",
+     "_note": "v5 (client 2026-11-18): v4 with the screens pushed back to ~200 off the north wall (were 300), leaving ~435 of desk in front of them for keyboard and forearms; the painting still clears. The client has their own ergonomic chair (the boucle tub chair is a placeholder) and their own screen mount; no second drawer stack (the built-in robe is the storage), task lamp and footrest undecided. Everything else as v4: v4 (client 2026-11-18): the Marketplace sheer + blockout curtains back on W1 (double ceiling track 140 / 240 off the west wall, floor length, stacked either side of the window at y 8.07-8.27 and 9.67-9.87; the roller blind goes, the blockout replaces it). Their folds reach ~290 off the wall, so the window run now stands 320 off the wall (back edge x 4.37) and the curtains drop behind it to the floor; draw them across behind the desk. To keep knee room at the screens, the window run's 246 EKBACKEN is ripped from 635 to 500 deep (circular saw with a track, fine blade, laminate side down; seal the cut edge, it faces the curtains), front edge x 3.87. The north run stays full 635 deep against the north wall; knee space between the EKET stack (x 3.03) and the window run is 840 (was 1020), so screens, chair and painting move to x 3.45. Legs: back corner and back-mid/back-south on the window run move with it (x 4.32), south-end front at x 3.955; north-run back at 3.55 unchanged. Steel RHS under the front edges follows. Walkway behind: the gap is curtain space only, not for storage; keep cables off the floor (SIGNUM trays). Painting lowered (client): frame bottom at 0.95, ~220 above the desktop, centre 1.72, top 2.49; the screens stand ~300 in front of it, so its lower half sits behind them from the chair and reads anchored to the desk from the room. Chair mat: IKEA KOLON floor protector 120x100 (901.762.45, $29.99), clear, 1200 along the north run from just past the EKET fronts, slipping under the window run's overhang (no legs in the way)",
+     "wall_x": 4.37,
+     "y0": 8.05,
+     "length": 2.1,
+     "depth": 0.5,
+     "north": {
+      "x_end": 2.32,
+      "drawers_x1": 3.03,
+      "drawers_inset": 0.04
+     },
+     "chaise": {
+      "x0": 1.43,
+      "y0": 8.07,
+      "back": "north"
+     },
+     "legs": [
+      [
+       4.32,
+       8.1
+      ],
+      [
+       4.32,
+       9.1
+      ],
+      [
+       4.32,
+       10.1
+      ],
+      [
+       3.955,
+       10.1
+      ],
+      [
+       3.55,
+       8.1
+      ]
+     ],
+     "front_angle": true,
+     "monitors": {
+      "x": 3.45,
+      "face_y": 0.2,
+      "centre_z": 1.01
+     },
+     "cable_trays": [
+      [
+       2.95,
+       3.65
+      ],
+      [
+       3.65,
+       4.35
+      ]
+     ],
+     "chair": {
+      "x": 3.45,
+      "y": 9.05,
+      "face": "north"
+     },
+     "painting": {
+      "file": "sarah-brooke-blue",
+      "w": 1.2,
+      "h": 1.5,
+      "x": 3.45,
+      "zc": 1.72
+     },
+     "depth_north": 0.635,
+     "curtains": true,
+     "chair_mat": {
+      "x0": 2.85,
+      "x1": 4.05,
+      "y0": 8.66,
+      "y1": 9.66
+     }
+    }
+   }
+  },
   "shower": {
    "x0": 0.115,
    "x1": 1.0,
@@ -603,7 +958,7 @@
    "show": false
   },
   "living_layouts": {
-   "active": "north",
+   "active": "east",
    "_note": "Living room furniture (client 2026-11-16): the three-drawer walnut TV unit (1800 x 400 x 425, splayed legs) with a 75\" TV (1.66 x 0.93 picture) on it, and our King Living 1977 sofa, Package 6 (curve + 2-seater + chair, 2770 W, Leura S boucle; client 2026-11-16, kingliving.com.au 1977-pkg-6-v3). Add ?lounge=window or ?lounge=north to the URL to compare",
    "window": {
     "tv_unit": {
@@ -643,7 +998,237 @@
       "chair"
      ]
     },
-    "_note": "The King Living 1977 Package 6 as an L (client 2026-11-16, kingliving.com.au 1977-pkg-6-v3: curve + 2-seater + chair, 2770 W x 2140): curve in the south-west, the 2-seater running east with its back to the kitchen opening (back at y 14.31: a 0.60 walkway to the south wall, client: 'just enough for a person to walk through'; 2-seater end at x 1.86, so 1.75 clear of the party wall for the hall-to-kitchen route), the single chair running north along the west wall under W2 (y 12.17-13.01, 0.57 short of the north wall). The gas heater is not used (client); the curve's round back passes ~0.16 from its corner. TV unit on the north wall at x 1.78-3.58, roughly centred on the 2-seater (x 1.86-3.33). Eyes to screen ~2.1 m (75\": THX ~2.3, SMPTE ~3.1)"
+    "_note": "The King Living 1977 Package 6 as an L (client 2026-11-16, kingliving.com.au 1977-pkg-6-v3: curve + 2-seater + chair, 2770 W x 2140): curve in the south-west, the 2-seater running east with its back to the kitchen opening (back at y 14.31: a 0.60 walkway to the south wall, client: 'just enough for a person to walk through'; 2-seater end at x 1.86, so 1.75 clear of the party wall for the hall-to-kitchen route), the single chair running north along the west wall under W2 (y 12.17-13.01, 0.57 short of the north wall). The gas heater is not used (client); the curve's round back passes ~0.16 from its corner. TV unit on the north wall at x 1.78-3.58, roughly centred on the 2-seater (x 1.86-3.33). Eyes to screen ~2.1 m (75\": THX ~2.3, SMPTE ~3.1)",
+    "label": "TV on the north wall"
+   },
+   "east": {
+    "label": "TV on the east wall",
+    "tv_unit": {
+     "wall_x": 0.133,
+     "face": 1,
+     "y": 14.01,
+     "tv_in": 75
+    },
+    "sofa": {
+     "back_x": 4.49,
+     "back_y": 11.618,
+     "sx": -1,
+     "sy": 1,
+     "x_arm": [
+      "chair"
+     ],
+     "y_arm": [
+      "double"
+     ]
+    },
+    "_note": "Client 2026-11-18: sofa on the west wall with its back to W2, TV cabinet on the east (party) wall facing it. The whole King Living Package 6 (curve + 2-seater + chair) as an L: the curve in the north-west corner, the 2-seater running south along the west wall (y 12.92-14.39) in front of the console gas heater (disconnected, client), the chair along the north wall (x 3.19-2.35, facing south; the hall doorway at x 0.2-0.92 stays clear). The back line is at x 4.49, the heater's front (it is 200 deep, 700 high, y 13.9-14.65), so the sofa stands 200 off the window wall; the back (710) covers the bottom 260 of W2 (sill 450). It can't run straight: curve + 2-seater + chair along the west wall needs 3.61 m and the wall is 3.29. With the curve in the south-west corner instead, the chair would sit in front of the kitchen opening (leaving 0.70 of it). TV cabinets on the east wall pushed into the south-east corner (client 2026-11-18): on feet they stop 18 off the south wall's skirting (y 14.892), wall-hung at the wall (14.91); the 2.45 m runs then centre the TV at ~13.65, on the 2-seater (13.655). They cover the double GPO on the south wall (x ~0.3-0.4, ~0.3 high; hallway2.jpeg), which ends up behind the end cabinet's side panel 18 off the wall: no room for a plug, so it needs moving or a hole in that panel. Eyes to screen ~3.75 m (sofa eyes at x ~4.04, screen at x ~0.29), the far side for a 75\" (THX ~2.3, SMPTE ~3.1); an 85\" would suit the distance better"
+   }
+  },
+  "tv_cabinets": {
+   "_note": "TV cabinet options per living layout (client 2026-11-18; layouts.<id>.wall is the TV wall, options' start = the left end seen from the room: lot x of the west end on the north wall, lot y of the north end on the east wall), switched from the TV button in the viewer's toolbar (or ?tv=<id> on the URL). 'drawers' is the three-drawer walnut unit from living_layouts.north. The rest are IKEA EKET in brown walnut effect, built like the client's two reference builds: (1) on EKET adjustable feet (403.400.45, 19-24 mm) on the floor, the 35x35x70 door cabinet (806.167.68) laid on its side as a 700-wide flap-door unit, open 35x35x35 cabinets (405.305.78; full depth so they sit flush, not the 25-deep 005.305.75 first linked) at the ends; (2) the same cabinets wrapped in an IKEA EKBACKEN laminate worktop (grey-beige stone effect, 28 thick) as a waterfall: a top 380 deep and both ends down to the floor. No media shelf (client: nobody uses it). On feet the cabinets are 372 high (400 with the worktop), under W2's sill board (z 0.42) but not its architrave (z 0.39 up, at x 4.67-4.69), so every floor run stops at x 4.66. The usable wall runs from there to the hall doorway's architrave (x 0.995): 3.665. 3.5 m of cabinets fits (x 4.66-1.16), and with the worktop ends 3.556 (x 4.66-1.104, 109 clear of the architrave). The EKBACKEN comes 246 or 186 long by 635 deep: ripped to 380, the top needs 3.556 and the two ends 2 x ~0.37, 4.3 m in all, so two 246 lengths, with one join in the top (put it over a cabinet joint). Backs sit 18 off the wall against the 170 skirting; the worktop ends are scribed over it. A 75\" TV standing on the worktop has its screen centre at ~0.95 (on the bare cabinets ~0.93), a little under seated eye height (~1.0-1.1). One wall-hung option is kept for comparison: underside at 180 above the skirting, 70 off the west wall to clear the sill board. East wall (layout 'east'): 2.1-2.5 m runs (the 2.1 m stone one 2.156 with its ends), pushed to the south wall (client): the 2.45 m runs end 0.84 short of the north wall, the 2.1 m ones 1.19; the 2.45 m runs use the 35x35x35 2-drawer cabinet (806.167.49) in the middle. 'eRec' (review 2026-11-18): same 2.45 m footprint and joints as the open-ends run, but closed 35 door cabinets at the ends (the south one takes the power board; cut its end panel at the south-wall GPO) and the south wide cabinet built without its door or back as a ventilated equipment bay (inside ~668 x 318 x 330: a PS5 390 wide or Xbox One 333 beside a compact amp up to ~250 wide; a full-size AV receiver, 430 x 330-380 deep plus plugs, does not fit any EKET). No open 70x35x35 exists in walnut, hence the door-off cabinet. 60 mm cable holes through the adjoining side panels and the backs; soundbar on top in front of the TV (needs to be under ~75 high to clear the screen on its stand). 'eWide3' (client 2026-11-18: devices hidden behind doors, holes drilled in the backs, no 35 cubes): three wide door cabinets, 2.1 m (y 12.792-14.892, 1.19 short of the north wall; four would be 2.8 m and end 0.49 from the hall doorway wall). TV centre y 13.84. eRec closed up (client 2026-11-18): the equipment bay gets its door back, so console and amp sit behind the south wide door with cable holes in the back",
+   "z0": 0.18,
+   "tv_in": 75,
+   "layouts": {
+    "north": {
+     "wall": {
+      "wall_y": 11.6
+     },
+     "active": "eketFeet",
+     "options": [
+      {
+       "id": "drawers",
+       "label": "3-drawer walnut",
+       "sub": "Current freestanding unit, 1.8 m"
+      },
+      {
+       "id": "eketFeet",
+       "label": "EKET on feet, open ends",
+       "sub": "Reference 1: four wide door cabinets, open cabinets at the ends",
+       "mount": "feet",
+       "modules": [
+        "open",
+        "wide",
+        "wide",
+        "wide",
+        "wide",
+        "open"
+       ],
+       "start": 4.66
+      },
+      {
+       "id": "eketFeetDr",
+       "label": "EKET on feet, drawers in the middle",
+       "sub": "Two 2-drawer cabinets under the TV, wide doors, open ends",
+       "mount": "feet",
+       "modules": [
+        "open",
+        "wide",
+        "drawers",
+        "drawers",
+        "wide",
+        "open"
+       ],
+       "start": 4.66
+      },
+      {
+       "id": "eketStone",
+       "label": "Stone waterfall, drawers in the middle",
+       "sub": "Reference 2: EKBACKEN grey-beige stone top and ends over the cabinets",
+       "mount": "feet",
+       "top": true,
+       "modules": [
+        "wide",
+        "wide",
+        "drawers",
+        "wide",
+        "wide"
+       ],
+       "start": 4.66
+      },
+      {
+       "id": "eketStoneEnds",
+       "label": "Stone waterfall, drawers at the ends",
+       "sub": "2-drawer cabinets at each end, three wide doors between",
+       "mount": "feet",
+       "top": true,
+       "modules": [
+        "drawers",
+        "wide",
+        "wide",
+        "wide",
+        "drawers"
+       ],
+       "start": 4.66
+      },
+      {
+       "id": "eketWall",
+       "label": "EKET wall-hung",
+       "sub": "Same cabinets floating 180 off the floor on suspension rails",
+       "mount": "wall",
+       "modules": [
+        "open",
+        "wide",
+        "drawers",
+        "drawers",
+        "wide",
+        "open"
+       ],
+       "start": 4.62
+      }
+     ]
+    },
+    "east": {
+     "wall": {
+      "wall_x": 0.115
+     },
+     "active": "eRec",
+     "options": [
+      {
+       "id": "drawers",
+       "label": "3-drawer walnut",
+       "sub": "Current freestanding unit, 1.8 m"
+      },
+      {
+       "id": "eWide3",
+       "label": "Three wide doors, gear hidden",
+       "sub": "Only the 70-wide door cabinets; console and amp behind the doors, cables through holes in the backs. Soundbar on top",
+       "mount": "feet",
+       "start": 12.792,
+       "modules": [
+        "wide",
+        "wide",
+        "wide"
+       ],
+       "gear": true,
+       "fittings": 1
+      },
+      {
+       "id": "eRec",
+       "label": "Recommended: all closed",
+       "sub": "Door cubes at the ends, small drawers under the TV, two wide door cabinets. Console and amp behind the south wide door; soundbar on top",
+       "mount": "feet",
+       "start": 12.442,
+       "modules": [
+        "door",
+        "wide",
+        "drawers35",
+        "wide",
+        "door"
+       ],
+       "gear": true,
+       "fittings": 1
+      },
+      {
+       "id": "eFeet",
+       "label": "EKET on feet, open ends",
+       "sub": "Reference 1, shortened: two wide door cabinets, open cabinets at the ends",
+       "mount": "feet",
+       "start": 12.792,
+       "modules": [
+        "open",
+        "wide",
+        "wide",
+        "open"
+       ]
+      },
+      {
+       "id": "eFeetLong",
+       "label": "EKET on feet, drawers under the TV",
+       "sub": "A 35 2-drawer cabinet between two wide doors, open ends",
+       "mount": "feet",
+       "start": 12.442,
+       "modules": [
+        "open",
+        "wide",
+        "drawers35",
+        "wide",
+        "open"
+       ]
+      },
+      {
+       "id": "eStone",
+       "label": "Stone waterfall, drawers in the middle",
+       "sub": "Reference 2: EKBACKEN grey-beige stone top and ends, wide doors either side",
+       "mount": "feet",
+       "top": true,
+       "start": 12.736,
+       "modules": [
+        "wide",
+        "drawers",
+        "wide"
+       ]
+      },
+      {
+       "id": "eStoneLong",
+       "label": "Stone waterfall, 2.5 m",
+       "sub": "Door cabinets at the ends, wide doors, small drawers under the TV",
+       "mount": "feet",
+       "top": true,
+       "start": 12.386,
+       "modules": [
+        "door",
+        "wide",
+        "drawers35",
+        "wide",
+        "door"
+       ]
+      },
+      {
+       "id": "eWall",
+       "label": "EKET wall-hung",
+       "sub": "Floating 180 off the floor on suspension rails",
+       "mount": "wall",
+       "start": 12.46,
+       "modules": [
+        "open",
+        "wide",
+        "drawers35",
+        "wide",
+        "open"
+       ]
+      }
+     ]
+    }
    }
   },
   "ceiling_roses": [

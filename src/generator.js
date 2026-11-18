@@ -2,6 +2,8 @@
 // Lot frame (x west, y south, z up) -> three.js (X = -x, Y = z, Z = y). Right-handed.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { studyDesk } from './study-desk.js?v=20261118m';
+import { creamRug } from './rug.js?v=20261118a';
 
 export const L = (x, y, z) => new THREE.Vector3(-x, z, y);
 
@@ -253,6 +255,12 @@ function mats() {
   M.green = s(0x3f5a3a);
   M.shed = s(0xb9bec2, { metalness: 0.5, roughness: 0.5 });
   M.ceiling = s(0xf7f5f0, { side: THREE.DoubleSide });
+  // repainted inside as in the renovated model (client 2026-11-18): walls and ceilings in Dulux Natural White, and every
+  // stained or coloured timber finish painted white (doors and panels, frames and linings, architraves and skirting,
+  // timber window frames, the honey kitchen joinery and the robes), the renovated model's 'white woodwork' colours.
+  // The sage bay frames (street side) and the floors keep their finishes
+  M.intWall.color.setHex(0xf3f0e8); M.ceiling.color.setHex(0xf3f0e8);
+  for (const [k, c] of Object.entries({ door: 0xf2f0ea, honeyPanel: 0xf6f4ef, honey: 0xf2f0ea, trimDark: 0xf4f2ec, frameT: 0xf2f0ea, robe: 0xf2f0ea, robePanel: 0xf6f4ef })) M[k].color.setHex(c);
   M.gutter = s(0x3a3a3a);
   return M;
 }
@@ -559,22 +567,116 @@ function drawerTvUnit(parent, P, tv = 0) {
   for (const su of [-1, 1]) for (const v of [0.07, D - 0.07]) {
     const leg = new THREE.Mesh(legGeo, bodyM); leg.rotation.z = su * 0.21; leg.position.set(su * (hw - 0.19), legH / 2 + 0.01, v); leg.castShadow = true; grp.add(leg);
   }
-  if (tv) {
-    // flat panel, 16:9: a 75" is 1.66 x 0.93 of picture; 8 bezel, 30 deep at the edge, a fatter 60 back in the lower middle
-    const dg = tv * 0.0254, sw = dg * 16 / Math.hypot(16, 9), sh = dg * 9 / Math.hypot(16, 9), bz = 0.008;
-    const shell = TVU_M.tvShell || (TVU_M.tvShell = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.45, metalness: 0.3 }));
-    const glass = TVU_M.tvGlass || (TVU_M.tvGlass = new THREE.MeshStandardMaterial({ color: 0x07080b, roughness: 0.08, metalness: 0.2 }));
-    const vC = D * 0.45, z0 = H + 0.075;
-    for (const su of [-1, 1]) {                                                           // blade feet near the ends
-      bx(su * sw * 0.38 - 0.012, su * sw * 0.38 + 0.012, vC - 0.13, vC + 0.11, H, H + 0.006, shell);
-      bx(su * sw * 0.38 - 0.006, su * sw * 0.38 + 0.006, vC - 0.01, vC + 0.01, H, z0 + 0.08, shell);
-    }
-    bx(-sw / 2 - bz, sw / 2 + bz, vC - 0.015, vC + 0.015, z0, z0 + sh + 2 * bz, shell);    // panel
-    bx(-sw * 0.3, sw * 0.3, vC - 0.045, vC - 0.015, z0 + 0.05, z0 + sh * 0.55, shell);    // electronics bulge at the back
-    bx(-sw / 2, sw / 2, vC + 0.015, vC + 0.0165, z0 + bz, z0 + bz + sh, glass);            // screen
-  }
+  if (tv) standTv(bx, 0, D * 0.45, H, tv);
   if (P.wall_y != null) { grp.rotation.y = P.face > 0 ? 0 : Math.PI; grp.position.copy(L(P.x, P.wall_y, 0)); }
   else { grp.rotation.y = P.face > 0 ? -Math.PI / 2 : Math.PI / 2; grp.position.copy(L(P.wall_x, P.y, 0)); }
+  parent.add(grp);
+  return grp;
+}
+
+// Flat-panel TV standing on a cabinet top, in a cabinet's local frame (bx = its box helper: u along the wall, v out from
+// it, z up). 16:9: a 75" is 1.66 x 0.93 of picture; 8 bezel, 30 deep at the edge, a fatter 60 back in the lower middle.
+// uc = centre along the wall, vC = panel plane out from the wall, H = the top it stands on, tv = diagonal in inches
+function standTv(bx, uc, vC, H, tv) {
+  const dg = tv * 0.0254, sw = dg * 16 / Math.hypot(16, 9), sh = dg * 9 / Math.hypot(16, 9), bz = 0.008;
+  const shell = TVU_M.tvShell || (TVU_M.tvShell = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.45, metalness: 0.3 }));
+  const glass = TVU_M.tvGlass || (TVU_M.tvGlass = new THREE.MeshStandardMaterial({ color: 0x07080b, roughness: 0.08, metalness: 0.2 }));
+  const z0 = H + 0.075;
+  for (const su of [-1, 1]) {                                                             // blade feet near the ends
+    bx(uc + su * sw * 0.38 - 0.012, uc + su * sw * 0.38 + 0.012, vC - 0.13, vC + 0.11, H, H + 0.006, shell);
+    bx(uc + su * sw * 0.38 - 0.006, uc + su * sw * 0.38 + 0.006, vC - 0.01, vC + 0.01, H, z0 + 0.08, shell);
+  }
+  bx(uc - sw / 2 - bz, uc + sw / 2 + bz, vC - 0.015, vC + 0.015, z0, z0 + sh + 2 * bz, shell);   // panel
+  bx(uc - sw * 0.3, uc + sw * 0.3, vC - 0.045, vC - 0.015, z0 + 0.05, z0 + sh * 0.55, shell);   // electronics bulge at the back
+  bx(uc - sw / 2, uc + sw / 2, vC + 0.015, vC + 0.0165, z0 + bz, z0 + bz + sh, glass);           // screen
+}
+
+// IKEA EKET, brown walnut effect (ikea.com/au, client links and reference photos 2026-11-18). Every module is 350 deep
+// x 350 high except the cabinet with door and 1 shelf (35 x 35 x 70), which the
+// client's reference builds lay on its side as a 700-wide, 350-high flap-door cabinet ('wide'). Each module is its own
+// box (16 panels, a thin back), so the joints between modules show, as in the photos. Doors and drawer fronts sit inside
+// the frame with a 2 mm reveal, push-to-open, no handles. No media shelf: the client doesn't want it. AUD, full price
+export const EKET = {
+  wide:    { w: 0.70, d: 0.35, h: 0.35, price: 95,  art: '806.167.68', name: 'Cabinet w door and 1 shelf, 35x35x70, on its side' },
+  wideOpen: { w: 0.70, d: 0.35, h: 0.35, price: 95, art: '806.167.68', name: 'Cabinet w door and 1 shelf, 35x35x70, on its side, door and back left off (equipment bay)' },
+  drawers: { w: 0.70, d: 0.35, h: 0.35, price: 199, art: '606.167.50', name: 'Cabinet with 2 drawers, 70x35x35' },
+  door:    { w: 0.35, d: 0.35, h: 0.35, price: 60,  art: '406.167.70', name: 'Cabinet with door, 35x35x35' },
+  drawers35: { w: 0.35, d: 0.35, h: 0.35, price: 95, art: '806.167.49', name: 'Cabinet with 2 drawers, 35x35x35' },
+  open:    { w: 0.35, d: 0.35, h: 0.35, price: 35,  art: '405.305.78', name: 'Cabinet (open), 35x35x35' },   // full depth, flush with the rest (not the 35x25x35, 005.305.75)
+};
+export const EKET_EXTRA = {
+  rail: { 0.35: 5, 0.7: 10 },                                           // wall-hung: a suspension rail per module (603.400.49 / 203.400.51)
+  feet: { price: 9, art: '403.400.45', name: 'Foot, adjustable, 4-pack (19-24 mm)' },   // floor: one 4-pack per module
+  worktop: { price: 179, art: '006.043.21', name: 'EKBACKEN worktop 246x63.5x2.8, grey-beige stone effect', qty: 2 },
+};
+// A run of EKET modules along a wall: the north wall (P.wall_y = its face, the run projects to +y) or the east party
+// wall (P.wall_x, projecting to +x). P.start = the left end as seen from the room (lot x of the west end on the north
+// wall, lot y of the north end on the east wall), modules listed left to right.
+// P.mount 'wall': hung on rails, underside P.z0, backs on the wall. 'feet': on EKET adjustable feet (22) on the floor,
+// backs 18 off the wall against the skirting. P.top: an EKBACKEN laminate 'waterfall' (28 thick) over the run and down
+// both ends to the floor, 380 deep from the wall (12 proud of the fronts); start is then the outside of its left end.
+// tv = a TV of that diagonal standing on the middle of the run
+function eketRun(parent, P, tv = 0) {
+  const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; };
+  if (!TVU_M.ekGrain) TVU_M.ekGrain = tex(512, 128, g => {
+    g.fillStyle = '#8e6849'; g.fillRect(0, 0, 512, 128);
+    let sd = 29; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 110; i++) { const d = rnd(); g.strokeStyle = d < 0.55 ? `rgba(58,36,22,${0.07 + rnd() * 0.18})` : `rgba(170,130,95,${0.08 + rnd() * 0.16})`; g.lineWidth = 0.5 + rnd() * 2.2;
+      let x = -10, y = rnd() * 128; g.beginPath(); g.moveTo(x, y); while (x < 522) { x += 12 + rnd() * 30; y += (rnd() - 0.5) * 3.5; g.lineTo(x, y); } g.stroke(); }
+  });
+  const mat = (rot, rx, ry) => { const m = new THREE.MeshStandardMaterial({ roughness: 0.55, map: TVU_M.ekGrain.clone() }); m.map.needsUpdate = true; m.map.center.set(0.5, 0.5); m.map.rotation = rot; m.map.repeat.set(rx, ry); return m; };
+  const topM = TVU_M.ekTop || (TVU_M.ekTop = mat(0, 1, 2));                 // grain along the run
+  const vertM = TVU_M.ekVert || (TVU_M.ekVert = mat(Math.PI / 2, 1, 1));    // sides and backs: grain runs up
+  const footM = TVU_M.ekFoot || (TVU_M.ekFoot = new THREE.MeshStandardMaterial({ color: 0x8c8f92, roughness: 0.5, metalness: 0.5 }));
+  const stone = TVU_M.ekStone || (TVU_M.ekStone = new THREE.MeshStandardMaterial({ roughness: 0.6, map: tex(512, 256, g => {
+    g.fillStyle = '#bfb8ad'; g.fillRect(0, 0, 512, 256);
+    let sd = 7; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 260; i++) { const r = 6 + rnd() * 40, x = rnd() * 512, y = rnd() * 256, l = rnd() < 0.5;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, l ? 'rgba(220,214,204,0.18)' : 'rgba(150,142,130,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+  }) }));
+  const grp = new THREE.Group();
+  const bx = (u0, u1, v0, v1, z0, z1, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, z1 - z0, v1 - v0), m); o.position.set((u0 + u1) / 2, (z0 + z1) / 2, (v0 + v1) / 2); o.castShadow = o.receiveShadow = true; grp.add(o); return o; };
+  const t = 0.016, rv = 0.002, bk = 0.006, wt = 0.028, ft = 0.022;
+  const floor = P.mount === 'feet', vb = floor ? 0.018 : 0, zc = floor ? ft : P.z0;
+  const run = P.modules.reduce((a, k) => a + EKET[k].w, 0);
+  let u = P.top ? wt : 0;
+  for (const k of P.modules) {
+    const m = EKET[k], u0 = u, u1 = u + m.w, z0 = zc, z1 = zc + m.h, v0 = vb, D = vb + m.d;
+    bx(u0, u1, v0, D, z1 - t, z1, topM);                                    // top
+    bx(u0, u1, v0, D, z0, z0 + t, topM);                                    // bottom
+    bx(u0, u0 + t, v0, D, z0 + t, z1 - t, vertM); bx(u1 - t, u1, v0, D, z0 + t, z1 - t, vertM);   // sides
+    bx(u0 + t, u1 - t, v0, v0 + bk, z0 + t, z1 - t, vertM);                 // back
+    const front = (za, zb, rot) => bx(u0 + t + rv, u1 - t - rv, D - t, D - 0.001, za + rv, zb - rv, rot ? topM : vertM);
+    if (k === 'door') front(z0 + t, z1 - t);
+    if (k === 'wideOpen' && P.gear) {                                       // equipment bay: a console lying flat (PS5-size, 390 x 104 x 260) and a compact amp (220 x 70 x 220)
+      const gearM = TVU_M.gearW || (TVU_M.gearW = new THREE.MeshStandardMaterial({ color: 0xe9e9ec, roughness: 0.4 })), gearB = TVU_M.gearB || (TVU_M.gearB = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.5 }));
+      bx(u0 + t + 0.03, u0 + t + 0.42, D - 0.29, D - 0.03, z0 + t, z0 + t + 0.104, gearM); bx(u0 + t + 0.03, u0 + t + 0.42, D - 0.285, D - 0.028, z0 + t + 0.04, z0 + t + 0.064, gearB);
+      bx(u1 - t - 0.25, u1 - t - 0.03, D - 0.26, D - 0.04, z0 + t, z0 + t + 0.07, gearB);
+    }
+    if (k === 'wide') front(z0 + t, z1 - t, true);                          // on its side, so the door's grain runs along
+    if (k === 'drawers' || k === 'drawers35') { const mid = (z0 + z1) / 2; front(z0 + t, mid, true); front(mid, z1 - t, true); }
+    if (floor) for (const fu of [u0 + 0.04, u1 - 0.04]) for (const fv of [v0 + 0.04, D - 0.04]) {   // adjustable feet, set in at the corners
+      const f = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.022, ft, 12), footM); f.position.set(fu, ft / 2, fv); grp.add(f);
+    }
+    u = u1;
+  }
+  let H = zc + 0.35;
+  if (P.top) {
+    const v1 = 0.38, uR = run + 2 * wt;
+    bx(0, uR, 0, v1, H, H + wt, stone);                                     // worktop over the run
+    bx(0, wt, vb, v1, 0, H, stone); bx(uR - wt, uR, vb, v1, 0, H, stone);   // waterfall ends, scribed over the skirting
+    H += wt;
+  }
+  if (tv) standTv(bx, (P.top ? run + 2 * wt : run) / 2, vb + 0.35 * 0.45, H, tv);
+  if (P.gear) {                                                            // soundbar (Samsung Q800-class, 1110 x 60 x 120; the Q990 is 1232 x 70 x 138) on the top in front of the TV, between its feet, under the screen's bottom edge
+    const uc = (P.top ? run + 2 * wt : run) / 2, vS = vb + 0.35 * 0.45 + 0.03;
+    bx(uc - 0.555, uc + 0.555, vS, vS + 0.12, H, H + 0.06, TVU_M.gearB || (TVU_M.gearB = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.5 })));
+  }
+  // north wall (wall_y): local u = east (lot -x), v = lot +y, start = lot x of the west end.
+  // east wall (wall_x, projecting west): u = south (lot +y), v = lot +x, start = lot y of the north end
+  if (P.wall_x != null) { grp.rotation.y = -Math.PI / 2; grp.position.copy(L(P.wall_x, P.start, 0)); }
+  else grp.position.copy(L(P.start, P.wall_y, 0));
   parent.add(grp);
   return grp;
 }
@@ -866,11 +968,31 @@ export function buildHouse(spec) {
   // living room console gas heater
   // fluted walnut TV unit under the living room's west window (client 2026-11-16, spec.fixtures.tv_unit)
   if (F.tv_unit && F.tv_unit.show !== false) flutedTvUnit(int_, F.tv_unit.wall_x, -1, F.tv_unit.y, F.tv_unit.z0);
-  // three-drawer walnut TV unit with a 75" TV (spec.fixtures.tv_unit_drawers), and the King Living sofa facing it
-  // two layouts in spec.fixtures.living_layouts; ?lounge=<name> on the URL picks one, else living_layouts.active
-  const LL = F.living_layouts, lay = LL && (LL[new URLSearchParams(globalThis.location?.search || '').get('lounge')] || LL[LL.active]);
-  if (lay?.tv_unit) drawerTvUnit(int_, lay.tv_unit, lay.tv_unit.tv_in || 0);
-  if (lay?.sofa) (lay.sofa.x_arm ? couchL : couch1977)(int_, lay.sofa);
+  // Living room furniture layouts (spec.fixtures.living_layouts): the King Living sofa, the three-drawer walnut TV unit
+  // with a 75" TV, and the TV cabinet options for that layout's TV wall (spec.fixtures.tv_cabinets.layouts.<id>: IKEA
+  // EKET runs). Every layout with a label is built, plus any ?lounge=<id> on the URL; one layout and one cabinet option
+  // shown at a time. The viewer's TV sheet switches both (int_.userData.living); groups marked `switchable` only
+  // block walk mode while shown
+  const LL = F.living_layouts, TC = F.tv_cabinets, urlLounge = new URLSearchParams(globalThis.location?.search || '').get('lounge');
+  const living = {};
+  for (const [lid, lay] of Object.entries(LL || {})) {
+    if (!lay || typeof lay !== 'object' || !(lay.label || lid === urlLounge || lid === LL.active)) continue;
+    const lg = new THREE.Group(); lg.userData.switchable = true; int_.add(lg);
+    if (lay.sofa) (lay.sofa.x_arm ? couchL : couch1977)(lg, lay.sofa);
+    creamRug(lg, F.living_rug?.[lid]);                                          // big cream rug under the sofa's front (spec.fixtures.living_rug)
+    const tvc = {}, TL = TC?.layouts?.[lid];
+    if (lay.tv_unit) tvc.drawers = drawerTvUnit(lg, lay.tv_unit, lay.tv_unit.tv_in || 0);
+    if (TL) for (const o of TL.options) if (o.modules) tvc[o.id] = eketRun(lg, { ...TL.wall, z0: TC.z0, ...o }, TC.tv_in);
+    const tvOn = tvc[TL?.active] ? TL.active : 'drawers';
+    for (const [id, g] of Object.entries(tvc)) { g.userData.tvVariant = id; g.userData.switchable = true; g.visible = id === tvOn; }
+    living[lid] = { group: lg, tv: tvc };
+  }
+  const layOn = living[urlLounge] ? urlLounge : LL?.active;
+  for (const [lid, l] of Object.entries(living)) l.group.visible = lid === layOn;
+  int_.userData.living = living; int_.userData.livingActive = layOn;
+  // bedroom 2 study: EKBACKEN walnut desk under W1 on EKET drawers, 1977 chaise (saved designs in spec.fixtures.study_designs)
+  { const SD = F.study_designs, sid = new URLSearchParams(globalThis.location?.search || '').get('study');
+    if (SD) studyDesk(int_, SD.items[sid] || SD.items[SD.active], spec.rooms.find(r => r.name === 'Bedroom 2').floor); }
   const WH = F.wall_heater; box(int_, WH.x0, WH.x1, WH.y0, WH.y1, WH.z0, WH.z1, M.trimDark); box(int_, WH.x0 - 0.005, WH.x0, WH.y0 + 0.05, WH.y1 - 0.05, WH.z0 + 0.1, WH.z1 - 0.1, M.grille);
   // ceiling roses and light fittings
   for (const cr of F.ceiling_roses) {
