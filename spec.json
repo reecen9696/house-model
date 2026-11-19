@@ -1129,6 +1129,18 @@
        "sub": "Current freestanding unit, 1.8 m"
       },
       {
+       "id": "ermita",
+       "kind": "ermita",
+       "label": "Ermita walnut, 3 drawers (preview)",
+       "sub": "Conception Living Ermita messmate, walnut, 2200 x 380 x 370; pushed into the south-east corner like the EKET runs",
+       "wall_x": 0.133,
+       "face": 1,
+       "y": 13.792,
+       "w": 2.2,
+       "price": 1039,
+       "info": "Ermita messmate 3-drawer TV unit, walnut: 2200 W × 380 D × 370 H, waterfall top and ends, slatted drawers on metal runners, fully assembled. $1,039 (sale) at LivingStyles."
+      },
+      {
        "id": "eWide3",
        "label": "Three wide doors, gear hidden",
        "sub": "Only the 70-wide door cabinets; console and amp behind the doors, cables through holes in the backs. Soundbar on top",
@@ -1227,7 +1239,9 @@
         "open"
        ]
       }
-     ]
+     ],
+     "preview": "ermita",
+     "_preview_note": "TEMPORARY (client 2026-11-19): 'preview' shows the Ermita over the remembered choice. Delete 'preview' (and the ermita option) to go back to eRec."
     }
    }
   },

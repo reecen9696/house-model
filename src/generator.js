@@ -574,6 +574,54 @@ function drawerTvUnit(parent, P, tv = 0) {
   return grp;
 }
 
+// Ermita messmate 3-drawer TV unit, walnut (Conception Living via livingstyles.com.au, client 2026-11-19; TEMPORARY
+// preview): 2200 W x 380 D x 370 H. A ~30 top that wraps over rounded corners into full-depth end panels (waterfall),
+// the end panels carrying on to the floor as the front legs; square legs at the back corners, set in a little, and
+// under both drawer joints front and back. Three equal drawers faced in horizontal slats with shadow gaps, no
+// handles, set just behind the top's front edge; ~130 clear under the drawers. Dark walnut stain.
+// P: {wall_x, face, y} (back on a wall along y) or {wall_y, face, x}, as drawerTvUnit
+function ermitaTvUnit(parent, P, tv = 0) {
+  const W = 2.2, D = 0.38, H = 0.37, t = 0.03, R = 0.05, r = 0.02, zb = 0.13, hw = W / 2;
+  const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); const t2 = new THREE.CanvasTexture(c); t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.colorSpace = THREE.SRGBColorSpace; return t2; };
+  const grain = TVU_M.eGrain || (TVU_M.eGrain = tex(512, 64, g => {
+    g.fillStyle = '#4a3326'; g.fillRect(0, 0, 512, 64);
+    let sd = 23; const rnd = () => { sd = (sd * 9301 + 49297) % 233280; return sd / 233280; };
+    for (let i = 0; i < 70; i++) { const d = rnd(); g.strokeStyle = d < 0.55 ? `rgba(28,17,11,${0.08 + rnd() * 0.18})` : `rgba(110,80,60,${0.08 + rnd() * 0.14})`; g.lineWidth = 0.5 + rnd() * 2.5;
+      let x = -10, y = rnd() * 64; g.beginPath(); g.moveTo(x, y); while (x < 522) { x += 15 + rnd() * 35; y += (rnd() - 0.5) * 3; g.lineTo(x, y); } g.stroke(); } }));
+  const walMat = (key, rx, ry) => TVU_M[key] || (TVU_M[key] = (() => { const m = new THREE.MeshStandardMaterial({ roughness: 0.55, map: grain.clone() }); m.map.needsUpdate = true; m.map.repeat.set(rx, ry); return m; })());
+  const shellM = walMat('eShell', 0.45, 2), slatM = walMat('eSlat', 1.4, 0.4), legM = walMat('eLeg', 0.1, 0.4);
+  const gapM = TVU_M.eGap || (TVU_M.eGap = new THREE.MeshStandardMaterial({ color: 0x1a110c, roughness: 0.85 }));
+  const grp = new THREE.Group();
+  const bx = (u0, u1, v0, v1, z0, z1, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(u1 - u0, z1 - z0, v1 - v0), mat); m.position.set((u0 + u1) / 2, (z0 + z1) / 2, (v0 + v1) / 2); m.castShadow = m.receiveShadow = true; grp.add(m); return m; };
+  // top + end panels: an inverted U in the (u, z) plane with rounded corners, extruded through the depth (v 0..D)
+  const s = new THREE.Shape();
+  s.moveTo(-hw, zb); s.lineTo(-hw, H - R); s.absarc(-hw + R, H - R, R, Math.PI, Math.PI / 2, true); s.lineTo(hw - R, H);
+  s.absarc(hw - R, H - R, R, Math.PI / 2, 0, true); s.lineTo(hw, zb); s.lineTo(hw - t, zb); s.lineTo(hw - t, H - t - r);
+  s.absarc(hw - t - r, H - t - r, r, 0, Math.PI / 2, false); s.lineTo(-hw + t + r, H - t); s.absarc(-hw + t + r, H - t - r, r, Math.PI / 2, Math.PI, false); s.lineTo(-hw + t, zb); s.lineTo(-hw, zb);
+  const shell = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: D, bevelEnabled: false, curveSegments: 12 }), shellM);
+  shell.castShadow = shell.receiveShadow = true; grp.add(shell);
+  const fv = D - 0.012;                                                                     // drawer face plane
+  bx(-hw + t, hw - t, 0.005, fv - 0.02, zb, H - t, gapM);                                    // carcass (dark: reads in the slat gaps)
+  bx(-hw + t, hw - t, 0.005, fv - 0.02, zb, zb + 0.016, shellM);                              // bottom panel
+  // three drawers, 3 mm joints, each faced with 7 slats
+  const du = (W - 2 * t) / 3, nS = 7, dz0 = zb + 0.004, dz1 = H - t - 0.004, sh = (dz1 - dz0) / nS;
+  for (let i = 0; i < 3; i++) {
+    const a = -hw + t + i * du + 0.0015, b = a + du - 0.003;
+    for (let k = 0; k < nS; k++) bx(a, b, fv - 0.02, fv - (k % 2 ? 0.002 : 0), dz0 + k * sh + 0.0025, dz0 + (k + 1) * sh - 0.0025, slatM);
+  }
+  // legs: end panels down to the floor at the front; square legs at the back corners and under the drawer joints
+  for (const su of [-1, 1]) {
+    bx(su > 0 ? hw - t : -hw, su > 0 ? hw : -hw + t, D - 0.055, D, 0, zb + 0.001, legM);
+    const ub = su * (hw - 0.05); bx(ub - 0.02, ub + 0.02, 0.02, 0.06, 0, zb + 0.001, legM);
+    const uj = su * du / 2; for (const v of [0.02, D - 0.075]) bx(uj - 0.02, uj + 0.02, v, v + 0.04, 0, zb + 0.001, legM);
+  }
+  if (tv) standTv(bx, 0, D * 0.45, H, tv);
+  if (P.wall_y != null) { grp.rotation.y = P.face > 0 ? 0 : Math.PI; grp.position.copy(L(P.x, P.wall_y, 0)); }
+  else { grp.rotation.y = P.face > 0 ? -Math.PI / 2 : Math.PI / 2; grp.position.copy(L(P.wall_x, P.y, 0)); }
+  parent.add(grp);
+  return grp;
+}
+
 // Flat-panel TV standing on a cabinet top, in a cabinet's local frame (bx = its box helper: u along the wall, v out from
 // it, z up). 16:9: a 75" is 1.66 x 0.93 of picture; 8 bezel, 30 deep at the edge, a fatter 60 back in the lower middle.
 // uc = centre along the wall, vC = panel plane out from the wall, H = the top it stands on, tv = diagonal in inches
@@ -983,6 +1031,7 @@ export function buildHouse(spec) {
     const tvc = {}, TL = TC?.layouts?.[lid];
     if (lay.tv_unit) tvc.drawers = drawerTvUnit(lg, lay.tv_unit, lay.tv_unit.tv_in || 0);
     if (TL) for (const o of TL.options) if (o.modules) tvc[o.id] = eketRun(lg, { ...TL.wall, z0: TC.z0, ...o }, TC.tv_in);
+      else if (o.kind === 'ermita') tvc[o.id] = ermitaTvUnit(lg, o, TC.tv_in);   // temporary preview (2026-11-19)
     const tvOn = tvc[TL?.active] ? TL.active : 'drawers';
     for (const [id, g] of Object.entries(tvc)) { g.userData.tvVariant = id; g.userData.switchable = true; g.visible = id === tvOn; }
     living[lid] = { group: lg, tv: tvc };

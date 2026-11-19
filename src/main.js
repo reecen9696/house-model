@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import SunCalc from 'suncalc';
 import { buildNeighbours } from '../context/neighbours.js';
-import { buildHouse, L, EKET, EKET_EXTRA } from './generator.js?v=20261118p';
+import { buildHouse, L, EKET, EKET_EXTRA } from './generator.js?v=20261119e';
 
 const spec = await (await fetch('./spec.json')).json();
 
@@ -159,7 +159,7 @@ function setTv(id, remember = true) {
   if (o?.modules) {
     const len = o.modules.reduce((a, k) => a + EKET[k].w, 0) + (o.top ? 0.056 : 0), hgt = o.mount === 'wall' ? 'hung 180 off the floor, top at 530' : o.top ? 'on feet, 400 high' : 'on feet, 372 high';
     $('tvInfo').textContent = eketParts(o).map(r => `${r.q} × ${r.name}`).join(' · ') + `. ${len.toFixed(2)} m long, ${hgt}.`;
-  } else $('tvInfo').textContent = '1800 × 400 × 425 on splayed legs, freestanding.';
+  } else $('tvInfo').textContent = o?.info || '1800 × 400 × 425 on splayed legs, freestanding.';
   if (remember) store.set('tvCabinet.' + layNow, id);
 }
 function setLayout(lid, remember = true) {
@@ -171,15 +171,16 @@ function setLayout(lid, remember = true) {
   for (const o of tvOptionsFor(lid)) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'tvopt'; b.dataset.id = o.id; b.setAttribute('role', 'radio');
-    const len = o.modules ? o.modules.reduce((a, k) => a + EKET[k].w, 0) + (o.top ? 0.056 : 0) : 1.8;
-    const cost = o.modules ? aud(eketParts(o).reduce((a, r) => a + r.cost, 0)) : 'have it';
+    const len = o.modules ? o.modules.reduce((a, k) => a + EKET[k].w, 0) + (o.top ? 0.056 : 0) : o.w || 1.8;
+    const cost = o.modules ? aud(eketParts(o).reduce((a, r) => a + r.cost, 0)) : o.price ? aud(o.price) : 'have it';
     const strip = o.modules ? `<span class="strip${o.top ? ' top' : ''}" aria-hidden="true">${o.modules.map(k => `<i class="${k}" style="width:${Math.round(EKET[k].w * 110) - 1}px"></i>`).join('')}</span>` : '';
     b.innerHTML = `<span class="row"><b></b><span class="meta">${len.toFixed(2)} m · ${cost}</span></span>${strip}<span class="sub"></span>`;
     b.querySelector('b').textContent = o.label; b.querySelector('.sub').textContent = o.sub || '';
     b.addEventListener('click', () => setTv(o.id));
     $('tvOpts').append(b);
   }
-  const TVC = LIV[lid].tv, want = (remember ? null : qs.get('tv')) || store.get('tvCabinet.' + lid), act = TVSPEC?.layouts?.[lid]?.active;
+  const TVC = LIV[lid].tv, act = TVSPEC?.layouts?.[lid]?.active, pv = TVSPEC?.layouts?.[lid]?.preview;   // preview: a temporary option shown over the remembered choice
+  const want = (remember ? null : qs.get('tv')) || (pv && TVC[pv] ? pv : store.get('tvCabinet.' + lid));
   setTv(TVC[want] ? want : TVC[act] ? act : 'drawers', false);
   if (remember) store.set('livingLayout', lid);
 }
